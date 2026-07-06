@@ -39,14 +39,27 @@ router.get('/tournaments/:id', (req, res) => {
 router.get('/tournaments/:id/standings', (req, res) => {
   const t = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(req.params.id);
   if (!t) return res.status(404).json({ error: 'Tournament not found' });
+  // Buchholz = sum of current_points of every opponent actually faced
+  // (byes excluded), computed live from the match history.
   const standings = db
     .prepare(
       `SELECT p.id AS player_id, p.full_name, p.current_rating,
-              tp.current_points, tp.tiebreak_score
+              tp.current_points, tp.tiebreak_score,
+              COALESCE((
+                SELECT SUM(opp.current_points)
+                FROM matches m
+                JOIN tournament_players opp
+                  ON opp.tournament_id = m.tournament_id
+                 AND opp.player_id = CASE WHEN m.player1_id = p.id THEN m.player2_id ELSE m.player1_id END
+                WHERE m.tournament_id = tp.tournament_id
+                  AND (m.player1_id = p.id OR m.player2_id = p.id)
+                  AND m.player1_id IS NOT NULL
+                  AND m.player2_id IS NOT NULL
+              ), 0) AS buchholz
        FROM tournament_players tp
        JOIN players p ON p.id = tp.player_id
        WHERE tp.tournament_id = ?
-       ORDER BY tp.current_points DESC, tp.tiebreak_score DESC, p.current_rating DESC`
+       ORDER BY tp.current_points DESC, buchholz DESC, p.current_rating DESC`
     )
     .all(req.params.id);
   res.json({ tournament: t, standings });
