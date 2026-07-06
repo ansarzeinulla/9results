@@ -6,14 +6,23 @@ import publicRoutes from './routes/public.js';
 import organizerRoutes from './routes/organizer.js';
 
 const app = express();
+
+// CORS configuration
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://9results.vercel.app',
+];
+
 app.use(
   cors({
-    origin: [
-      'http://localhost:5173', // Local Vite dev
-      'http://localhost:3000', // Fallback
-      'https://9results.vercel.app', // Vercel production
-      process.env.FRONTEND_URL, // Allow env override
-    ].filter(Boolean),
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('CORS not allowed'));
+      }
+    },
     credentials: true,
   })
 );
