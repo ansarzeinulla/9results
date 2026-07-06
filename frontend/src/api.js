@@ -1,3 +1,12 @@
+function getApiUrl() {
+  // Local development: use Vite proxy or local backend
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    return 'http://localhost:3001/api';
+  }
+  // Production: use Render backend URL
+  return 'https://results-togyz-api.onrender.com/api';
+}
+
 function authHeaders() {
   const token = localStorage.getItem('token');
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -10,12 +19,12 @@ async function handle(res) {
 }
 
 export async function apiGet(path) {
-  return handle(await fetch(`/api${path}`, { headers: authHeaders() }));
+  return handle(await fetch(`${getApiUrl()}${path}`, { headers: authHeaders() }));
 }
 
 export async function apiSend(method, path, body) {
   return handle(
-    await fetch(`/api${path}`, {
+    await fetch(`${getApiUrl()}${path}`, {
       method,
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify(body),

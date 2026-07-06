@@ -1,22 +1,6 @@
 {
-  "buildCommand": "cd frontend && npm run build",
-  "installCommand": "npm install && npm install --prefix backend",
-  "framework": null,
+  "buildCommand": "npm run build --prefix frontend",
   "outputDirectory": "frontend/dist",
-  "routes": [
-    {
-      "src": "^/api/(.*)",
-      "dest": "backend/src/index.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "frontend/dist/index.html"
-    }
-  ],
-  "functions": {
-    "backend/src/index.js": {
-      "runtime": "nodejs20.x",
-      "maxDuration": 60
-    }
-  }
+  "framework": "vite",
+  "installCommand": "npm install --prefix frontend"
 }

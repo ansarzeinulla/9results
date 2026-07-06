@@ -6,7 +6,17 @@ import publicRoutes from './routes/public.js';
 import organizerRoutes from './routes/organizer.js';
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      'http://localhost:5173', // Local Vite dev
+      'http://localhost:3000', // Fallback
+      'https://9results.vercel.app', // Vercel production
+      process.env.FRONTEND_URL, // Allow env override
+    ].filter(Boolean),
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
