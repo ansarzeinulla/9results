@@ -52,6 +52,22 @@ router.get('/tournaments/:id/standings', (req, res) => {
   res.json({ tournament: t, standings });
 });
 
+router.get('/tournaments/:id/matches', (req, res) => {
+  const t = db.prepare('SELECT id FROM tournaments WHERE id = ?').get(req.params.id);
+  if (!t) return res.status(404).json({ error: 'Tournament not found' });
+  const matches = db
+    .prepare(
+      `SELECT m.*, p1.full_name AS player1_name, p2.full_name AS player2_name
+       FROM matches m
+       LEFT JOIN players p1 ON p1.id = m.player1_id
+       LEFT JOIN players p2 ON p2.id = m.player2_id
+       WHERE m.tournament_id = ?
+       ORDER BY m.round_number DESC, m.id`
+    )
+    .all(req.params.id);
+  res.json(matches);
+});
+
 router.get('/players/:id', (req, res) => {
   const player = db.prepare('SELECT * FROM players WHERE id = ?').get(req.params.id);
   if (!player) return res.status(404).json({ error: 'Player not found' });

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import Navbar from './Navbar.jsx';
 import Login from './Login.jsx';
 import Home from './pages/Home.jsx';
@@ -7,6 +7,8 @@ import Tournaments from './pages/Tournaments.jsx';
 import TournamentView from './pages/TournamentView.jsx';
 import Players from './pages/Players.jsx';
 import PlayerView from './pages/PlayerView.jsx';
+import OrganizerDashboard from './pages/OrganizerDashboard.jsx';
+import TournamentAdmin from './pages/TournamentAdmin.jsx';
 
 function loadUser() {
   try {
@@ -33,7 +35,7 @@ function LoginPage({ user, setUser }) {
         <div className="login-card">
           <h1>Organizer</h1>
           <p className="subtitle">Signed in as <strong>{user.username}</strong></p>
-          <p>Tournament management coming in Phase 3.</p>
+          <p><Link to="/organizer">Go to your dashboard →</Link></p>
           <button onClick={logout}>Log out</button>
         </div>
       </div>
@@ -42,7 +44,7 @@ function LoginPage({ user, setUser }) {
 
   return (
     <div className="page center">
-      <Login onLogin={(u) => { setUser(u); navigate('/login'); }} />
+      <Login onLogin={(u) => { setUser(u); navigate('/organizer'); }} />
     </div>
   );
 }
@@ -60,6 +62,8 @@ export default function App() {
         <Route path="/players" element={<Players />} />
         <Route path="/players/:id" element={<PlayerView />} />
         <Route path="/login" element={<LoginPage user={user} setUser={setUser} />} />
+        <Route path="/organizer" element={<OrganizerDashboard user={user} />} />
+        <Route path="/organizer/tournaments/:id" element={<TournamentAdmin user={user} />} />
       </Routes>
     </BrowserRouter>
   );

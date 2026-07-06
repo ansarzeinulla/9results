@@ -46,8 +46,30 @@ CREATE TABLE IF NOT EXISTS matches (
   round_number INTEGER NOT NULL,
   player1_id INTEGER REFERENCES players(id),
   player2_id INTEGER REFERENCES players(id),
-  result TEXT CHECK (result IS NULL OR result IN ('1-0','0-1','0.5-0.5','+--','--+','=-='))
+  result TEXT CHECK (result IS NULL OR result IN ('1-0','0-1','0.5-0.5','0-0','+--','--+','=-='))
 );
 `);
+
+// Migration: older DBs lack '0-0' in the matches result CHECK — rebuild the table if so.
+const matchesSql = db
+  .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='matches'")
+  .get()?.sql;
+if (matchesSql && !matchesSql.includes("'0-0'")) {
+  db.transaction(() => {
+    db.exec(`
+      ALTER TABLE matches RENAME TO matches_old;
+      CREATE TABLE matches (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tournament_id INTEGER NOT NULL REFERENCES tournaments(id),
+        round_number INTEGER NOT NULL,
+        player1_id INTEGER REFERENCES players(id),
+        player2_id INTEGER REFERENCES players(id),
+        result TEXT CHECK (result IS NULL OR result IN ('1-0','0-1','0.5-0.5','0-0','+--','--+','=-='))
+      );
+      INSERT INTO matches SELECT * FROM matches_old;
+      DROP TABLE matches_old;
+    `);
+  })();
+}
 
 export default db;

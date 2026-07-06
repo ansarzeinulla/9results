@@ -176,6 +176,70 @@ button {
 button:disabled { opacity: 0.6; cursor: default; }
 
 .error { color: #c01c28; font-size: 0.9rem; margin-bottom: 0.5rem; }
+.notice { color: #116329; font-size: 0.9rem; margin-bottom: 0.5rem; }
+
+/* Cards & forms */
+.card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.card h2 { margin-top: 0; font-size: 1.1rem; }
+
+.form-grid { display: grid; gap: 0.75rem; max-width: 420px; }
+.form-grid button { justify-self: start; }
+
+.form-row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.form-row select, .form-row input { width: auto; flex: 1; min-width: 10rem; margin-top: 0; }
+.form-row button { flex: 0 0 auto; }
+
+select {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  background: #fff;
+}
+
+/* Tabs */
+.tabs { display: flex; gap: 0.25rem; border-bottom: 2px solid var(--border); margin: 1rem 0 1.25rem; flex-wrap: wrap; }
+
+.tab {
+  background: none;
+  color: var(--muted);
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  padding: 0.5rem 1rem;
+  margin-bottom: -2px;
+  font-size: 0.95rem;
+}
+
+.tab-active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 600; }
+
+/* Results entry */
+.match-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; }
+
+.match-row {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.match-buttons { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.match-buttons .chip { padding: 0.25rem 0.7rem; font-size: 0.85rem; }
 
 @media (max-width: 600px) {
   .navbar { flex-direction: column; align-items: flex-start; }
