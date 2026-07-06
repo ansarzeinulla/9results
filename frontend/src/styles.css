@@ -238,6 +238,14 @@ select {
   flex-wrap: wrap;
 }
 
+.generate-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .match-buttons { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 .match-buttons .chip { padding: 0.25rem 0.7rem; font-size: 0.85rem; }
 

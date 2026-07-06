@@ -91,6 +91,12 @@ export default function TournamentAdmin({ user }) {
           standings={standings}
           onResult={(match_id, result) => act(() => apiPost(`/tournaments/${id}/results`, { match_id, result }), `Result ${result} saved`)}
           onCreateMatch={(body) => act(() => apiPost(`/tournaments/${id}/matches`, body), 'Match added')}
+          onGenerate={() =>
+            act(async () => {
+              const r = await apiPost(`/tournaments/${id}/generate-round`, {});
+              flash(`Round ${r.round_number} generated: ${r.matches.length} match(es)`);
+            })
+          }
         />
       )}
     </div>
@@ -197,14 +203,29 @@ function ParticipantsTab({ standings, allPlayers, onAdd }) {
   );
 }
 
-function ResultsTab({ matches, standings, onResult, onCreateMatch }) {
+function ResultsTab({ matches, standings, onResult, onCreateMatch, onGenerate }) {
   const currentRound = matches.length ? Math.max(...matches.map((m) => m.round_number)) : 1;
   const [form, setForm] = useState({ round_number: currentRound, player1_id: '', player2_id: '' });
   const currentMatches = matches.filter((m) => m.round_number === currentRound);
   const earlier = matches.filter((m) => m.round_number !== currentRound);
+  const pending = currentMatches.filter((m) => m.player2_id && !m.result).length;
 
   return (
     <>
+      <div className="card generate-card">
+        <div>
+          <h2>Pairings</h2>
+          <p className="muted" style={{ margin: 0 }}>
+            {matches.length === 0
+              ? 'No rounds yet — generate round 1.'
+              : pending > 0
+                ? `${pending} match(es) in round ${currentRound} still need a result.`
+                : `Round ${currentRound} complete — ready for the next round.`}
+          </p>
+        </div>
+        <button onClick={onGenerate} disabled={pending > 0}>Generate Next Round</button>
+      </div>
+
       <div className="card">
         <h2>Add Match (Round {currentRound})</h2>
         <form

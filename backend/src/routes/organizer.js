@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import db from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
+import { generateRound, PairingError } from '../pairingEngine.js';
 
 const router = Router();
 
@@ -130,6 +131,74 @@ router.post('/tournaments/:id/results', requireAuth, (req, res) => {
 
   submitResult(t.id, match, result);
   res.json(db.prepare('SELECT * FROM matches WHERE id = ?').get(match.id));
+});
+
+const insertRound = db.transaction((tournamentId, roundNumber, pairings) => {
+  const insertMatch = db.prepare(
+    'INSERT INTO matches (tournament_id, round_number, player1_id, player2_id, result) VALUES (?, ?, ?, ?, ?)'
+  );
+  const awardByePoint = db.prepare(
+    'UPDATE tournament_players SET current_points = current_points + 1 WHERE tournament_id = ? AND player_id = ?'
+  );
+  const ids = [];
+  for (const p of pairings) {
+    if (p.player2_id == null) {
+      // Bye: recorded as a decided match, free point awarded immediately
+      ids.push(insertMatch.run(tournamentId, roundNumber, p.player1_id, null, '1-0').lastInsertRowid);
+      awardByePoint.run(tournamentId, p.player1_id);
+    } else {
+      ids.push(insertMatch.run(tournamentId, roundNumber, p.player1_id, p.player2_id, null).lastInsertRowid);
+    }
+  }
+  return ids;
+});
+
+router.post('/tournaments/:id/generate-round', requireAuth, (req, res) => {
+  const t = ownedTournament(req, res);
+  if (!t) return;
+
+  const players = db
+    .prepare(
+      `SELECT tp.player_id, tp.current_points, tp.tiebreak_score, p.current_rating
+       FROM tournament_players tp JOIN players p ON p.id = tp.player_id
+       WHERE tp.tournament_id = ?`
+    )
+    .all(t.id);
+  const previousMatches = db
+    .prepare('SELECT round_number, player1_id, player2_id, result FROM matches WHERE tournament_id = ?')
+    .all(t.id);
+
+  const unfinished = previousMatches.filter((m) => m.player2_id != null && m.result == null).length;
+  if (unfinished > 0) {
+    return res.status(409).json({ error: `Cannot generate a new round: ${unfinished} match(es) still have no result` });
+  }
+
+  const roundNumber = previousMatches.reduce((max, m) => Math.max(max, m.round_number), 0) + 1;
+
+  let pairings;
+  try {
+    ({ pairings } = generateRound({
+      systemType: t.system_type,
+      players,
+      previousMatches,
+      roundNumber,
+    }));
+  } catch (e) {
+    if (e instanceof PairingError) return res.status(409).json({ error: e.message });
+    throw e;
+  }
+
+  const ids = insertRound(t.id, roundNumber, pairings);
+  const created = db
+    .prepare(
+      `SELECT m.*, p1.full_name AS player1_name, p2.full_name AS player2_name
+       FROM matches m
+       LEFT JOIN players p1 ON p1.id = m.player1_id
+       LEFT JOIN players p2 ON p2.id = m.player2_id
+       WHERE m.id IN (${ids.map(() => '?').join(',')})`
+    )
+    .all(...ids);
+  res.status(201).json({ round_number: roundNumber, matches: created });
 });
 
 export default router;
