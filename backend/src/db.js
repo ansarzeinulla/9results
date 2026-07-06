@@ -11,8 +11,11 @@ pool.on('error', (err) => {
   process.exit(-1);
 });
 
-// Initialize schema on startup
+// Initialize schema on first connection (deferred to avoid startup crash)
+let schemaInitialized = false;
+
 async function initSchema() {
+  if (schemaInitialized) return;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -57,39 +60,62 @@ async function initSchema() {
       );
     `);
     await client.query('COMMIT');
-    console.log('Database schema initialized');
+    schemaInitialized = true;
+    console.log('✓ Database schema initialized');
   } catch (e) {
     await client.query('ROLLBACK');
     if (!e.message.includes('already exists')) throw e;
+    schemaInitialized = true;
   } finally {
     client.release();
   }
 }
 
-await initSchema();
+// Wrapper to ensure schema is initialized before queries
+const ensureSchema = async () => {
+  if (!schemaInitialized) await initSchema();
+};
 
 // Export convenience wrapper: query(sql, params) returns Promise<result>
 export const db = {
-  query: (sql, params = []) => pool.query(sql, params),
+  query: async (sql, params = []) => {
+    await ensureSchema();
+    return pool.query(sql, params);
+  },
   get: async (sql, params) => {
+    await ensureSchema();
     const res = await pool.query(sql, params);
     return res.rows[0] || null;
   },
   all: async (sql, params) => {
+    await ensureSchema();
     const res = await pool.query(sql, params);
     return res.rows;
   },
   run: async (sql, params) => {
+    await ensureSchema();
     const res = await pool.query(sql, params);
     return res;
   },
   prepare: (sql) => ({
-    run: (...params) => pool.query(sql, params),
-    get: (...params) => pool.query(sql, params).then((r) => r.rows[0] || null),
-    all: (...params) => pool.query(sql, params).then((r) => r.rows),
+    run: async (...params) => {
+      await ensureSchema();
+      return pool.query(sql, params);
+    },
+    get: async (...params) => {
+      await ensureSchema();
+      const res = await pool.query(sql, params);
+      return res.rows[0] || null;
+    },
+    all: async (...params) => {
+      await ensureSchema();
+      const res = await pool.query(sql, params);
+      return res.rows;
+    },
   }),
   transaction: (fn) => {
     return async (...args) => {
+      await ensureSchema();
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
