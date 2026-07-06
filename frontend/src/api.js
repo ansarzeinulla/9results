@@ -3,8 +3,8 @@ function getApiUrl() {
   if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
     return 'http://localhost:3001/api';
   }
-  // Production: use Render backend URL
-  return 'https://results-togyz-api.onrender.com/api';
+  // Production: use Render backend URL (from environment or default)
+  return import.meta.env.VITE_API_URL || 'https://nineresults-api.onrender.com/api';
 }
 
 function authHeaders() {
