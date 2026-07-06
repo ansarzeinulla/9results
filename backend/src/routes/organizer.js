@@ -2,6 +2,7 @@ import { Router } from 'express';
 import db from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { generateRound, PairingError } from '../pairingEngine.js';
+import { calculateTournamentRatings } from '../ratingEngine.js';
 
 const router = Router();
 
@@ -50,6 +51,27 @@ router.post('/tournaments', requireAuth, (req, res) => {
   res.status(201).json(db.prepare('SELECT * FROM tournaments WHERE id = ?').get(info.lastInsertRowid));
 });
 
+const applyRatings = db.transaction((tournamentId) => {
+  const players = db
+    .prepare('SELECT p.id AS player_id, p.current_rating FROM players p')
+    .all();
+  const matches = db
+    .prepare(
+      'SELECT player1_id, player2_id, result FROM matches WHERE tournament_id = ? AND player2_id IS NOT NULL'
+    )
+    .all(tournamentId);
+
+  const deltas = calculateTournamentRatings(players, matches);
+  const updateRating = db.prepare('UPDATE players SET current_rating = ? WHERE id = ?');
+  for (const [playerId, delta] of Object.entries(deltas)) {
+    const player = players.find((p) => p.player_id === Number(playerId));
+    if (player) {
+      const newRating = player.current_rating + delta;
+      updateRating.run(newRating, playerId);
+    }
+  }
+});
+
 router.put('/tournaments/:id', requireAuth, (req, res) => {
   const t = ownedTournament(req, res);
   if (!t) return;
@@ -60,6 +82,12 @@ router.put('/tournaments/:id', requireAuth, (req, res) => {
     system_type: ['swiss', 'round_robin'].includes(system_type) ? system_type : t.system_type,
     status: ['setup', 'ongoing', 'finished'].includes(status) ? status : t.status,
   };
+
+  // Finish tournament and apply ratings exactly once
+  if (next.status === 'finished' && t.status !== 'finished') {
+    applyRatings(t.id);
+  }
+
   db.prepare('UPDATE tournaments SET name = ?, location = ?, system_type = ?, status = ? WHERE id = ?')
     .run(next.name, next.location, next.system_type, next.status, t.id);
   res.json(db.prepare('SELECT * FROM tournaments WHERE id = ?').get(t.id));

@@ -144,6 +144,11 @@ function SettingsTab({ tournament, onSave }) {
           </select>
         </label>
         <button type="submit">Save</button>
+        {tournament.status !== 'finished' && form.status === 'finished' && (
+          <p className="muted" style={{ fontSize: '0.85rem', marginTop: '-0.5rem' }}>
+            Ratings will be calculated and applied when you save.
+          </p>
+        )}
       </form>
     </div>
   );
