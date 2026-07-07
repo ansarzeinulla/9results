@@ -1,27 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiGet } from '../api.js';
 import { statusLabel, levelLabel, ratingTypeLabel, systemLabel } from '../labels.js';
 
-function exportCsv(tournament, standings, rated) {
+function exportCsv(name, standings, rated) {
   const esc = (v) => {
     const s = String(v ?? '');
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  const header = ['Rank', 'Player', 'Federation', 'Start rating', ...(rated ? ['Projected rating'] : []), 'Points', 'Buchholz'];
+  const header = ['Rk', 'Name', 'FED', 'Rtg', 'Pts', 'TB1', ...(rated ? ['Rp'] : [])];
   const rows = [
     header,
     ...standings.map((s, i) => [
-      i + 1, s.full_name, s.federation, s.start_rating ?? '',
-      ...(rated ? [s.projected_rating ?? ''] : []), s.current_points, s.buchholz,
+      i + 1, s.full_name, s.federation, s.start_rating ?? '', s.current_points, s.buchholz,
+      ...(rated ? [s.rp ?? ''] : []),
     ]),
   ];
   const csv = rows.map((r) => r.map(esc).join(',')).join('\r\n');
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `${tournament.name.replace(/[^\w\d-]+/g, '_')}_standings.csv`;
+  a.download = `${name.replace(/[^\w\d-]+/g, '_')}_standings.csv`;
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -29,133 +29,209 @@ function exportCsv(tournament, standings, rated) {
 export default function TournamentView() {
   const { id } = useParams();
   const { t } = useTranslation();
-  const [tournament, setTournament] = useState(null);
-  const [roundsData, setRoundsData] = useState(null);
-  const [selectedRound, setSelectedRound] = useState(null); // null = final
+  const [detail, setDetail] = useState(null);
+  const [rounds, setRounds] = useState(null);
+  const [startRank, setStartRank] = useState(null);
+  const [view, setView] = useState('');
   const [standings, setStandings] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    apiGet(`/tournaments/${id}/rounds`).then(setRoundsData).catch((e) => setError(e.message));
+    Promise.all([
+      apiGet(`/tournaments/${id}`),
+      apiGet(`/tournaments/${id}/rounds`),
+      apiGet(`/tournaments/${id}/starting-rank`),
+    ])
+      .then(([d, r, sr]) => {
+        setDetail(d); setRounds(r); setStartRank(sr);
+        setView(r.max_round > 0 ? 'final' : 'start');
+      })
+      .catch((e) => setError(e.message));
   }, [id]);
 
+  // Fetch standings when a ranking/final view is selected.
+  const throughRound = useMemo(() => {
+    if (view === 'final') return null;
+    if (view.startsWith('rank-')) return Number(view.slice(5));
+    return undefined; // not a standings view
+  }, [view]);
+
   useEffect(() => {
-    const rq = selectedRound == null ? '' : `?through_round=${selectedRound}`;
-    apiGet(`/tournaments/${id}/standings${rq}`)
-      .then((d) => { setStandings(d); setTournament(d.tournament); })
-      .catch((e) => setError(e.message));
-  }, [id, selectedRound]);
+    if (throughRound === undefined) return;
+    const q = throughRound == null ? '' : `?through_round=${throughRound}`;
+    apiGet(`/tournaments/${id}/standings${q}`).then(setStandings).catch((e) => setError(e.message));
+  }, [id, throughRound]);
 
   if (error) return <div className="page"><p className="error">{error}</p></div>;
-  if (!tournament || !standings || !roundsData) return <div className="page"><p className="muted">{t('common.loading')}</p></div>;
+  if (!detail || !rounds || !startRank) return <div className="page"><p className="muted">{t('common.loading')}</p></div>;
 
-  const maxRound = roundsData.max_round;
-  const rated = standings.rated;
-  const currentPairings = roundsData.rounds.find((r) => r.round_number === selectedRound)?.pairings;
+  const maxRound = rounds.max_round;
+  const rated = detail.rating_type !== 'non_rated';
+
+  const info = [
+    [t('fields.organizer'), detail.organizer_name],
+    [t('fields.federation'), detail.federation],
+    [t('fields.city'), detail.city],
+    [t('fields.level'), levelLabel(t, detail.level)],
+    [t('fields.timeControl'), ratingTypeLabel(t, detail.rating_type)],
+    [t('fields.system'), systemLabel(t, detail.system_type)],
+    [t('fields.rounds'), detail.number_of_rounds],
+    [t('fields.tieBreak'), 'Buchholz (TB1)'],
+    [t('fields.players'), detail.player_count],
+    [t('fields.status'), statusLabel(t, detail.status)],
+  ];
+
+  const pairingRound = view.startsWith('pair-') ? Number(view.slice(5)) : null;
+  const pairings = pairingRound ? rounds.rounds.find((r) => r.round_number === pairingRound)?.pairings : null;
+  const isRanking = view === 'final' || view.startsWith('rank-');
 
   return (
     <div className="page">
-      <h1>{tournament.name}</h1>
-      <p className="muted">
-        {tournament.federation} · {tournament.city} ·{' '}
-        <span className={`badge badge-${tournament.status}`}>{statusLabel(t, tournament.status)}</span> ·{' '}
-        {levelLabel(t, tournament.level)} · {ratingTypeLabel(t, tournament.rating_type)} · {systemLabel(t, tournament.system_type)}
-      </p>
+      <h1>{detail.name}</h1>
 
-      {/* Round selector buttons */}
-      <div className="round-buttons no-print">
-        <button className={`chip ${selectedRound === 0 ? 'chip-active' : ''}`} onClick={() => setSelectedRound(0)}>
-          {t('tournamentView.start')}
-        </button>
-        {Array.from({ length: maxRound }, (_, i) => i + 1).map((n) => (
-          <button key={n} className={`chip ${selectedRound === n ? 'chip-active' : ''}`} onClick={() => setSelectedRound(n)}>
-            {n === maxRound ? t('tournamentView.final') : t('tournamentView.round', { n })}
-          </button>
-        ))}
+      {/* Info block */}
+      <div className="info-block">
+        <table>
+          <tbody>
+            {info.map(([k, v]) => (
+              <tr key={k}><th>{k}</th><td>{v ?? '—'}</td></tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {/* Pairings for the selected round */}
-      {selectedRound != null && selectedRound > 0 && (
+      {/* Chess-results-style view selector */}
+      <div className="view-selector no-print">
+        <label>{t('view.label')}:{' '}
+          <select value={view} onChange={(e) => setView(e.target.value)}>
+            <option value="start">{t('view.startingRank')}</option>
+            {maxRound > 0 && (
+              <optgroup label={t('view.pairings')}>
+                {Array.from({ length: maxRound }, (_, i) => i + 1).map((n) => (
+                  <option key={`p${n}`} value={`pair-${n}`}>{t('view.pairings')} — {t('tournamentView.round', { n })}</option>
+                ))}
+              </optgroup>
+            )}
+            {maxRound > 0 && (
+              <optgroup label={t('view.rankingAfter')}>
+                {Array.from({ length: maxRound }, (_, i) => i + 1).map((n) => (
+                  <option key={`r${n}`} value={`rank-${n}`}>{t('view.rankingAfter')} {n}</option>
+                ))}
+              </optgroup>
+            )}
+            {maxRound > 0 && <option value="final">{t('view.finalRanking')}</option>}
+          </select>
+        </label>
+      </div>
+
+      {/* Starting rank list */}
+      {view === 'start' && (
         <>
-          <h2>{t('tournamentView.pairings', { n: selectedRound })}</h2>
-          {!currentPairings || currentPairings.length === 0 ? (
+          <h2>{t('view.startingRank')}</h2>
+          <div className="table-wrap">
+            <table className="cr-table">
+              <thead>
+                <tr>
+                  <th>{t('fields.sno')}</th><th>{t('fields.title')}</th><th>{t('fields.player')}</th>
+                  <th>{t('fields.federation')}</th><th>{t('fields.rating')}</th><th>{t('fields.birthYear')}</th><th>{t('fields.club')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {startRank.map((r) => (
+                  <tr key={r.player_id}>
+                    <td>{r.sno}</td><td>{r.title || ''}</td>
+                    <td><Link to={`/players/${r.player_id}`}>{r.full_name}</Link></td>
+                    <td>{r.federation}</td><td>{r.rating ?? '—'}</td><td>{r.birth_year || ''}</td><td>{r.club || ''}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {/* Pairings of a round */}
+      {pairingRound && (
+        <>
+          <h2>{t('view.pairings')} — {t('tournamentView.round', { n: pairingRound })}</h2>
+          {!pairings || pairings.length === 0 ? (
             <p className="muted">{t('tournamentView.noPairings')}</p>
           ) : (
-            <div className="match-list">
-              {currentPairings.map((m) => (
-                <div className="match-row" key={m.id}>
-                  <span className="match-players">
-                    <Link to={`/players/${m.player1_id}`}>{m.player1_name}</Link>
-                    {' vs '}
-                    {m.player2_id ? <Link to={`/players/${m.player2_id}`}>{m.player2_name}</Link> : t('tournamentView.bye')}
-                  </span>
-                  {m.result && <span className="badge badge-finished">{m.result}</span>}
-                </div>
-              ))}
+            <div className="table-wrap">
+              <table className="cr-table">
+                <thead>
+                  <tr>
+                    <th>{t('fields.board')}</th><th>{t('fields.white')}</th><th>{t('fields.result')}</th><th>{t('fields.black')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pairings.map((m, i) => (
+                    <tr key={m.id}>
+                      <td>{i + 1}</td>
+                      <td><Link to={`/players/${m.player1_id}`}>{m.player1_name}</Link></td>
+                      <td className="cr-result">{m.result || '—'}</td>
+                      <td>{m.player2_id ? <Link to={`/players/${m.player2_id}`}>{m.player2_name}</Link> : t('tournamentView.bye')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </>
       )}
 
-      {/* Standings snapshot */}
-      <div className="standings-header no-print">
-        <h2>
-          {t('tournamentView.standings')}
-          {' — '}
-          {selectedRound === 0
-            ? t('tournamentView.beforeTournament')
-            : selectedRound == null || selectedRound === maxRound
-              ? t('tournamentView.final')
-              : t('tournamentView.round', { n: selectedRound })}
-        </h2>
-        {standings.standings.length > 0 && (
-          <div className="export-buttons">
-            <button className="chip" onClick={() => window.print()}>{t('tournamentView.print')}</button>
-            <button className="chip" onClick={() => exportCsv(tournament, standings.standings, rated)}>{t('tournamentView.exportCsv')}</button>
+      {/* Ranking / final crosstable */}
+      {isRanking && standings && (
+        <>
+          <div className="standings-header no-print">
+            <h2>{view === 'final' ? t('view.finalRanking') : `${t('view.rankingAfter')} ${throughRound}`}</h2>
+            {standings.standings.length > 0 && (
+              <div className="export-buttons">
+                <button className="chip" onClick={() => window.print()}>{t('tournamentView.print')}</button>
+                <button className="chip" onClick={() => exportCsv(detail.name, standings.standings, rated)}>{t('tournamentView.exportCsv')}</button>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-
-      {standings.standings.length === 0 ? (
-        <p className="muted">{t('tournamentView.noPlayers')}</p>
-      ) : (
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>{t('fields.rank')}</th>
-                <th>{t('fields.player')}</th>
-                <th>{t('fields.federation')}</th>
-                <th>{t('fields.startRating')}</th>
-                {rated && <th>{t('fields.projectedRating')}</th>}
-                <th>{t('fields.points')}</th>
-                <th>{t('fields.buchholz')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {standings.standings.map((s, i) => (
-                <tr key={s.player_id}>
-                  <td>{i + 1}</td>
-                  <td><Link to={`/players/${s.player_id}`}>{s.full_name}</Link></td>
-                  <td>{s.federation}</td>
-                  <td>{s.start_rating ?? '—'}</td>
-                  {rated && (
-                    <td>
-                      {s.projected_rating ?? '—'}
-                      {s.projected_rating != null && s.start_rating != null && (
-                        <span className={`delta ${s.projected_rating >= s.start_rating ? 'up' : 'down'}`}>
-                          {' '}{s.projected_rating >= s.start_rating ? '+' : ''}{s.projected_rating - s.start_rating}
-                        </span>
+          {standings.standings.length === 0 ? (
+            <p className="muted">{t('tournamentView.noPlayers')}</p>
+          ) : (
+            <div className="table-wrap">
+              <table className="cr-table">
+                <thead>
+                  <tr>
+                    <th>{t('fields.rank')}</th><th>{t('fields.player')}</th><th>{t('fields.federation')}</th>
+                    <th>{t('fields.startRating')}</th><th>{t('fields.points')}</th><th>{t('fields.buchholz')}</th>
+                    {rated && <th>{t('fields.rp')}</th>}
+                    {rated && <th>{t('fields.projectedRating')}</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {standings.standings.map((s, i) => (
+                    <tr key={s.player_id}>
+                      <td>{i + 1}</td>
+                      <td><Link to={`/players/${s.player_id}`}>{s.full_name}</Link></td>
+                      <td>{s.federation}</td>
+                      <td>{s.start_rating ?? '—'}</td>
+                      <td><strong>{s.current_points}</strong></td>
+                      <td>{s.buchholz}</td>
+                      {rated && <td>{s.rp ?? '—'}</td>}
+                      {rated && (
+                        <td>
+                          {s.projected_rating ?? '—'}
+                          {s.projected_rating != null && s.start_rating != null && (
+                            <span className={`delta ${s.projected_rating >= s.start_rating ? 'up' : 'down'}`}>
+                              {' '}{s.projected_rating >= s.start_rating ? '+' : ''}{s.projected_rating - s.start_rating}
+                            </span>
+                          )}
+                        </td>
                       )}
-                    </td>
-                  )}
-                  <td><strong>{s.current_points}</strong></td>
-                  <td>{s.buchholz}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

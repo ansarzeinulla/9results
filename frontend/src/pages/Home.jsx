@@ -1,59 +1,63 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiGet } from '../api.js';
-import { statusLabel } from '../labels.js';
+import { statusLabel, ratingTypeLabel } from '../labels.js';
 
 export default function Home() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [q, setQ] = useState('');
-  const [results, setResults] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [tournaments, setTournaments] = useState(null);
 
-  async function search(e) {
+  useEffect(() => {
+    apiGet('/tournaments').then(setTournaments).catch(() => setTournaments([]));
+  }, []);
+
+  function search(e) {
     e.preventDefault();
-    if (!q.trim()) return;
-    setLoading(true);
-    try {
-      setResults(await apiGet(`/search?q=${encodeURIComponent(q)}`));
-    } finally {
-      setLoading(false);
-    }
+    if (q.trim()) navigate(`/tournaments?q=${encodeURIComponent(q)}`);
   }
 
   return (
     <div className="page">
-      <div className="hero">
+      <div className="db-header">
         <h1>{t('app.title')}</h1>
-        <p>{t('app.tagline')}</p>
-        <form onSubmit={search} className="search-bar">
+        <form onSubmit={search} className="search-bar compact">
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('home.searchPlaceholder')} />
-          <button type="submit" disabled={loading}>{loading ? '…' : t('common.search')}</button>
+          <button type="submit">{t('common.search')}</button>
         </form>
       </div>
+      <p className="muted">{t('app.tagline')}</p>
 
-      {results && (
-        <div className="search-results">
-          <h2>{t('home.tournaments')}</h2>
-          {results.tournaments.length === 0 && <p className="muted">{t('home.noTournaments')}</p>}
-          <ul className="result-list">
-            {results.tournaments.map((tt) => (
-              <li key={tt.id}>
-                <Link to={`/tournaments/${tt.id}`}>{tt.name}</Link>
-                <span className="muted"> — {tt.city} · {statusLabel(t, tt.status)}</span>
-              </li>
-            ))}
-          </ul>
-          <h2>{t('home.players')}</h2>
-          {results.players.length === 0 && <p className="muted">{t('home.noPlayers')}</p>}
-          <ul className="result-list">
-            {results.players.map((p) => (
-              <li key={p.id}>
-                <Link to={`/players/${p.id}`}>{p.first_name} {p.last_name}</Link>
-                <span className="muted"> — {p.federation} · {p.rating_classic}</span>
-              </li>
-            ))}
-          </ul>
+      <h2>{t('nav.tournaments')}</h2>
+      {!tournaments ? (
+        <p className="muted">{t('common.loading')}</p>
+      ) : tournaments.length === 0 ? (
+        <p className="muted">{t('home.noTournaments')}</p>
+      ) : (
+        <div className="table-wrap">
+          <table className="cr-table">
+            <thead>
+              <tr>
+                <th>#</th><th>{t('fields.name')}</th><th>{t('fields.federation')}</th><th>{t('fields.city')}</th>
+                <th>{t('fields.timeControl')}</th><th>{t('fields.status')}</th><th>{t('fields.players')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tournaments.map((tt, i) => (
+                <tr key={tt.id}>
+                  <td>{i + 1}</td>
+                  <td><Link to={`/tournaments/${tt.id}`}>{tt.name}</Link></td>
+                  <td>{tt.federation}</td>
+                  <td>{tt.city}</td>
+                  <td>{ratingTypeLabel(t, tt.rating_type)}</td>
+                  <td><span className={`badge badge-${tt.status}`}>{statusLabel(t, tt.status)}</span></td>
+                  <td>{tt.player_count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

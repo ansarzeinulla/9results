@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiGet } from '../api.js';
 import { FEDERATIONS, CITIES_BY_FEDERATION, LEVELS, RATING_TYPES } from '../constants.js';
@@ -9,7 +9,9 @@ const STATUSES = ['upcoming', 'live', 'finished'];
 
 export default function Tournaments() {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
   const [filters, setFilters] = useState({
+    q: searchParams.get('q') || '',
     federation: '', city: '', status: '', level: '', rating_type: '',
     created_from: '', created_to: '',
   });

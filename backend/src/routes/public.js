@@ -15,7 +15,7 @@ function playerName(row, prefix) {
 
 // GET /api/tournaments — faceted search.
 router.get('/tournaments', async (req, res) => {
-  const { federation, city, status, level, rating_type, created_from, created_to, ended_from, ended_to } = req.query;
+  const { q, federation, city, status, level, rating_type, created_from, created_to, ended_from, ended_to } = req.query;
   const where = [];
   const params = [];
   const add = (clause, value) => {
@@ -23,6 +23,7 @@ router.get('/tournaments', async (req, res) => {
     where.push(clause.replace('?', `$${params.length}`));
   };
 
+  if (q) add('t.name ILIKE ?', `%${q}%`);
   if (federation) add('t.federation = ?', federation);
   if (city) add('t.city = ?', city);
   if (status) add('t.status = ?', STATUS_MAP[String(status).toLowerCase()] || status);
@@ -43,10 +44,45 @@ router.get('/tournaments', async (req, res) => {
   res.json(rows);
 });
 
+// Tournament detail enriched with the chess-results-style info block fields.
 router.get('/tournaments/:id', async (req, res) => {
-  const t = await db.get('SELECT * FROM tournaments WHERE id = $1', [req.params.id]);
+  const t = await db.get(
+    `SELECT t.*, o.first_name AS organizer_first, o.last_name AS organizer_last,
+            (SELECT COUNT(*) FROM tournament_players tp WHERE tp.tournament_id = t.id) AS player_count,
+            (SELECT COALESCE(MAX(round_number), 0) FROM matches m WHERE m.tournament_id = t.id) AS number_of_rounds
+     FROM tournaments t LEFT JOIN users o ON o.id = t.organizer_id
+     WHERE t.id = $1`,
+    [req.params.id]
+  );
   if (!t) return res.status(404).json({ error: 'Tournament not found' });
+  t.organizer_name = t.organizer_first ? `${t.organizer_first} ${t.organizer_last}` : null;
   res.json(t);
+});
+
+// Starting rank list: seeded by rating (SNo), with profile fields.
+router.get('/tournaments/:id/starting-rank', async (req, res) => {
+  const t = await db.get('SELECT rating_type FROM tournaments WHERE id = $1', [req.params.id]);
+  if (!t) return res.status(404).json({ error: 'Tournament not found' });
+  const ratingCol = RATING_COLUMN[t.rating_type] || 'rating_classic';
+  const rows = await db.all(
+    `SELECT tp.player_id, tp.start_rating,
+            u.first_name, u.last_name, u.middle_name, u.federation, u.title, u.birth_year, u.club,
+            u.${ratingCol} AS rating
+     FROM tournament_players tp JOIN users u ON u.id = tp.player_id
+     WHERE tp.tournament_id = $1
+     ORDER BY COALESCE(tp.start_rating, u.${ratingCol}) DESC, u.last_name`,
+    [req.params.id]
+  );
+  res.json(rows.map((r, i) => ({
+    sno: i + 1,
+    player_id: r.player_id,
+    full_name: [r.first_name, r.last_name].filter(Boolean).join(' '),
+    federation: r.federation,
+    title: r.title,
+    rating: r.start_rating ?? r.rating,
+    birth_year: r.birth_year,
+    club: r.club,
+  })));
 });
 
 // GET /api/tournaments/:id/rounds — each round with its pairings.
@@ -112,11 +148,14 @@ router.get('/tournaments/:id/standings', async (req, res) => {
   const baseRating = new Map();
   const points = new Map();
   const projected = new Map();
+  // Rating performance (Rp) accumulators: opponent-rating sum, games, wins, losses.
+  const perf = new Map();
   for (const p of participants) {
-    const base = p.start_rating ?? (rated ? p[ratingCol] : null);
+    const base = p.start_rating ?? p[ratingCol];
     baseRating.set(p.player_id, base);
     points.set(p.player_id, 0);
-    projected.set(p.player_id, base);
+    projected.set(p.player_id, rated ? base : null);
+    perf.set(p.player_id, { oppSum: 0, games: 0, wins: 0, losses: 0 });
   }
 
   // Replay matches round by round up to throughRound: accumulate points and,
@@ -128,17 +167,31 @@ router.get('/tournaments/:id/standings', async (req, res) => {
     if (m.player2_id != null && points.has(m.player2_id)) {
       points.set(m.player2_id, points.get(m.player2_id) + p2);
     }
-    if (rated && m.player2_id != null && RATED_RESULTS.includes(m.result)) {
-      const r1 = projected.get(m.player1_id);
-      const r2 = projected.get(m.player2_id);
-      if (r1 != null && r2 != null) {
-        const resultNum = m.result === '1-0' ? 1 : m.result === '0-1' ? 0 : 0.5;
-        const { rating1_new, rating2_new } = calculateElo(r1, r2, resultNum);
-        projected.set(m.player1_id, rating1_new);
-        projected.set(m.player2_id, rating2_new);
+    if (m.player2_id != null && RATED_RESULTS.includes(m.result)) {
+      const resultNum = m.result === '1-0' ? 1 : m.result === '0-1' ? 0 : 0.5;
+      // Rating performance uses opponents' base (start) ratings.
+      const b1 = baseRating.get(m.player1_id);
+      const b2 = baseRating.get(m.player2_id);
+      const a = perf.get(m.player1_id);
+      const b = perf.get(m.player2_id);
+      if (a && b2 != null) { a.oppSum += b2; a.games += 1; a.wins += resultNum === 1 ? 1 : 0; a.losses += resultNum === 0 ? 1 : 0; }
+      if (b && b1 != null) { b.oppSum += b1; b.games += 1; b.wins += resultNum === 0 ? 1 : 0; b.losses += resultNum === 1 ? 1 : 0; }
+      if (rated) {
+        const r1 = projected.get(m.player1_id);
+        const r2 = projected.get(m.player2_id);
+        if (r1 != null && r2 != null) {
+          const { rating1_new, rating2_new } = calculateElo(r1, r2, resultNum);
+          projected.set(m.player1_id, rating1_new);
+          projected.set(m.player2_id, rating2_new);
+        }
       }
     }
   }
+  const rpOf = (pid) => {
+    const a = perf.get(pid);
+    if (!a || a.games === 0) return null;
+    return Math.round(a.oppSum / a.games + (400 * (a.wins - a.losses)) / a.games);
+  };
 
   // Buchholz as-of-round: sum of opponents' points (through the same round).
   const buchholz = new Map(participants.map((p) => [p.player_id, 0]));
@@ -155,6 +208,7 @@ router.get('/tournaments/:id/standings', async (req, res) => {
       federation: p.federation,
       start_rating: baseRating.get(p.player_id),
       projected_rating: rated ? projected.get(p.player_id) : null,
+      rp: rpOf(p.player_id),
       current_points: points.get(p.player_id),
       buchholz: buchholz.get(p.player_id),
     }))
