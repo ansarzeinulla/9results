@@ -1,56 +1,97 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { apiGet, STATUS_LABELS } from '../api.js';
+import { useTranslation } from 'react-i18next';
+import { apiGet } from '../api.js';
+import { FEDERATIONS, CITIES_BY_FEDERATION, LEVELS, RATING_TYPES } from '../constants.js';
+import { statusLabel, levelLabel, ratingTypeLabel, systemLabel } from '../labels.js';
 
-const FILTERS = ['All', 'Upcoming', 'Live', 'Finished'];
+const STATUSES = ['upcoming', 'live', 'finished'];
 
 export default function Tournaments() {
-  const [filter, setFilter] = useState('All');
+  const { t } = useTranslation();
+  const [filters, setFilters] = useState({
+    federation: '', city: '', status: '', level: '', rating_type: '',
+    created_from: '', created_to: '',
+  });
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const cities = useMemo(
+    () => (filters.federation ? CITIES_BY_FEDERATION[filters.federation] || [] : []),
+    [filters.federation]
+  );
+
   useEffect(() => {
     setLoading(true);
-    const query = filter === 'All' ? '' : `?status=${filter.toLowerCase()}`;
-    apiGet(`/tournaments${query}`)
+    const qs = Object.entries(filters)
+      .filter(([, v]) => v)
+      .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+      .join('&');
+    apiGet(`/tournaments${qs ? '?' + qs : ''}`)
       .then(setTournaments)
       .finally(() => setLoading(false));
-  }, [filter]);
+  }, [filters]);
+
+  const set = (k, v) => setFilters((f) => ({ ...f, [k]: v, ...(k === 'federation' ? { city: '' } : {}) }));
 
   return (
     <div className="page">
-      <h1>Tournaments</h1>
-      <div className="filter-row">
-        {FILTERS.map((f) => (
-          <button
-            key={f}
-            className={`chip ${filter === f ? 'chip-active' : ''}`}
-            onClick={() => setFilter(f)}
-          >
-            {f}
-          </button>
-        ))}
+      <h1>{t('tournaments.title')}</h1>
+
+      <div className="filter-grid">
+        <select value={filters.federation} onChange={(e) => set('federation', e.target.value)}>
+          <option value="">{t('tournaments.anyFederation')}</option>
+          {FEDERATIONS.map((f) => <option key={f} value={f}>{f}</option>)}
+        </select>
+        <select value={filters.city} onChange={(e) => set('city', e.target.value)} disabled={!filters.federation}>
+          <option value="">{t('tournaments.anyCity')}</option>
+          {cities.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <select value={filters.status} onChange={(e) => set('status', e.target.value)}>
+          <option value="">{t('tournaments.anyStatus')}</option>
+          {STATUSES.map((s) => <option key={s} value={s}>{statusLabel(t, { upcoming: 'setup', live: 'ongoing', finished: 'finished' }[s])}</option>)}
+        </select>
+        <select value={filters.level} onChange={(e) => set('level', e.target.value)}>
+          <option value="">{t('tournaments.anyLevel')}</option>
+          {LEVELS.map((l) => <option key={l} value={l}>{levelLabel(t, l)}</option>)}
+        </select>
+        <select value={filters.rating_type} onChange={(e) => set('rating_type', e.target.value)}>
+          <option value="">{t('tournaments.anyRatingType')}</option>
+          {RATING_TYPES.map((r) => <option key={r} value={r}>{ratingTypeLabel(t, r)}</option>)}
+        </select>
+        <label className="date-filter">{t('fields.createdAt')}
+          <input type="date" value={filters.created_from} onChange={(e) => set('created_from', e.target.value)} />
+        </label>
+        <label className="date-filter">→
+          <input type="date" value={filters.created_to} onChange={(e) => set('created_to', e.target.value)} />
+        </label>
       </div>
+
       {loading ? (
-        <p className="muted">Loading…</p>
+        <p className="muted">{t('common.loading')}</p>
       ) : tournaments.length === 0 ? (
-        <p className="muted">No tournaments.</p>
+        <p className="muted">{t('tournaments.empty')}</p>
       ) : (
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Name</th><th>Location</th><th>Status</th><th>System</th><th>Players</th>
+                <th>{t('fields.name')}</th><th>{t('fields.federation')}</th><th>{t('fields.city')}</th>
+                <th>{t('fields.level')}</th><th>{t('fields.ratingType')}</th><th>{t('fields.status')}</th>
+                <th>{t('fields.system')}</th><th>{t('fields.players')}</th>
               </tr>
             </thead>
             <tbody>
-              {tournaments.map((t) => (
-                <tr key={t.id}>
-                  <td><Link to={`/tournaments/${t.id}`}>{t.name}</Link></td>
-                  <td>{t.location}</td>
-                  <td><span className={`badge badge-${t.status}`}>{STATUS_LABELS[t.status] || t.status}</span></td>
-                  <td>{t.system_type === 'round_robin' ? 'Round Robin' : 'Swiss'}</td>
-                  <td>{t.player_count}</td>
+              {tournaments.map((tt) => (
+                <tr key={tt.id}>
+                  <td><Link to={`/tournaments/${tt.id}`}>{tt.name}</Link></td>
+                  <td>{tt.federation}</td>
+                  <td>{tt.city}</td>
+                  <td>{levelLabel(t, tt.level)}</td>
+                  <td>{ratingTypeLabel(t, tt.rating_type)}</td>
+                  <td><span className={`badge badge-${tt.status}`}>{statusLabel(t, tt.status)}</span></td>
+                  <td>{systemLabel(t, tt.system_type)}</td>
+                  <td>{tt.player_count}</td>
                 </tr>
               ))}
             </tbody>

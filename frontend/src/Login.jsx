@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { apiPost } from './api.js';
 
 export default function Login({ onLogin }) {
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -25,11 +27,11 @@ export default function Login({ onLogin }) {
 
   return (
     <div className="login-card">
-      <h1>results.togyz</h1>
-      <p className="subtitle">Organizer sign in</p>
+      <h1>{t('app.title')}</h1>
+      <p className="subtitle">{t('login.title')}</p>
       <form onSubmit={handleSubmit}>
         <label>
-          Username
+          {t('login.username')}
           <input
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -38,7 +40,7 @@ export default function Login({ onLogin }) {
           />
         </label>
         <label>
-          Password
+          {t('login.password')}
           <input
             type="password"
             value={password}
@@ -49,7 +51,7 @@ export default function Login({ onLogin }) {
         </label>
         {error && <div className="error">{error}</div>}
         <button type="submit" disabled={loading}>
-          {loading ? 'Signing in…' : 'Sign in'}
+          {loading ? t('login.signingIn') : t('login.signIn')}
         </button>
       </form>
     </div>

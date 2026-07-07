@@ -1,0 +1,149 @@
+{
+  "app": { "title": "results.togyz", "tagline": "Togyzkumalak tournament results and player ratings" },
+  "nav": {
+    "home": "Home",
+    "tournaments": "Tournaments",
+    "players": "Players",
+    "registerPlayer": "Register Player",
+    "organizerLogin": "Organizer Login",
+    "dashboard": "Dashboard",
+    "logout": "Log out"
+  },
+  "common": {
+    "search": "Search",
+    "loading": "Loading…",
+    "all": "All",
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "none": "None",
+    "yes": "Yes",
+    "no": "No",
+    "apply": "Apply",
+    "actions": "Actions",
+    "publicPage": "Public page",
+    "optional": "optional"
+  },
+  "home": {
+    "searchPlaceholder": "Search tournaments or players…",
+    "tournaments": "Tournaments",
+    "players": "Players",
+    "noTournaments": "No tournaments found.",
+    "noPlayers": "No players found."
+  },
+  "fields": {
+    "name": "Name",
+    "federation": "Federation",
+    "city": "City",
+    "location": "Location",
+    "status": "Status",
+    "level": "Level",
+    "ratingType": "Rating type",
+    "system": "System",
+    "players": "Players",
+    "firstName": "First name",
+    "lastName": "Second name",
+    "middleName": "Middle name",
+    "birthYear": "Year of birth",
+    "club": "Club",
+    "title": "Title",
+    "ratingBlitz": "Blitz rating",
+    "ratingRapid": "Rapid rating",
+    "ratingClassic": "Classic rating",
+    "createdAt": "Created",
+    "endedAt": "Ended",
+    "rank": "#",
+    "player": "Player",
+    "rating": "Rating",
+    "points": "Points",
+    "buchholz": "Buchholz",
+    "startRating": "Start rating",
+    "projectedRating": "Rating after round"
+  },
+  "status": { "setup": "Upcoming", "ongoing": "Live", "finished": "Finished" },
+  "level": {
+    "International": "International",
+    "National": "National",
+    "Regional": "Regional",
+    "School": "School",
+    "Test": "Test"
+  },
+  "ratingType": { "blitz": "Blitz", "rapid": "Rapid", "classic": "Classic", "non_rated": "Non-rated" },
+  "system": { "swiss": "Swiss", "round_robin": "Round Robin" },
+  "tournaments": {
+    "title": "Tournaments",
+    "filters": "Filters",
+    "anyFederation": "Any federation",
+    "anyCity": "Any city",
+    "anyStatus": "Any status",
+    "anyLevel": "Any level",
+    "anyRatingType": "Any rating type",
+    "empty": "No tournaments."
+  },
+  "tournamentView": {
+    "standings": "Standings",
+    "start": "Start",
+    "round": "Round {{n}}",
+    "final": "Final",
+    "pairings": "Round {{n}} pairings",
+    "noPairings": "No pairings for this round.",
+    "noPlayers": "No players registered yet.",
+    "bye": "BYE",
+    "print": "Print",
+    "exportCsv": "Export to CSV",
+    "beforeTournament": "Before tournament"
+  },
+  "players": {
+    "title": "Players",
+    "history": "Tournament history",
+    "noHistory": "No tournaments yet."
+  },
+  "playerRegister": {
+    "title": "Register as a Player",
+    "submit": "Register",
+    "success": "Registered! Your player profile has been created.",
+    "hint": "Create a player profile. No password needed — organizers add you to tournaments."
+  },
+  "login": {
+    "title": "Organizer sign in",
+    "username": "Username",
+    "password": "Password",
+    "signIn": "Sign in",
+    "signingIn": "Signing in…"
+  },
+  "dashboard": {
+    "title": "My Tournaments",
+    "create": "Create Tournament",
+    "empty": "No tournaments yet — create one below.",
+    "createBtn": "Create"
+  },
+  "admin": {
+    "settings": "Settings",
+    "participants": "Participants",
+    "resultsEntry": "Results Entry",
+    "changeRatings": "Change Ratings",
+    "addPlayer": "Add Player",
+    "selectPlayer": "Select a player…",
+    "add": "Add",
+    "allRegistered": "All players are already registered.",
+    "generateRound": "Generate Next Round",
+    "roundComplete": "Round {{n}} complete — ready for the next round.",
+    "roundPending": "{{count}} match(es) in round {{n}} still need a result.",
+    "noRounds": "No rounds yet — generate round 1.",
+    "ratedResults": "Rated results",
+    "nonRatedResults": "Non-rated (no rating effect)",
+    "backToList": "My Tournaments",
+    "federationFixed": "Federation (fixed)"
+  },
+  "changeRatings": {
+    "title": "Change Ratings",
+    "subtitle": "Apply Elo changes for the {{type}} rating. This can only be done once.",
+    "oldRating": "Old",
+    "delta": "Change",
+    "newRating": "New",
+    "applyBtn": "Apply rating changes",
+    "applied": "Ratings have been applied.",
+    "nonRated": "This tournament is non-rated — no rating changes.",
+    "confirm": "Apply these rating changes permanently?"
+  }
+}

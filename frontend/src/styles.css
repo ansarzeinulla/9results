@@ -249,6 +249,47 @@ select {
 .match-buttons { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 .match-buttons .chip { padding: 0.25rem 0.7rem; font-size: 0.85rem; }
 
+/* Language switcher */
+.lang-switch { display: inline-flex; gap: 0.15rem; margin-left: 0.25rem; }
+.lang-switch button {
+  width: auto; padding: 0.2rem 0.45rem; margin: 0; font-size: 0.8rem;
+  background: #fff; color: var(--muted); border: 1px solid var(--border);
+}
+.lang-switch button.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+/* Filter grid */
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.filter-grid select, .filter-grid input { margin-top: 0; }
+.date-filter { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--muted); margin: 0; }
+.date-filter input { margin-top: 0; }
+
+/* Rating cards on player profile */
+.rating-cards { display: flex; gap: 0.75rem; flex-wrap: wrap; margin: 1rem 0 1.5rem; }
+.rating-card {
+  background: #fff; border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.75rem 1.25rem; text-align: center; min-width: 100px;
+}
+.rating-card span { display: block; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; }
+.rating-card strong { font-size: 1.4rem; }
+
+/* Round selector buttons */
+.round-buttons { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 1rem 0; }
+
+/* Rating delta */
+.delta { font-size: 0.85rem; font-weight: 600; }
+.delta.up { color: #116329; }
+.delta.down { color: #c01c28; }
+
+/* Non-rated result buttons + separator */
+.result-sep { width: 1px; align-self: stretch; background: var(--border); margin: 0 0.15rem; }
+.chip-alt { background: #faf5ff; border-color: #e6d9f5; }
+a.tab { text-decoration: none; display: inline-block; }
+
 /* Standings header with export actions */
 .standings-header {
   display: flex;

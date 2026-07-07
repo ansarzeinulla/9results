@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { apiGet, STATUS_LABELS } from '../api.js';
+import { useTranslation } from 'react-i18next';
+import { apiGet } from '../api.js';
+import { statusLabel } from '../labels.js';
 
 export default function Home() {
+  const { t } = useTranslation();
   const [q, setQ] = useState('');
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -21,37 +24,33 @@ export default function Home() {
   return (
     <div className="page">
       <div className="hero">
-        <h1>results.togyz</h1>
-        <p>Togyzkumalak tournament results and player ratings</p>
+        <h1>{t('app.title')}</h1>
+        <p>{t('app.tagline')}</p>
         <form onSubmit={search} className="search-bar">
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search tournaments or players…"
-          />
-          <button type="submit" disabled={loading}>{loading ? '…' : 'Search'}</button>
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('home.searchPlaceholder')} />
+          <button type="submit" disabled={loading}>{loading ? '…' : t('common.search')}</button>
         </form>
       </div>
 
       {results && (
         <div className="search-results">
-          <h2>Tournaments</h2>
-          {results.tournaments.length === 0 && <p className="muted">No tournaments found.</p>}
+          <h2>{t('home.tournaments')}</h2>
+          {results.tournaments.length === 0 && <p className="muted">{t('home.noTournaments')}</p>}
           <ul className="result-list">
-            {results.tournaments.map((t) => (
-              <li key={t.id}>
-                <Link to={`/tournaments/${t.id}`}>{t.name}</Link>
-                <span className="muted"> — {t.location} · {STATUS_LABELS[t.status] || t.status}</span>
+            {results.tournaments.map((tt) => (
+              <li key={tt.id}>
+                <Link to={`/tournaments/${tt.id}`}>{tt.name}</Link>
+                <span className="muted"> — {tt.city} · {statusLabel(t, tt.status)}</span>
               </li>
             ))}
           </ul>
-          <h2>Players</h2>
-          {results.players.length === 0 && <p className="muted">No players found.</p>}
+          <h2>{t('home.players')}</h2>
+          {results.players.length === 0 && <p className="muted">{t('home.noPlayers')}</p>}
           <ul className="result-list">
             {results.players.map((p) => (
               <li key={p.id}>
-                <Link to={`/players/${p.id}`}>{p.full_name}</Link>
-                <span className="muted"> — rating {p.current_rating}</span>
+                <Link to={`/players/${p.id}`}>{p.first_name} {p.last_name}</Link>
+                <span className="muted"> — {p.federation} · {p.rating_classic}</span>
               </li>
             ))}
           </ul>

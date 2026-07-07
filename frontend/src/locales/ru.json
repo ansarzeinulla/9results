@@ -1,0 +1,149 @@
+{
+  "app": { "title": "results.togyz", "tagline": "Результаты турниров по тогызкумалаку и рейтинги игроков" },
+  "nav": {
+    "home": "Главная",
+    "tournaments": "Турниры",
+    "players": "Игроки",
+    "registerPlayer": "Регистрация игрока",
+    "organizerLogin": "Вход для организатора",
+    "dashboard": "Панель",
+    "logout": "Выйти"
+  },
+  "common": {
+    "search": "Поиск",
+    "loading": "Загрузка…",
+    "all": "Все",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "back": "Назад",
+    "none": "Нет",
+    "yes": "Да",
+    "no": "Нет",
+    "apply": "Применить",
+    "actions": "Действия",
+    "publicPage": "Публичная страница",
+    "optional": "необязательно"
+  },
+  "home": {
+    "searchPlaceholder": "Поиск турниров или игроков…",
+    "tournaments": "Турниры",
+    "players": "Игроки",
+    "noTournaments": "Турниры не найдены.",
+    "noPlayers": "Игроки не найдены."
+  },
+  "fields": {
+    "name": "Название",
+    "federation": "Федерация",
+    "city": "Город",
+    "location": "Место",
+    "status": "Статус",
+    "level": "Уровень",
+    "ratingType": "Тип рейтинга",
+    "system": "Система",
+    "players": "Игроки",
+    "firstName": "Имя",
+    "lastName": "Фамилия",
+    "middleName": "Отчество",
+    "birthYear": "Год рождения",
+    "club": "Клуб",
+    "title": "Звание",
+    "ratingBlitz": "Рейтинг блиц",
+    "ratingRapid": "Рейтинг рапид",
+    "ratingClassic": "Рейтинг классика",
+    "createdAt": "Создан",
+    "endedAt": "Завершён",
+    "rank": "№",
+    "player": "Игрок",
+    "rating": "Рейтинг",
+    "points": "Очки",
+    "buchholz": "Бухгольц",
+    "startRating": "Рейтинг до",
+    "projectedRating": "Рейтинг после тура"
+  },
+  "status": { "setup": "Предстоящий", "ongoing": "Идёт", "finished": "Завершён" },
+  "level": {
+    "International": "Международный",
+    "National": "Национальный",
+    "Regional": "Региональный",
+    "School": "Школьный",
+    "Test": "Тестовый"
+  },
+  "ratingType": { "blitz": "Блиц", "rapid": "Рапид", "classic": "Классика", "non_rated": "Без рейтинга" },
+  "system": { "swiss": "Швейцарская", "round_robin": "Круговая" },
+  "tournaments": {
+    "title": "Турниры",
+    "filters": "Фильтры",
+    "anyFederation": "Любая федерация",
+    "anyCity": "Любой город",
+    "anyStatus": "Любой статус",
+    "anyLevel": "Любой уровень",
+    "anyRatingType": "Любой тип рейтинга",
+    "empty": "Нет турниров."
+  },
+  "tournamentView": {
+    "standings": "Турнирная таблица",
+    "start": "Старт",
+    "round": "Тур {{n}}",
+    "final": "Финал",
+    "pairings": "Пары тура {{n}}",
+    "noPairings": "Нет пар для этого тура.",
+    "noPlayers": "Игроки ещё не зарегистрированы.",
+    "bye": "БАЙ",
+    "print": "Печать",
+    "exportCsv": "Экспорт в CSV",
+    "beforeTournament": "До турнира"
+  },
+  "players": {
+    "title": "Игроки",
+    "history": "История турниров",
+    "noHistory": "Пока нет турниров."
+  },
+  "playerRegister": {
+    "title": "Регистрация игрока",
+    "submit": "Зарегистрироваться",
+    "success": "Готово! Профиль игрока создан.",
+    "hint": "Создайте профиль игрока. Пароль не нужен — организаторы добавят вас в турниры."
+  },
+  "login": {
+    "title": "Вход для организатора",
+    "username": "Логин",
+    "password": "Пароль",
+    "signIn": "Войти",
+    "signingIn": "Вход…"
+  },
+  "dashboard": {
+    "title": "Мои турниры",
+    "create": "Создать турнир",
+    "empty": "Пока нет турниров — создайте ниже.",
+    "createBtn": "Создать"
+  },
+  "admin": {
+    "settings": "Настройки",
+    "participants": "Участники",
+    "resultsEntry": "Ввод результатов",
+    "changeRatings": "Изменить рейтинги",
+    "addPlayer": "Добавить игрока",
+    "selectPlayer": "Выберите игрока…",
+    "add": "Добавить",
+    "allRegistered": "Все игроки уже зарегистрированы.",
+    "generateRound": "Сгенерировать тур",
+    "roundComplete": "Тур {{n}} завершён — можно генерировать следующий.",
+    "roundPending": "В туре {{n}} ещё {{count}} партий без результата.",
+    "noRounds": "Туров пока нет — сгенерируйте тур 1.",
+    "ratedResults": "Рейтинговые результаты",
+    "nonRatedResults": "Без рейтинга (не влияют на рейтинг)",
+    "backToList": "Мои турниры",
+    "federationFixed": "Федерация (фиксирована)"
+  },
+  "changeRatings": {
+    "title": "Изменение рейтингов",
+    "subtitle": "Применить изменения Эло для рейтинга {{type}}. Можно сделать только один раз.",
+    "oldRating": "Было",
+    "delta": "Δ",
+    "newRating": "Стало",
+    "applyBtn": "Применить изменения рейтинга",
+    "applied": "Рейтинги применены.",
+    "nonRated": "Турнир без рейтинга — изменений нет.",
+    "confirm": "Применить эти изменения рейтинга навсегда?"
+  }
+}

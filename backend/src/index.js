@@ -4,6 +4,7 @@ import cors from 'cors';
 import authRoutes from './routes/auth.js';
 import publicRoutes from './routes/public.js';
 import organizerRoutes from './routes/organizer.js';
+import playerRoutes from './routes/players.js';
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use(express.json());
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 app.use('/api', authRoutes);
 app.use('/api', organizerRoutes);
+app.use('/api', playerRoutes);
 app.use('/api', publicRoutes);
 
 const PORT = process.env.PORT || 3001;

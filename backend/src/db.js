@@ -22,31 +22,43 @@ async function initSchema() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
-        username TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS players (
-        id SERIAL PRIMARY KEY,
-        full_name TEXT NOT NULL,
-        current_rating INTEGER NOT NULL DEFAULT 1200
+        role TEXT NOT NULL DEFAULT 'player' CHECK (role IN ('organizer','player')),
+        username TEXT UNIQUE,
+        password_hash TEXT,
+        first_name TEXT NOT NULL,
+        last_name TEXT NOT NULL,
+        middle_name TEXT,
+        birth_year INTEGER,
+        federation TEXT NOT NULL DEFAULT 'KAZ',
+        club TEXT,
+        title TEXT,
+        rating_blitz INTEGER NOT NULL DEFAULT 1200,
+        rating_rapid INTEGER NOT NULL DEFAULT 1200,
+        rating_classic INTEGER NOT NULL DEFAULT 1200
       );
 
       CREATE TABLE IF NOT EXISTS tournaments (
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
-        location TEXT,
+        federation TEXT NOT NULL DEFAULT 'KAZ',
+        city TEXT,
+        level TEXT NOT NULL DEFAULT 'Regional' CHECK (level IN ('International','National','Regional','School','Test')),
+        rating_type TEXT NOT NULL DEFAULT 'non_rated' CHECK (rating_type IN ('blitz','rapid','classic','non_rated')),
         status TEXT NOT NULL DEFAULT 'setup' CHECK (status IN ('setup','ongoing','finished')),
         system_type TEXT NOT NULL DEFAULT 'swiss' CHECK (system_type IN ('swiss','round_robin')),
-        organizer_id INTEGER REFERENCES users(id)
+        organizer_id INTEGER REFERENCES users(id),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        finished_at TIMESTAMPTZ,
+        ratings_applied BOOLEAN NOT NULL DEFAULT false
       );
 
       CREATE TABLE IF NOT EXISTS tournament_players (
         id SERIAL PRIMARY KEY,
         tournament_id INTEGER NOT NULL REFERENCES tournaments(id),
-        player_id INTEGER NOT NULL REFERENCES players(id),
+        player_id INTEGER NOT NULL REFERENCES users(id),
         current_points DECIMAL NOT NULL DEFAULT 0,
         tiebreak_score DECIMAL NOT NULL DEFAULT 0,
+        start_rating INTEGER,
         UNIQUE (tournament_id, player_id)
       );
 
@@ -54,9 +66,9 @@ async function initSchema() {
         id SERIAL PRIMARY KEY,
         tournament_id INTEGER NOT NULL REFERENCES tournaments(id),
         round_number INTEGER NOT NULL,
-        player1_id INTEGER REFERENCES players(id),
-        player2_id INTEGER REFERENCES players(id),
-        result TEXT CHECK (result IS NULL OR result IN ('1-0','0-1','0.5-0.5','0-0','+--','--+','=-='))
+        player1_id INTEGER REFERENCES users(id),
+        player2_id INTEGER REFERENCES users(id),
+        result TEXT CHECK (result IS NULL OR result IN ('1-0','0-1','0.5-0.5','+--','--+','=-=','---'))
       );
     `);
     await client.query('COMMIT');
