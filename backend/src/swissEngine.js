@@ -196,11 +196,11 @@ export function validateRoundPairings({ pairings, players: rawPlayers, previousM
   const seen = new Set();
   const takeSeat = (id) => {
     if (!byId.has(id)) {
-      errors.push({ code: 'UNKNOWN_PLAYER', message: `Player ${id} is not in this tournament` });
+      errors.push({ code: 'UNKNOWN_PLAYER', params: { id }, message: `Player ${id} is not in this tournament` });
       return;
     }
     if (seen.has(id)) {
-      errors.push({ code: 'DUPLICATE_PLAYER', message: `Player ${id} appears in more than one pair` });
+      errors.push({ code: 'DUPLICATE_PLAYER', params: { id }, message: `Player ${id} appears in more than one pair` });
       return;
     }
     seen.add(id);
@@ -209,7 +209,7 @@ export function validateRoundPairings({ pairings, players: rawPlayers, previousM
   let byes = 0;
   for (const m of pairings) {
     if (m.player1_id == null) {
-      errors.push({ code: 'UNKNOWN_PLAYER', message: 'A pair is missing player 1' });
+      errors.push({ code: 'UNKNOWN_PLAYER', params: { id: '?' }, message: 'A pair is missing player 1' });
       continue;
     }
     takeSeat(m.player1_id);
@@ -218,13 +218,14 @@ export function validateRoundPairings({ pairings, players: rawPlayers, previousM
       continue;
     }
     if (m.player2_id === m.player1_id) {
-      errors.push({ code: 'DUPLICATE_PLAYER', message: `Player ${m.player1_id} cannot play themselves` });
+      errors.push({ code: 'DUPLICATE_PLAYER', params: { id: m.player1_id }, message: `Player ${m.player1_id} cannot play themselves` });
       continue;
     }
     takeSeat(m.player2_id);
     if (history.played.has(`${m.player1_id}:${m.player2_id}`)) {
       errors.push({
         code: 'REMATCH',
+        params: { a: m.player1_id, b: m.player2_id },
         message: `Players ${m.player1_id} and ${m.player2_id} already played each other`,
       });
     }
@@ -233,23 +234,24 @@ export function validateRoundPairings({ pairings, players: rawPlayers, previousM
     if (a && b && a.current_points !== b.current_points) {
       warnings.push({
         code: 'SCORE_MISMATCH',
+        params: { a: m.player1_id, pa: a.current_points, b: m.player2_id, pb: b.current_points },
         message: `Players ${m.player1_id} (${a.current_points}) and ${m.player2_id} (${b.current_points}) are in different score groups`,
       });
     }
   }
 
   if (byes > 1) {
-    errors.push({ code: 'MULTIPLE_BYES', message: 'A round may have at most one bye' });
+    errors.push({ code: 'MULTIPLE_BYES', params: {}, message: 'A round may have at most one bye' });
   }
   if (byes === 1) {
     const byeId = pairings.find((m) => m.player2_id == null)?.player1_id;
     if (byeId != null && history.hadBye.has(byeId)) {
-      warnings.push({ code: 'REPEAT_BYE', message: `Player ${byeId} already had a bye` });
+      warnings.push({ code: 'REPEAT_BYE', params: { id: byeId }, message: `Player ${byeId} already had a bye` });
     }
   }
   for (const p of players) {
     if (!seen.has(p.player_id)) {
-      errors.push({ code: 'UNPAIRED_PLAYER', message: `Player ${p.player_id} is not paired in this round` });
+      errors.push({ code: 'UNPAIRED_PLAYER', params: { id: p.player_id }, message: `Player ${p.player_id} is not paired in this round` });
     }
   }
 

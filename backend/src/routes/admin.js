@@ -24,16 +24,16 @@ router.get('/admin/players', requireAdmin, async (req, res) => {
   const page = Math.max(1, Number(req.query.page) || 1);
   const pageSize = 25;
   const params = [];
-  let where = "role = 'player'";
+  let where = 'TRUE';
   if (q) {
     params.push(`%${q}%`);
-    where += /^\d+$/.test(q)
-      ? ` AND (id = ${Number(q)} OR first_name ILIKE $1 OR last_name ILIKE $1)`
-      : ' AND (first_name ILIKE $1 OR last_name ILIKE $1 OR club ILIKE $1)';
+    where = /^\d+$/.test(q)
+      ? `(id = ${Number(q)} OR first_name ILIKE $1 OR last_name ILIKE $1)`
+      : '(first_name ILIKE $1 OR last_name ILIKE $1 OR club ILIKE $1)';
   }
-  const total = await db.get(`SELECT COUNT(*)::int AS n FROM users WHERE ${where}`, params);
+  const total = await db.get(`SELECT COUNT(*)::int AS n FROM players WHERE ${where}`, params);
   const rows = await db.all(
-    `SELECT ${PLAYER_COLS} FROM users WHERE ${where}
+    `SELECT ${PLAYER_COLS} FROM players WHERE ${where}
      ORDER BY id DESC LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`,
     params
   );
@@ -51,9 +51,9 @@ router.post('/admin/players', requireAdmin, async (req, res) => {
     return res.status(400).json({ error: 'first_name and last_name are required' });
   }
   const result = await db.run(
-    `INSERT INTO users (role, first_name, last_name, middle_name, birth_year, federation, club, title,
-                        rating_blitz, rating_rapid, rating_classic)
-     VALUES ('player', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    `INSERT INTO players (first_name, last_name, middle_name, birth_year, federation, club, title,
+                          rating_blitz, rating_rapid, rating_classic)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      RETURNING ${PLAYER_COLS}`,
     [
       first_name.trim(),
@@ -73,7 +73,7 @@ router.post('/admin/players', requireAdmin, async (req, res) => {
 
 // Admin edits any player field, including ratings.
 router.put('/admin/players/:id', requireAdmin, async (req, res) => {
-  const player = await db.get("SELECT * FROM users WHERE id = $1 AND role = 'player'", [req.params.id]);
+  const player = await db.get('SELECT * FROM players WHERE id = $1', [req.params.id]);
   if (!player) return res.status(404).json({ error: 'Player not found' });
 
   const b = req.body || {};
@@ -91,8 +91,8 @@ router.put('/admin/players/:id', requireAdmin, async (req, res) => {
   };
 
   const result = await db.run(
-    `UPDATE users SET first_name=$1, last_name=$2, middle_name=$3, birth_year=$4, federation=$5,
-                      club=$6, title=$7, rating_blitz=$8, rating_rapid=$9, rating_classic=$10
+    `UPDATE players SET first_name=$1, last_name=$2, middle_name=$3, birth_year=$4, federation=$5,
+                        club=$6, title=$7, rating_blitz=$8, rating_rapid=$9, rating_classic=$10
      WHERE id=$11 RETURNING ${PLAYER_COLS}`,
     [
       next.first_name, next.last_name, next.middle_name, next.birth_year, next.federation,

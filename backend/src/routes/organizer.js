@@ -83,7 +83,7 @@ router.post('/tournaments/:id/add-player', requireOrganizer, async (req, res) =>
   const t = await ownedTournament(req, res);
   if (!t) return;
   const { player_id } = req.body || {};
-  const player = await db.get("SELECT * FROM users WHERE id = $1 AND role = 'player'", [player_id]);
+  const player = await db.get('SELECT * FROM players WHERE id = $1', [player_id]);
   if (!player) return res.status(400).json({ error: 'Unknown player_id' });
   const startRating = t.rating_type !== 'non_rated' ? player[RATING_COLUMN[t.rating_type]] : null;
   try {
@@ -184,7 +184,7 @@ router.get('/tournaments/:id/rating-preview', requireOrganizer, async (req, res)
   const col = RATING_COLUMN[t.rating_type];
   const detail = await db.all(
     `SELECT tp.player_id, u.first_name, u.last_name, u.${col} AS live_rating, tp.start_rating
-     FROM tournament_players tp JOIN users u ON u.id = tp.player_id
+     FROM tournament_players tp JOIN players u ON u.id = tp.player_id
      WHERE tp.tournament_id = $1`,
     [t.id]
   );
@@ -208,7 +208,7 @@ const applyRatings = db.transaction(async (tx, tournament) => {
   for (const p of players) {
     const delta = deltas[p.player_id] ?? 0;
     // Apply delta on top of the player's current live rating.
-    await tx.run(`UPDATE users SET ${col} = ${col} + $1 WHERE id = $2`, [delta, p.player_id]);
+    await tx.run(`UPDATE players SET ${col} = ${col} + $1 WHERE id = $2`, [delta, p.player_id]);
   }
   await tx.run('UPDATE tournaments SET ratings_applied = true WHERE id = $1', [tournament.id]);
 });
@@ -250,8 +250,8 @@ const insertRound = db.transaction(async (tx, tournamentId, roundNumber, pairing
     `SELECT m.*, p1.first_name AS p1_first, p1.last_name AS p1_last,
             p2.first_name AS p2_first, p2.last_name AS p2_last
      FROM matches m
-     LEFT JOIN users p1 ON p1.id = m.player1_id
-     LEFT JOIN users p2 ON p2.id = m.player2_id
+     LEFT JOIN players p1 ON p1.id = m.player1_id
+     LEFT JOIN players p2 ON p2.id = m.player2_id
      WHERE m.id = ANY($1)`,
     [ids]
   );
@@ -380,8 +380,8 @@ router.put('/tournaments/:id/rounds/:round', requireOrganizer, async (req, res) 
       `SELECT m.*, p1.first_name AS p1_first, p1.last_name AS p1_last,
               p2.first_name AS p2_first, p2.last_name AS p2_last
        FROM matches m
-       LEFT JOIN users p1 ON p1.id = m.player1_id
-       LEFT JOIN users p2 ON p2.id = m.player2_id
+       LEFT JOIN players p1 ON p1.id = m.player1_id
+       LEFT JOIN players p2 ON p2.id = m.player2_id
        WHERE m.id = ANY($1) ORDER BY m.board_number NULLS LAST`,
       [ids]
     );

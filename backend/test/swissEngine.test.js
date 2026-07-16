@@ -170,6 +170,29 @@ describe('validateRoundPairings', () => {
     assert.ok(res.errors.some((e) => e.code === 'REMATCH'));
   });
 
+  test('errors and warnings carry structured params for client-side translation', () => {
+    const res = validateRoundPairings({
+      pairings: [pair(1, 3, 1), pair(2, 4, 2)],
+      players, previousMatches: prev, roundNumber: 2,
+    });
+    const rematch = res.errors.find((e) => e.code === 'REMATCH');
+    assert.deepEqual(rematch.params, { a: 1, b: 3 });
+
+    const cross = validateRoundPairings({
+      pairings: [pair(1, 4, 1), pair(2, 3, 2)],
+      players, previousMatches: prev, roundNumber: 2,
+    });
+    const w = cross.warnings.find((x) => x.code === 'SCORE_MISMATCH');
+    assert.deepEqual(w.params, { a: 1, pa: 1, b: 4, pb: 0 });
+
+    const dup = validateRoundPairings({
+      pairings: [pair(1, 2, 1), pair(1, 4, 2)],
+      players, previousMatches: prev, roundNumber: 2,
+    });
+    assert.equal(dup.errors.find((e) => e.code === 'DUPLICATE_PLAYER').params.id, 1);
+    assert.equal(dup.errors.find((e) => e.code === 'UNPAIRED_PLAYER').params.id, 3);
+  });
+
   test('rejects a player appearing twice', () => {
     const res = validateRoundPairings({
       pairings: [pair(1, 2, 1), pair(1, 4, 2)],

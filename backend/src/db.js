@@ -23,27 +23,40 @@ async function initSchema() {
   try {
     await client.query('BEGIN');
 
-    // One-time destructive migration: the Swiss-only schema added
-    // matches.board_number and tournament gender/age attributes. If an old
-    // schema is present, drop and rebuild (authorized — throwaway data).
+    // One-time destructive migration: the current schema keeps login
+    // accounts in `users` and player profiles in a dedicated `players`
+    // table (plus matches.board_number). If an older layout is present,
+    // drop and rebuild (authorized — throwaway data).
     const outdated = await client.query(`
-      SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'matches')
-             AND NOT EXISTS (
-               SELECT 1 FROM information_schema.columns
-               WHERE table_name = 'matches' AND column_name = 'board_number'
-             ) AS stale
+      SELECT (
+        EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'matches')
+        AND NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'matches' AND column_name = 'board_number'
+        )
+      ) OR (
+        EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users')
+        AND NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'players')
+      ) AS stale
     `);
     if (outdated.rows[0].stale) {
-      await client.query('DROP TABLE IF EXISTS matches, tournament_players, tournaments, users CASCADE');
-      console.log('✓ Dropped outdated schema (pre board_number)');
+      await client.query('DROP TABLE IF EXISTS matches, tournament_players, tournaments, players, users CASCADE');
+      console.log('✓ Dropped outdated schema (pre players-table split)');
     }
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
-        role TEXT NOT NULL DEFAULT 'player' CHECK (role IN ('admin','organizer','player')),
-        username TEXT UNIQUE,
-        password_hash TEXT,
+        role TEXT NOT NULL DEFAULT 'organizer' CHECK (role IN ('admin','organizer')),
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        first_name TEXT NOT NULL,
+        last_name TEXT NOT NULL,
+        federation TEXT NOT NULL DEFAULT 'KAZ'
+      );
+
+      CREATE TABLE IF NOT EXISTS players (
+        id SERIAL PRIMARY KEY,
         first_name TEXT NOT NULL,
         last_name TEXT NOT NULL,
         middle_name TEXT,
@@ -75,7 +88,7 @@ async function initSchema() {
       CREATE TABLE IF NOT EXISTS tournament_players (
         id SERIAL PRIMARY KEY,
         tournament_id INTEGER NOT NULL REFERENCES tournaments(id),
-        player_id INTEGER NOT NULL REFERENCES users(id),
+        player_id INTEGER NOT NULL REFERENCES players(id),
         current_points DECIMAL NOT NULL DEFAULT 0,
         tiebreak_score DECIMAL NOT NULL DEFAULT 0,
         start_rating INTEGER,
@@ -87,8 +100,8 @@ async function initSchema() {
         tournament_id INTEGER NOT NULL REFERENCES tournaments(id),
         round_number INTEGER NOT NULL,
         board_number INTEGER,
-        player1_id INTEGER REFERENCES users(id),
-        player2_id INTEGER REFERENCES users(id),
+        player1_id INTEGER REFERENCES players(id),
+        player2_id INTEGER REFERENCES players(id),
         result TEXT CHECK (result IS NULL OR result IN ('1-0','0-1','0.5-0.5','+--','--+','=-=','---'))
       );
     `);

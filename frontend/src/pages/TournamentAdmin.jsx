@@ -290,8 +290,21 @@ function ResultsTab({ rounds, standings, onResult, onGenerate, onSaveRound, onDe
   );
 }
 
+// Server-side Swiss rule violations arrive as {code, params}; translate them
+// here and substitute player names for raw ids.
+function ruleText(t, item, nameOf) {
+  if (!item.code) return item.message;
+  const params = { ...(item.params || {}) };
+  for (const key of ['a', 'b', 'id']) {
+    if (params[key] != null) params[key] = nameOf(params[key]);
+  }
+  return t(`swiss.${item.code}`, { ...params, defaultValue: item.message });
+}
+
 function RoundTable({ pairings, onResult, editable, standings, onSave, onDelete }) {
   const { t } = useTranslation();
+  const names = new Map(standings.map((s) => [s.player_id, s.full_name]));
+  const nameOf = (id) => names.get(Number(id)) || `#${id}`;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState([]);
   const [errors, setErrors] = useState([]);
@@ -341,8 +354,8 @@ function RoundTable({ pairings, onResult, editable, standings, onSave, onDelete 
           <button type="button" className="chip" onClick={() => setEditing(false)}>{t('common.cancel')}</button>
         </div>
       )}
-      {errors.map((e, i) => <p key={i} className="error">{e.message}</p>)}
-      {warnings.map((w, i) => <p key={i} className="warning">{w.message}</p>)}
+      {errors.map((e, i) => <p key={i} className="error">{ruleText(t, e, nameOf)}</p>)}
+      {warnings.map((w, i) => <p key={i} className="warning">{ruleText(t, w, nameOf)}</p>)}
 
       <div className="table-wrap round-table">
         <table className="cr-table results-table">

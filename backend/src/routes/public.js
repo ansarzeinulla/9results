@@ -74,7 +74,7 @@ router.get('/tournaments/:id/starting-rank', async (req, res) => {
     `SELECT tp.player_id, tp.start_rating,
             u.first_name, u.last_name, u.middle_name, u.federation, u.title, u.birth_year, u.club,
             u.${ratingCol} AS rating
-     FROM tournament_players tp JOIN users u ON u.id = tp.player_id
+     FROM tournament_players tp JOIN players u ON u.id = tp.player_id
      WHERE tp.tournament_id = $1
      ORDER BY COALESCE(tp.start_rating, u.${ratingCol}) DESC, u.last_name`,
     [req.params.id]
@@ -100,8 +100,8 @@ router.get('/tournaments/:id/rounds', async (req, res) => {
             p1.first_name AS p1_first, p1.last_name AS p1_last,
             p2.first_name AS p2_first, p2.last_name AS p2_last
      FROM matches m
-     LEFT JOIN users p1 ON p1.id = m.player1_id
-     LEFT JOIN users p2 ON p2.id = m.player2_id
+     LEFT JOIN players p1 ON p1.id = m.player1_id
+     LEFT JOIN players p2 ON p2.id = m.player2_id
      WHERE m.tournament_id = $1
      ORDER BY m.round_number, m.board_number NULLS LAST, m.id`,
     [req.params.id]
@@ -135,7 +135,7 @@ router.get('/tournaments/:id/standings', async (req, res) => {
     `SELECT tp.player_id, tp.start_rating,
             u.first_name, u.last_name, u.federation,
             u.rating_blitz, u.rating_rapid, u.rating_classic
-     FROM tournament_players tp JOIN users u ON u.id = tp.player_id
+     FROM tournament_players tp JOIN players u ON u.id = tp.player_id
      WHERE tp.tournament_id = $1`,
     [req.params.id]
   );
@@ -240,7 +240,7 @@ router.get('/search', async (req, res) => {
       [like]
     ),
     db.all(
-      "SELECT id, first_name, last_name, federation, rating_classic FROM users WHERE role='player' AND (first_name ILIKE $1 OR last_name ILIKE $1) LIMIT 10",
+      "SELECT id, first_name, last_name, federation, rating_classic FROM players WHERE first_name ILIKE $1 OR last_name ILIKE $1 LIMIT 10",
       [like]
     ),
   ]);

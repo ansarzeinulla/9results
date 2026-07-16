@@ -1,8 +1,9 @@
 -- =====================================================================
--- Swiss-only schema migration for Supabase.
+-- Players-table migration for Supabase.
 -- Run this ONCE in the Supabase SQL Editor (Dashboard → SQL Editor → New query).
--- It drops the old schema and rebuilds it: admin role, tournament
--- gender/age attributes, Swiss-only (no system_type), match board numbers.
+-- Rebuilds the schema: login accounts (admin/organizer) in `users`,
+-- player profiles in a dedicated `players` table, Swiss-only tournaments
+-- with gender/age attributes, match board numbers.
 -- WARNING: this deletes existing tournaments/players/matches (throwaway test data).
 -- =====================================================================
 
@@ -14,9 +15,16 @@ DROP TABLE IF EXISTS users CASCADE;
 
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
-  role TEXT NOT NULL DEFAULT 'player' CHECK (role IN ('admin','organizer','player')),
-  username TEXT UNIQUE,
-  password_hash TEXT,
+  role TEXT NOT NULL DEFAULT 'organizer' CHECK (role IN ('admin','organizer')),
+  username TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  federation TEXT NOT NULL DEFAULT 'KAZ'
+);
+
+CREATE TABLE players (
+  id SERIAL PRIMARY KEY,
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
   middle_name TEXT,
@@ -48,7 +56,7 @@ CREATE TABLE tournaments (
 CREATE TABLE tournament_players (
   id SERIAL PRIMARY KEY,
   tournament_id INTEGER NOT NULL REFERENCES tournaments(id),
-  player_id INTEGER NOT NULL REFERENCES users(id),
+  player_id INTEGER NOT NULL REFERENCES players(id),
   current_points DECIMAL NOT NULL DEFAULT 0,
   tiebreak_score DECIMAL NOT NULL DEFAULT 0,
   start_rating INTEGER,
@@ -60,34 +68,31 @@ CREATE TABLE matches (
   tournament_id INTEGER NOT NULL REFERENCES tournaments(id),
   round_number INTEGER NOT NULL,
   board_number INTEGER,
-  player1_id INTEGER REFERENCES users(id),
-  player2_id INTEGER REFERENCES users(id),
+  player1_id INTEGER REFERENCES players(id),
+  player2_id INTEGER REFERENCES players(id),
   result TEXT CHECK (result IS NULL OR result IN ('1-0','0-1','0.5-0.5','+--','--+','=-=','---'))
 );
 
--- Admin (username: admin, password: password123)
-INSERT INTO users (role, username, password_hash, first_name, last_name, federation)
-VALUES ('admin', 'admin', '$2b$10$4.Tw6opY6JyfpprLZDSSVu.I4mGySY0Pb8fBtKybXkdne3UhFuDNm', 'Site', 'Admin', 'KAZ');
+-- Logins (password for both: password123)
+INSERT INTO users (role, username, password_hash, first_name, last_name, federation) VALUES
+  ('admin',     'admin',     '$2b$10$4.Tw6opY6JyfpprLZDSSVu.I4mGySY0Pb8fBtKybXkdne3UhFuDNm', 'Site',  'Admin',     'KAZ'),
+  ('organizer', 'organizer', '$2b$10$4.Tw6opY6JyfpprLZDSSVu.I4mGySY0Pb8fBtKybXkdne3UhFuDNm', 'Askar', 'Organizer', 'KAZ');
 
--- Organizer (username: organizer, password: password123), federation KAZ
-INSERT INTO users (role, username, password_hash, first_name, last_name, federation)
-VALUES ('organizer', 'organizer', '$2b$10$4.Tw6opY6JyfpprLZDSSVu.I4mGySY0Pb8fBtKybXkdne3UhFuDNm', 'Askar', 'Organizer', 'KAZ');
-
--- Players (rich profiles, no login)
-INSERT INTO users (role, first_name, last_name, birth_year, federation, club, title, rating_blitz, rating_rapid, rating_classic) VALUES
-  ('player', 'Aslan',   'Bekov',       1990, 'KAZ', 'Almaty TK',    'GM',  2180, 2150, 2200),
-  ('player', 'Dana',    'Serikova',    1995, 'KAZ', 'Astana TK',    'WGM', 2065, 2040, 2080),
-  ('player', 'Yerlan',  'Nurpeisov',   1988, 'KAZ', 'Shymkent TK',  'IM',  1990, 1975, 2010),
-  ('player', 'Aigerim', 'Tulegenova',  2000, 'KAZ', 'Karaganda TK', 'WIM', 1920, 1900, 1940),
-  ('player', 'Marat',   'Zhaksybek',   1992, 'KAZ', 'Taraz TK',     'FM',  1855, 1840, 1870),
-  ('player', 'Saule',   'Amanzholova', 1998, 'KAZ', 'Pavlodar TK',  NULL,  1790, 1780, 1800),
-  ('player', 'Nurlan',  'Kairatuly',   2003, 'KAZ', 'Oskemen TK',   NULL,  1705, 1690, 1720),
-  ('player', 'Zhanel',  'Ospanova',    2005, 'KAZ', 'Semey TK',     NULL,  1640, 1620, 1660),
-  ('player', 'Timur',   'Abenov',      1985, 'WDF', 'Bishkek DC',   'CM',  1530, 1520, 1550),
-  ('player', 'Madina',  'Yesimova',    2001, 'WDF', 'Tashkent DC',  NULL,  1445, 1430, 1460);
+-- Players
+INSERT INTO players (first_name, last_name, birth_year, federation, club, title, rating_blitz, rating_rapid, rating_classic) VALUES
+  ('Aslan',   'Bekov',       1990, 'KAZ', 'Almaty TK',    'GM',  2180, 2150, 2200),
+  ('Dana',    'Serikova',    1995, 'KAZ', 'Astana TK',    'WGM', 2065, 2040, 2080),
+  ('Yerlan',  'Nurpeisov',   1988, 'KAZ', 'Shymkent TK',  'IM',  1990, 1975, 2010),
+  ('Aigerim', 'Tulegenova',  2000, 'KAZ', 'Karaganda TK', 'WIM', 1920, 1900, 1940),
+  ('Marat',   'Zhaksybek',   1992, 'KAZ', 'Taraz TK',     'FM',  1855, 1840, 1870),
+  ('Saule',   'Amanzholova', 1998, 'KAZ', 'Pavlodar TK',  NULL,  1790, 1780, 1800),
+  ('Nurlan',  'Kairatuly',   2003, 'KAZ', 'Oskemen TK',   NULL,  1705, 1690, 1720),
+  ('Zhanel',  'Ospanova',    2005, 'KAZ', 'Semey TK',     NULL,  1640, 1620, 1660),
+  ('Timur',   'Abenov',      1985, 'WDF', 'Bishkek DC',   'CM',  1530, 1520, 1550),
+  ('Madina',  'Yesimova',    2001, 'WDF', 'Tashkent DC',  NULL,  1445, 1430, 1460);
 
 -- Demo tournaments (organizer id = 2)
 INSERT INTO tournaments (name, federation, city, level, rating_type, status, gender, age_category, organizer_id) VALUES
-  ('Almaty Open 2026',            'KAZ', 'Almaty',   'National', 'classic',   'ongoing',  'all',    'all', 2),
-  ('Astana Blitz Cup 2026',       'KAZ', 'Astana',   'Regional', 'blitz',     'finished', 'all',    'all', 2),
-  ('Shymkent School Championship','KAZ', 'Shymkent', 'School',   'non_rated', 'setup',    'all',    'U12', 2);
+  ('Almaty Open 2026',            'KAZ', 'Almaty',   'National', 'classic',   'ongoing',  'all', 'all', 2),
+  ('Astana Blitz Cup 2026',       'KAZ', 'Astana',   'Regional', 'blitz',     'finished', 'all', 'all', 2),
+  ('Shymkent School Championship','KAZ', 'Shymkent', 'School',   'non_rated', 'setup',    'all', 'U12', 2);

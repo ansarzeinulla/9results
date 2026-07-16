@@ -211,5 +211,14 @@
     "edit": "Edit",
     "prev": "← Prev",
     "next": "Next →"
+  },
+  "swiss": {
+    "REMATCH": "{{a}} and {{b}} have already played each other",
+    "UNKNOWN_PLAYER": "{{id}} is not in this tournament",
+    "DUPLICATE_PLAYER": "{{id}} appears in more than one pair",
+    "UNPAIRED_PLAYER": "{{id}} is not paired in this round",
+    "MULTIPLE_BYES": "A round may have at most one bye",
+    "SCORE_MISMATCH": "{{a}} and {{b}} are in different score groups ({{pa}} vs {{pb}} points)",
+    "REPEAT_BYE": "{{id}} already had a bye"
   }
 }
