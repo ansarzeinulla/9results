@@ -162,7 +162,10 @@ export default function TournamentView() {
               <table className="cr-table">
                 <thead>
                   <tr>
-                    <th>{t('fields.board')}</th><th>{t('fields.white')}</th><th>{t('fields.result')}</th><th>{t('fields.black')}</th>
+                    <th>{t('fields.board')}</th>
+                    <th>{t('fields.white')}</th><th>{t('fields.rating')}</th><th>{t('fields.points')}</th><th>{t('fields.buchholz')}</th>
+                    <th>{t('fields.result')}</th>
+                    <th>{t('fields.black')}</th><th>{t('fields.rating')}</th><th>{t('fields.points')}</th><th>{t('fields.buchholz')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -170,8 +173,12 @@ export default function TournamentView() {
                     <tr key={m.id}>
                       <td>{m.board_number ?? i + 1}</td>
                       <td><Link to={`/players/${m.player1_id}`}>{m.player1_name}</Link></td>
+                      <td>{m.p1_rating ?? '—'}</td><td>{m.p1_points}</td><td>{m.p1_tb}</td>
                       <td className="cr-result">{m.result || '—'}</td>
                       <td>{m.player2_id ? <Link to={`/players/${m.player2_id}`}>{m.player2_name}</Link> : t('tournamentView.bye')}</td>
+                      <td>{m.player2_id ? m.p2_rating ?? '—' : ''}</td>
+                      <td>{m.player2_id ? m.p2_points : ''}</td>
+                      <td>{m.player2_id ? m.p2_tb : ''}</td>
                     </tr>
                   ))}
                 </tbody>

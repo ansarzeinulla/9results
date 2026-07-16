@@ -44,6 +44,11 @@ export default function Tournaments() {
       <h1>{t('tournaments.title')}</h1>
 
       <div className="filter-grid">
+        <input
+          placeholder={t('tournaments.searchName')}
+          value={filters.q}
+          onChange={(e) => set('q', e.target.value)}
+        />
         <select value={filters.federation} onChange={(e) => set('federation', e.target.value)}>
           <option value="">{t('tournaments.anyFederation')}</option>
           {federations.map((f) => <option key={f.code} value={f.code}>{f.code}</option>)}

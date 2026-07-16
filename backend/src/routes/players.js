@@ -10,7 +10,7 @@ const PLAYER_COLS =
 
 // List players, optional federation + name search (public rating list, capped).
 router.get('/players', async (req, res) => {
-  const { federation, q } = req.query;
+  const { federation, q, birth_year, title, id } = req.query;
   const where = ['TRUE'];
   const params = [];
   if (federation) {
@@ -20,6 +20,18 @@ router.get('/players', async (req, res) => {
   if (q) {
     params.push(`%${q}%`);
     where.push(`(first_name ILIKE $${params.length} OR last_name ILIKE $${params.length})`);
+  }
+  if (birth_year && Number(birth_year)) {
+    params.push(Number(birth_year));
+    where.push(`birth_year = $${params.length}`);
+  }
+  if (title) {
+    params.push(`%${title}%`);
+    where.push(`title ILIKE $${params.length}`);
+  }
+  if (id && Number(id)) {
+    params.push(Number(id));
+    where.push(`id = $${params.length}`);
   }
   const rows = await db.all(
     `SELECT ${PLAYER_COLS} FROM players WHERE ${where.join(' AND ')} ORDER BY rating_classic DESC LIMIT 500`,
@@ -45,7 +57,16 @@ router.get('/players/:id', async (req, res) => {
      ORDER BY t.id DESC`,
     [req.params.id]
   );
-  res.json({ player, history });
+  const rating_history = await db.all(
+    `SELECT rh.id, rh.rating_type, rh.old_rating, rh.delta, rh.new_rating, rh.created_at,
+            rh.tournament_id, t.name AS tournament_name
+     FROM rating_history rh
+     LEFT JOIN tournaments t ON t.id = rh.tournament_id
+     WHERE rh.player_id = $1
+     ORDER BY rh.created_at DESC, rh.id DESC`,
+    [req.params.id]
+  );
+  res.json({ player, history, rating_history });
 });
 
 export default router;

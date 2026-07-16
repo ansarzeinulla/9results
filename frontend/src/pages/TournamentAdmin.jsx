@@ -365,8 +365,14 @@ function RoundTable({ pairings, onResult, editable, standings, onSave, onDelete 
             <tr>
               <th className="col-board">{t('fields.board')}</th>
               <th>{t('fields.player')} 1</th>
+              {!editing && <th className="col-num">{t('fields.rating')}</th>}
+              {!editing && <th className="col-num">{t('fields.points')}</th>}
+              {!editing && <th className="col-num">{t('fields.buchholz')}</th>}
               <th className="col-result">{t('fields.result')}</th>
               <th>{t('fields.player')} 2</th>
+              {!editing && <th className="col-num">{t('fields.rating')}</th>}
+              {!editing && <th className="col-num">{t('fields.points')}</th>}
+              {!editing && <th className="col-num">{t('fields.buchholz')}</th>}
             </tr>
           </thead>
           <tbody>
@@ -392,6 +398,9 @@ function RoundTable({ pairings, onResult, editable, standings, onSave, onDelete 
                   <tr key={m.id} className={m.player2_id && !m.result ? 'row-pending' : ''}>
                     <td className="cr-result">{m.board_number ?? '—'}</td>
                     <td><strong>{m.player1_name}</strong></td>
+                    <td className="col-num">{m.p1_rating ?? '—'}</td>
+                    <td className="col-num">{m.p1_points}</td>
+                    <td className="col-num">{m.p1_tb}</td>
                     <td className="cr-result">
                       {m.player2_id ? (
                         <select
@@ -407,6 +416,9 @@ function RoundTable({ pairings, onResult, editable, standings, onSave, onDelete 
                       )}
                     </td>
                     <td>{m.player2_id ? <strong>{m.player2_name}</strong> : <span className="muted">{t('tournamentView.bye')}</span>}</td>
+                    <td className="col-num">{m.player2_id ? m.p2_rating ?? '—' : ''}</td>
+                    <td className="col-num">{m.player2_id ? m.p2_points : ''}</td>
+                    <td className="col-num">{m.player2_id ? m.p2_tb : ''}</td>
                   </tr>
                 ))}
           </tbody>

@@ -91,25 +91,47 @@ router.get('/tournaments/:id/starting-rank', async (req, res) => {
   })));
 });
 
-// GET /api/tournaments/:id/rounds — each round with its pairings.
+// GET /api/tournaments/:id/rounds — each round with its pairings, enriched
+// with every player's rating and points/Buchholz as they stood BEFORE that
+// round (chess-results style).
 router.get('/tournaments/:id/rounds', async (req, res) => {
   const t = await db.get('SELECT id FROM tournaments WHERE id = $1', [req.params.id]);
   if (!t) return res.status(404).json({ error: 'Tournament not found' });
-  const matches = await db.all(
-    `SELECT m.id, m.round_number, m.board_number, m.player1_id, m.player2_id, m.result,
-            p1.first_name AS p1_first, p1.last_name AS p1_last,
-            p2.first_name AS p2_first, p2.last_name AS p2_last
-     FROM matches m
-     LEFT JOIN players p1 ON p1.id = m.player1_id
-     LEFT JOIN players p2 ON p2.id = m.player2_id
-     WHERE m.tournament_id = $1
-     ORDER BY m.round_number, m.board_number NULLS LAST, m.id`,
-    [req.params.id]
-  );
+  const [participants, matches] = await Promise.all([
+    db.all(
+      'SELECT player_id, start_rating FROM tournament_players WHERE tournament_id = $1',
+      [req.params.id]
+    ),
+    db.all(
+      `SELECT m.id, m.round_number, m.board_number, m.player1_id, m.player2_id, m.result,
+              p1.first_name AS p1_first, p1.last_name AS p1_last,
+              p2.first_name AS p2_first, p2.last_name AS p2_last
+       FROM matches m
+       LEFT JOIN players p1 ON p1.id = m.player1_id
+       LEFT JOIN players p2 ON p2.id = m.player2_id
+       WHERE m.tournament_id = $1
+       ORDER BY m.round_number, m.board_number NULLS LAST, m.id`,
+      [req.params.id]
+    ),
+  ]);
+
+  const rating = new Map(participants.map((p) => [p.player_id, p.start_rating]));
   const byRound = new Map();
   for (const m of matches) {
     if (!byRound.has(m.round_number)) byRound.set(m.round_number, []);
-    byRound.get(m.round_number).push({
+    byRound.get(m.round_number).push(m);
+  }
+  const roundNumbers = [...byRound.keys()].sort((a, b) => a - b);
+
+  // Replay the tournament: points/opponents accumulated so far, snapshotted
+  // before each round is emitted.
+  const points = new Map(participants.map((p) => [p.player_id, 0]));
+  const opponents = new Map(participants.map((p) => [p.player_id, []]));
+  const buchholzOf = (pid) => (opponents.get(pid) || []).reduce((s, o) => s + (points.get(o) ?? 0), 0);
+
+  const rounds = [];
+  for (const rn of roundNumbers) {
+    const pairings = byRound.get(rn).map((m) => ({
       id: m.id,
       board_number: m.board_number,
       player1_id: m.player1_id,
@@ -117,11 +139,27 @@ router.get('/tournaments/:id/rounds', async (req, res) => {
       player1_name: playerName(m, 'p1'),
       player2_name: playerName(m, 'p2'),
       result: m.result,
-    });
+      p1_rating: rating.get(m.player1_id) ?? null,
+      p2_rating: m.player2_id != null ? rating.get(m.player2_id) ?? null : null,
+      p1_points: points.get(m.player1_id) ?? 0,
+      p2_points: m.player2_id != null ? points.get(m.player2_id) ?? 0 : null,
+      p1_tb: buchholzOf(m.player1_id),
+      p2_tb: m.player2_id != null ? buchholzOf(m.player2_id) : null,
+    }));
+    rounds.push({ round_number: rn, pairings });
+
+    for (const m of byRound.get(rn)) {
+      if (m.result && POINTS[m.result]) {
+        const [a, b] = POINTS[m.result];
+        points.set(m.player1_id, (points.get(m.player1_id) ?? 0) + a);
+        if (m.player2_id != null) points.set(m.player2_id, (points.get(m.player2_id) ?? 0) + b);
+      }
+      if (m.player2_id != null) {
+        opponents.get(m.player1_id)?.push(m.player2_id);
+        opponents.get(m.player2_id)?.push(m.player1_id);
+      }
+    }
   }
-  const rounds = [...byRound.entries()]
-    .sort((a, b) => a[0] - b[0])
-    .map(([round_number, pairings]) => ({ round_number, pairings }));
   res.json({ max_round: rounds.length ? rounds[rounds.length - 1].round_number : 0, rounds });
 });
 

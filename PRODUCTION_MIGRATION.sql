@@ -7,6 +7,7 @@
 -- WARNING: this deletes existing tournaments/players/matches (throwaway test data).
 -- =====================================================================
 
+DROP TABLE IF EXISTS rating_history CASCADE;
 DROP TABLE IF EXISTS matches CASCADE;
 DROP TABLE IF EXISTS tournament_players CASCADE;
 DROP TABLE IF EXISTS tournaments CASCADE;
@@ -61,6 +62,17 @@ CREATE TABLE tournament_players (
   tiebreak_score DECIMAL NOT NULL DEFAULT 0,
   start_rating INTEGER,
   UNIQUE (tournament_id, player_id)
+);
+
+CREATE TABLE rating_history (
+  id SERIAL PRIMARY KEY,
+  player_id INTEGER NOT NULL REFERENCES players(id),
+  tournament_id INTEGER REFERENCES tournaments(id),
+  rating_type TEXT NOT NULL CHECK (rating_type IN ('blitz','rapid','classic')),
+  old_rating INTEGER NOT NULL,
+  delta INTEGER NOT NULL,
+  new_rating INTEGER NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE matches (

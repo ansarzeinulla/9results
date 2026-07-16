@@ -207,8 +207,16 @@ const applyRatings = db.transaction(async (tx, tournament) => {
   const col = RATING_COLUMN[tournament.rating_type];
   for (const p of players) {
     const delta = deltas[p.player_id] ?? 0;
-    // Apply delta on top of the player's current live rating.
-    await tx.run(`UPDATE players SET ${col} = ${col} + $1 WHERE id = $2`, [delta, p.player_id]);
+    // Apply delta on top of the player's current live rating and log it.
+    const updated = await tx.get(
+      `UPDATE players SET ${col} = ${col} + $1 WHERE id = $2 RETURNING ${col} AS new_rating`,
+      [delta, p.player_id]
+    );
+    await tx.run(
+      `INSERT INTO rating_history (player_id, tournament_id, rating_type, old_rating, delta, new_rating)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [p.player_id, tournament.id, tournament.rating_type, updated.new_rating - delta, delta, updated.new_rating]
+    );
   }
   await tx.run('UPDATE tournaments SET ratings_applied = true WHERE id = $1', [tournament.id]);
 });

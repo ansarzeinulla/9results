@@ -95,6 +95,17 @@ async function initSchema() {
         UNIQUE (tournament_id, player_id)
       );
 
+      CREATE TABLE IF NOT EXISTS rating_history (
+        id SERIAL PRIMARY KEY,
+        player_id INTEGER NOT NULL REFERENCES players(id),
+        tournament_id INTEGER REFERENCES tournaments(id),
+        rating_type TEXT NOT NULL CHECK (rating_type IN ('blitz','rapid','classic')),
+        old_rating INTEGER NOT NULL,
+        delta INTEGER NOT NULL,
+        new_rating INTEGER NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
+
       CREATE TABLE IF NOT EXISTS matches (
         id SERIAL PRIMARY KEY,
         tournament_id INTEGER NOT NULL REFERENCES tournaments(id),
@@ -125,16 +136,24 @@ async function initSchema() {
     console.log('✓ Database schema initialized');
   } catch (e) {
     await client.query('ROLLBACK');
-    if (!e.message.includes('already exists')) throw e;
+    // Benign races: another connection created the same table/sequence
+    // concurrently ("already exists", or 23505 on pg_class internals).
+    if (!e.message.includes('already exists') && e.code !== '23505') throw e;
     schemaInitialized = true;
   } finally {
     client.release();
   }
 }
 
-// Wrapper to ensure schema is initialized before queries
+// Ensure schema init runs at most once, even under concurrent first requests.
+let initPromise = null;
 const ensureSchema = async () => {
-  if (!schemaInitialized) await initSchema();
+  if (schemaInitialized) return;
+  initPromise ??= initSchema().catch((e) => {
+    initPromise = null; // allow a retry on genuine failures
+    throw e;
+  });
+  await initPromise;
 };
 
 // Export convenience wrapper: query(sql, params) returns Promise<result>

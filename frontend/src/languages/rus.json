@@ -76,7 +76,8 @@
     "lastUpdate": "Обновлено",
     "gender": "Пол",
     "ageCategory": "Возраст",
-    "playerId": "ID игрока"
+    "playerId": "ID игрока",
+    "date": "Дата"
   },
   "view": {
     "label": "Выбрать вид",
@@ -115,7 +116,8 @@
     "anyGender": "Любой пол",
     "anyAge": "Любой возраст",
     "createdFrom": "Создан с",
-    "createdTo": "Создан по"
+    "createdTo": "Создан по",
+    "searchName": "Поиск по названию…"
   },
   "tournamentView": {
     "standings": "Турнирная таблица",
@@ -133,7 +135,10 @@
   "players": {
     "title": "Игроки",
     "history": "История турниров",
-    "noHistory": "Пока нет турниров."
+    "noHistory": "Пока нет турниров.",
+    "searchName": "Поиск по имени…",
+    "ratingHistory": "Изменения рейтинга",
+    "noRatingHistory": "Изменений рейтинга пока нет."
   },
   "playerRegister": {
     "title": "Регистрация игрока",

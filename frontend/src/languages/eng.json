@@ -76,7 +76,8 @@
     "lastUpdate": "Last update",
     "gender": "Gender",
     "ageCategory": "Age",
-    "playerId": "Player ID"
+    "playerId": "Player ID",
+    "date": "Date"
   },
   "view": {
     "label": "Select view",
@@ -115,7 +116,8 @@
     "anyGender": "Any gender",
     "anyAge": "Any age",
     "createdFrom": "Created from",
-    "createdTo": "Created to"
+    "createdTo": "Created to",
+    "searchName": "Search by name…"
   },
   "tournamentView": {
     "standings": "Standings",
@@ -133,7 +135,10 @@
   "players": {
     "title": "Players",
     "history": "Tournament history",
-    "noHistory": "No tournaments yet."
+    "noHistory": "No tournaments yet.",
+    "searchName": "Search by name…",
+    "ratingHistory": "Rating changes",
+    "noRatingHistory": "No rating changes yet."
   },
   "playerRegister": {
     "title": "Register as a Player",
