@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import db from '../db.js';
 import { requireRole } from '../middleware/auth.js';
-import { generateSwissRound, PairingError } from '../swissEngine.js';
+import { generateSwissRound, validateRoundPairings, PairingError } from '../swissEngine.js';
 import { calculateTournamentRatings } from '../ratingEngine.js';
 import { POINTS, LEVELS, RATING_TYPES, RATING_COLUMN, GENDERS, AGE_CATEGORIES } from '../shared/constants.js';
 
@@ -117,32 +117,32 @@ router.post('/tournaments/:id/matches', requireOrganizer, async (req, res) => {
   res.status(201).json(result.rows[0]);
 });
 
-const submitResult = db.transaction(async (tournamentId, match, result) => {
+const submitResult = db.transaction(async (tx, tournamentId, match, result) => {
   if (match.result) {
     const [oldP1, oldP2] = POINTS[match.result];
-    await db.run(
+    await tx.run(
       'UPDATE tournament_players SET current_points = current_points - $1 WHERE tournament_id = $2 AND player_id = $3',
       [oldP1, tournamentId, match.player1_id]
     );
     if (match.player2_id) {
-      await db.run(
+      await tx.run(
         'UPDATE tournament_players SET current_points = current_points - $1 WHERE tournament_id = $2 AND player_id = $3',
         [oldP2, tournamentId, match.player2_id]
       );
     }
   }
   const [p1, p2] = POINTS[result];
-  await db.run(
+  await tx.run(
     'UPDATE tournament_players SET current_points = current_points + $1 WHERE tournament_id = $2 AND player_id = $3',
     [p1, tournamentId, match.player1_id]
   );
   if (match.player2_id) {
-    await db.run(
+    await tx.run(
       'UPDATE tournament_players SET current_points = current_points + $1 WHERE tournament_id = $2 AND player_id = $3',
       [p2, tournamentId, match.player2_id]
     );
   }
-  await db.run('UPDATE matches SET result = $1 WHERE id = $2', [result, match.id]);
+  await tx.run('UPDATE matches SET result = $1 WHERE id = $2', [result, match.id]);
 });
 
 router.post('/tournaments/:id/results', requireOrganizer, async (req, res) => {
@@ -202,15 +202,15 @@ router.get('/tournaments/:id/rating-preview', requireOrganizer, async (req, res)
   res.json({ rating_type: t.rating_type, ratings_applied: t.ratings_applied, preview });
 });
 
-const applyRatings = db.transaction(async (tournament) => {
+const applyRatings = db.transaction(async (tx, tournament) => {
   const { deltas, players } = await ratingDeltas(tournament.id);
   const col = RATING_COLUMN[tournament.rating_type];
   for (const p of players) {
     const delta = deltas[p.player_id] ?? 0;
     // Apply delta on top of the player's current live rating.
-    await db.run(`UPDATE users SET ${col} = ${col} + $1 WHERE id = $2`, [delta, p.player_id]);
+    await tx.run(`UPDATE users SET ${col} = ${col} + $1 WHERE id = $2`, [delta, p.player_id]);
   }
-  await db.run('UPDATE tournaments SET ratings_applied = true WHERE id = $1', [tournament.id]);
+  await tx.run('UPDATE tournaments SET ratings_applied = true WHERE id = $1', [tournament.id]);
 });
 
 router.post('/tournaments/:id/apply-ratings', requireOrganizer, async (req, res) => {
@@ -225,28 +225,28 @@ router.post('/tournaments/:id/apply-ratings', requireOrganizer, async (req, res)
 
 // --- Round generation (byes stored as decided matches) ---
 
-const insertRound = db.transaction(async (tournamentId, roundNumber, pairings) => {
+const insertRound = db.transaction(async (tx, tournamentId, roundNumber, pairings) => {
   const ids = [];
   for (const p of pairings) {
     let result;
     if (p.player2_id == null) {
-      result = await db.run(
+      result = await tx.run(
         "INSERT INTO matches (tournament_id, round_number, board_number, player1_id, player2_id, result) VALUES ($1, $2, NULL, $3, NULL, '1-0') RETURNING id",
         [tournamentId, roundNumber, p.player1_id]
       );
-      await db.run(
+      await tx.run(
         'UPDATE tournament_players SET current_points = current_points + 1 WHERE tournament_id = $1 AND player_id = $2',
         [tournamentId, p.player1_id]
       );
     } else {
-      result = await db.run(
+      result = await tx.run(
         'INSERT INTO matches (tournament_id, round_number, board_number, player1_id, player2_id) VALUES ($1, $2, $3, $4, $5) RETURNING id',
         [tournamentId, roundNumber, p.board_number ?? null, p.player1_id, p.player2_id]
       );
     }
     ids.push(result.rows[0].id);
   }
-  return db.all(
+  return tx.all(
     `SELECT m.*, p1.first_name AS p1_first, p1.last_name AS p1_last,
             p2.first_name AS p2_first, p2.last_name AS p2_last
      FROM matches m
@@ -287,6 +287,142 @@ router.post('/tournaments/:id/generate-round', requireOrganizer, async (req, res
 
   const created = await insertRound(t.id, roundNumber, pairings);
   res.status(201).json({ round_number: roundNumber, matches: created });
+});
+
+// --- Manual pairing edits (Swiss laws enforced by validateRoundPairings) ---
+
+async function editableRound(req, res, t) {
+  const roundNumber = Number(req.params.round);
+  const maxRound = (await db.get(
+    'SELECT COALESCE(MAX(round_number), 0) AS max FROM matches WHERE tournament_id = $1',
+    [t.id]
+  )).max;
+  if (!roundNumber || roundNumber !== Number(maxRound)) {
+    res.status(409).json({ error: 'Only the latest round can be edited' });
+    return null;
+  }
+  return roundNumber;
+}
+
+// Replace the latest round's pairings. Blocked once any real result is entered.
+router.put('/tournaments/:id/rounds/:round', requireOrganizer, async (req, res) => {
+  const t = await ownedTournament(req, res);
+  if (!t) return;
+  const roundNumber = await editableRound(req, res, t);
+  if (!roundNumber) return;
+
+  const existing = await db.all(
+    'SELECT * FROM matches WHERE tournament_id = $1 AND round_number = $2',
+    [t.id, roundNumber]
+  );
+  if (existing.some((m) => m.player2_id != null && m.result != null)) {
+    return res.status(409).json({ error: 'Results already entered — cannot edit pairings of this round' });
+  }
+
+  const rawPairings = (req.body || {}).pairings;
+  if (!Array.isArray(rawPairings) || rawPairings.length === 0) {
+    return res.status(400).json({ error: 'pairings array is required' });
+  }
+  const pairings = rawPairings.map((p) => ({
+    player1_id: p.player1_id == null ? null : Number(p.player1_id),
+    player2_id: p.player2_id == null ? null : Number(p.player2_id),
+  }));
+
+  const players = await db.all(
+    `SELECT tp.player_id, tp.current_points, COALESCE(tp.start_rating, 1200) AS current_rating
+     FROM tournament_players tp WHERE tp.tournament_id = $1`,
+    [t.id]
+  );
+  const previousMatches = await db.all(
+    'SELECT round_number, player1_id, player2_id, result FROM matches WHERE tournament_id = $1 AND round_number < $2',
+    [t.id, roundNumber]
+  );
+
+  const verdict = validateRoundPairings({ pairings, players, previousMatches, roundNumber });
+  if (!verdict.ok) {
+    return res.status(400).json({ error: 'Pairings violate Swiss rules', ...verdict });
+  }
+
+  const replaceRound = db.transaction(async (tx) => {
+    // Reverse the old bye's automatic point, then wipe the round.
+    for (const m of existing) {
+      if (m.player2_id == null && m.result === '1-0') {
+        await tx.run(
+          'UPDATE tournament_players SET current_points = current_points - 1 WHERE tournament_id = $1 AND player_id = $2',
+          [t.id, m.player1_id]
+        );
+      }
+    }
+    await tx.run('DELETE FROM matches WHERE tournament_id = $1 AND round_number = $2', [t.id, roundNumber]);
+    const ids = [];
+    let board = 0;
+    for (const p of pairings) {
+      if (p.player2_id == null) {
+        const r = await tx.run(
+          "INSERT INTO matches (tournament_id, round_number, board_number, player1_id, player2_id, result) VALUES ($1, $2, NULL, $3, NULL, '1-0') RETURNING id",
+          [t.id, roundNumber, p.player1_id]
+        );
+        await tx.run(
+          'UPDATE tournament_players SET current_points = current_points + 1 WHERE tournament_id = $1 AND player_id = $2',
+          [t.id, p.player1_id]
+        );
+        ids.push(r.rows[0].id);
+      } else {
+        board += 1;
+        const r = await tx.run(
+          'INSERT INTO matches (tournament_id, round_number, board_number, player1_id, player2_id) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+          [t.id, roundNumber, board, p.player1_id, p.player2_id]
+        );
+        ids.push(r.rows[0].id);
+      }
+    }
+    return tx.all(
+      `SELECT m.*, p1.first_name AS p1_first, p1.last_name AS p1_last,
+              p2.first_name AS p2_first, p2.last_name AS p2_last
+       FROM matches m
+       LEFT JOIN users p1 ON p1.id = m.player1_id
+       LEFT JOIN users p2 ON p2.id = m.player2_id
+       WHERE m.id = ANY($1) ORDER BY m.board_number NULLS LAST`,
+      [ids]
+    );
+  });
+
+  const matches = await replaceRound();
+  res.json({ round_number: roundNumber, matches, warnings: verdict.warnings });
+});
+
+// Delete the latest round entirely (points from its results are reversed).
+router.delete('/tournaments/:id/rounds/:round', requireOrganizer, async (req, res) => {
+  const t = await ownedTournament(req, res);
+  if (!t) return;
+  const roundNumber = await editableRound(req, res, t);
+  if (!roundNumber) return;
+
+  const deleteRound = db.transaction(async (tx) => {
+    const matches = await tx.all(
+      'SELECT * FROM matches WHERE tournament_id = $1 AND round_number = $2',
+      [t.id, roundNumber]
+    );
+    for (const m of matches) {
+      if (!m.result) continue;
+      const [p1, p2] = POINTS[m.result];
+      await tx.run(
+        'UPDATE tournament_players SET current_points = current_points - $1 WHERE tournament_id = $2 AND player_id = $3',
+        [p1, t.id, m.player1_id]
+      );
+      if (m.player2_id) {
+        await tx.run(
+          'UPDATE tournament_players SET current_points = current_points - $1 WHERE tournament_id = $2 AND player_id = $3',
+          [p2, t.id, m.player2_id]
+        );
+      }
+    }
+    await tx.run('DELETE FROM matches WHERE tournament_id = $1 AND round_number = $2', [t.id, roundNumber]);
+    return matches.length;
+  });
+
+  const removed = await deleteRound();
+  res.json({ ok: true, round_number: roundNumber, removed });
 });
 
 export default router;

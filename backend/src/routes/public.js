@@ -2,6 +2,7 @@ import { Router } from 'express';
 import db from '../db.js';
 import { POINTS, RATED_RESULTS, RATING_COLUMN, FEDERATION_LIST } from '../shared/constants.js';
 import { calculateElo } from '../ratingEngine.js';
+import { endOfDay } from '../shared/dates.js';
 
 const router = Router();
 
@@ -35,9 +36,9 @@ router.get('/tournaments', async (req, res) => {
   if (gender && gender !== 'all') add('t.gender = ?', gender);
   if (age_category && age_category !== 'all') add('t.age_category = ?', age_category);
   if (created_from) add('t.created_at >= ?', created_from);
-  if (created_to) add('t.created_at <= ?', created_to);
+  if (created_to) add('t.created_at <= ?', endOfDay(created_to));
   if (ended_from) add('t.finished_at >= ?', ended_from);
-  if (ended_to) add('t.finished_at <= ?', ended_to);
+  if (ended_to) add('t.finished_at <= ?', endOfDay(ended_to));
 
   const rows = await db.all(
     `SELECT t.*, COUNT(tp.id) AS player_count

@@ -176,7 +176,13 @@
     "find": "Найти",
     "notFound": "Игрок с таким ID не найден.",
     "confirmAdd": "Добавить в турнир",
-    "playerFound": "Игрок найден"
+    "playerFound": "Игрок найден",
+    "editPairings": "Изменить пары",
+    "savePairings": "Сохранить пары",
+    "deleteRound": "Удалить тур",
+    "deleteRoundConfirm": "Полностью удалить тур {{n}}? Его результаты будут отменены.",
+    "pairingsSaved": "Пары сохранены.",
+    "roundDeleted": "Тур удалён."
   },
   "changeRatings": {
     "title": "Изменение рейтингов",

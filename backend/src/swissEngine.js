@@ -91,27 +91,55 @@ function orderSides(a, b, { sideBalance, lastSide }) {
   return byStanding(a, b) <= 0 ? [a, b] : [b, a];
 }
 
-export function generateSwissRound(players, previousMatches, roundNumber) {
+// Postgres returns DECIMAL columns as strings ("2" vs "2.0"), which breaks
+// score-group equality and arithmetic — normalize once at the boundary.
+function normalize(players) {
+  return players.map((p) => ({
+    ...p,
+    current_points: Number(p.current_points) || 0,
+    current_rating: Number(p.current_rating) || 0,
+  }));
+}
+
+export function generateSwissRound(rawPlayers, previousMatches, roundNumber) {
+  const players = normalize(rawPlayers);
   if (players.length < 2) throw new PairingError('Need at least 2 players to pair a round');
 
   const history = buildHistory(previousMatches);
-  let ranked = [...players].sort(byStanding);
+  const ranked = [...players].sort(byStanding);
 
-  // Bye: lowest-standing player without a previous bye (fallback: lowest overall).
-  let byePlayer = null;
+  // Bye candidates in preference order: lowest-standing without a previous
+  // bye first, then (as a last resort) players who already had one. The bye
+  // choice is part of the search — if a preferred bye makes the remaining
+  // field unpairable, the next candidate is tried.
+  let byeCandidates = [null];
   if (ranked.length % 2 === 1) {
-    byePlayer =
-      [...ranked].reverse().find((p) => !history.hadBye.has(p.player_id)) ??
-      ranked[ranked.length - 1];
-    ranked = ranked.filter((p) => p !== byePlayer);
+    const fresh = [...ranked].reverse().filter((p) => !history.hadBye.has(p.player_id));
+    const repeat = [...ranked].reverse().filter((p) => history.hadBye.has(p.player_id));
+    byeCandidates = [...fresh, ...repeat];
   }
 
-  let rawPairs = [];
-  if (roundNumber === 1) {
-    // Fold the whole field: seed i plays seed i + n/2.
-    const half = ranked.length / 2;
-    for (let i = 0; i < half; i++) rawPairs.push([ranked[i], ranked[i + half]]);
-  } else if (!pairRecursive(ranked, history.played, rawPairs)) {
+  let rawPairs = null;
+  let byePlayer = null;
+  for (const candidate of byeCandidates) {
+    const field = candidate ? ranked.filter((p) => p !== candidate) : ranked;
+    const attempt = [];
+    let success;
+    if (roundNumber === 1) {
+      // Fold the whole field: seed i plays seed i + n/2.
+      const half = field.length / 2;
+      for (let i = 0; i < half; i++) attempt.push([field[i], field[i + half]]);
+      success = true;
+    } else {
+      success = pairRecursive(field, history.played, attempt);
+    }
+    if (success) {
+      rawPairs = attempt;
+      byePlayer = candidate;
+      break;
+    }
+  }
+  if (!rawPairs) {
     throw new PairingError(
       'No valid pairing exists — all remaining opponent combinations have already been played'
     );
@@ -145,4 +173,85 @@ export function generateSwissRound(players, previousMatches, roundNumber) {
     pairings.push({ player1_id: byePlayer.player_id, player2_id: null, board_number: null });
   }
   return { pairings };
+}
+
+/**
+ * Validate a manually edited round against Swiss laws.
+ *
+ * Hard errors (block saving): unknown players, a player paired twice or
+ * against themselves, participants left unpaired, more than one bye,
+ * repeating an opponent from a previous round.
+ * Warnings (allowed, surfaced to the arbiter): pairing across score groups,
+ * giving a second bye to the same player.
+ *
+ * Returns { ok, errors: [{code, message}], warnings: [{code, message}] }.
+ */
+export function validateRoundPairings({ pairings, players: rawPlayers, previousMatches, roundNumber }) {
+  const players = normalize(rawPlayers);
+  const byId = new Map(players.map((p) => [p.player_id, p]));
+  const history = buildHistory(previousMatches);
+  const errors = [];
+  const warnings = [];
+
+  const seen = new Set();
+  const takeSeat = (id) => {
+    if (!byId.has(id)) {
+      errors.push({ code: 'UNKNOWN_PLAYER', message: `Player ${id} is not in this tournament` });
+      return;
+    }
+    if (seen.has(id)) {
+      errors.push({ code: 'DUPLICATE_PLAYER', message: `Player ${id} appears in more than one pair` });
+      return;
+    }
+    seen.add(id);
+  };
+
+  let byes = 0;
+  for (const m of pairings) {
+    if (m.player1_id == null) {
+      errors.push({ code: 'UNKNOWN_PLAYER', message: 'A pair is missing player 1' });
+      continue;
+    }
+    takeSeat(m.player1_id);
+    if (m.player2_id == null) {
+      byes += 1;
+      continue;
+    }
+    if (m.player2_id === m.player1_id) {
+      errors.push({ code: 'DUPLICATE_PLAYER', message: `Player ${m.player1_id} cannot play themselves` });
+      continue;
+    }
+    takeSeat(m.player2_id);
+    if (history.played.has(`${m.player1_id}:${m.player2_id}`)) {
+      errors.push({
+        code: 'REMATCH',
+        message: `Players ${m.player1_id} and ${m.player2_id} already played each other`,
+      });
+    }
+    const a = byId.get(m.player1_id);
+    const b = byId.get(m.player2_id);
+    if (a && b && a.current_points !== b.current_points) {
+      warnings.push({
+        code: 'SCORE_MISMATCH',
+        message: `Players ${m.player1_id} (${a.current_points}) and ${m.player2_id} (${b.current_points}) are in different score groups`,
+      });
+    }
+  }
+
+  if (byes > 1) {
+    errors.push({ code: 'MULTIPLE_BYES', message: 'A round may have at most one bye' });
+  }
+  if (byes === 1) {
+    const byeId = pairings.find((m) => m.player2_id == null)?.player1_id;
+    if (byeId != null && history.hadBye.has(byeId)) {
+      warnings.push({ code: 'REPEAT_BYE', message: `Player ${byeId} already had a bye` });
+    }
+  }
+  for (const p of players) {
+    if (!seen.has(p.player_id)) {
+      errors.push({ code: 'UNPAIRED_PLAYER', message: `Player ${p.player_id} is not paired in this round` });
+    }
+  }
+
+  return { ok: errors.length === 0, errors, warnings };
 }

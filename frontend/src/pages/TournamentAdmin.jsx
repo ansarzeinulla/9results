@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { apiGet, apiPost, apiPut } from '../api.js';
+import { apiGet, apiPost, apiPut, apiSend } from '../api.js';
 import { LEVELS, RATING_TYPES, GENDERS, AGE_CATEGORIES, RATED_RESULTS, NON_RATED_RESULTS } from '../constants.js';
 import { useFederations, citiesOf } from '../federations.js';
 import { statusLabel, levelLabel, ratingTypeLabel, genderLabel, ageLabel } from '../labels.js';
@@ -86,11 +86,21 @@ export default function TournamentAdmin({ user }) {
       {tab === 'results' && (
         <ResultsTab
           rounds={rounds}
+          standings={standings}
           onResult={(match_id, result) => act(() => apiPost(`/tournaments/${id}/results`, { match_id, result }))}
           onGenerate={() => act(async () => {
             const r = await apiPost(`/tournaments/${id}/generate-round`, {});
             flash(`Round ${r.round_number}: ${r.matches.length}`);
           })}
+          onSaveRound={async (roundNumber, pairings) => {
+            const r = await apiPut(`/tournaments/${id}/rounds/${roundNumber}`, { pairings });
+            await reload();
+            flash(t('admin.pairingsSaved'));
+            return r;
+          }}
+          onDeleteRound={(roundNumber) => act(async () => {
+            await apiSend('DELETE', `/tournaments/${id}/rounds/${roundNumber}`);
+          }, t('admin.roundDeleted'))}
         />
       )}
     </div>
@@ -238,11 +248,13 @@ function ParticipantsTab({ standings, onAdd }) {
 }
 
 // One table per round, newest first, with board numbers and a result select.
-function ResultsTab({ rounds, onResult, onGenerate }) {
+// The latest round (while it has no entered results) can be manually re-paired.
+function ResultsTab({ rounds, standings, onResult, onGenerate, onSaveRound, onDeleteRound }) {
   const { t } = useTranslation();
   const currentRound = rounds.length ? rounds[rounds.length - 1].round_number : 0;
   const currentPairings = rounds.find((r) => r.round_number === currentRound)?.pairings || [];
   const pending = currentPairings.filter((m) => m.player2_id && !m.result).length;
+  const hasResults = currentPairings.some((m) => m.player2_id && m.result);
 
   const statusMsg = rounds.length === 0
     ? t('admin.noRounds')
@@ -260,53 +272,131 @@ function ResultsTab({ rounds, onResult, onGenerate }) {
       {[...rounds].sort((a, b) => b.round_number - a.round_number).map((round) => (
         <div key={round.round_number}>
           <h2>{t('tournamentView.round', { n: round.round_number })}</h2>
-          <RoundTable pairings={round.pairings} onResult={onResult} />
+          <RoundTable
+            pairings={round.pairings}
+            onResult={onResult}
+            editable={round.round_number === currentRound && !hasResults}
+            standings={standings}
+            onSave={(pairings) => onSaveRound(round.round_number, pairings)}
+            onDelete={() => {
+              if (window.confirm(t('admin.deleteRoundConfirm', { n: round.round_number }))) {
+                onDeleteRound(round.round_number);
+              }
+            }}
+          />
         </div>
       ))}
     </>
   );
 }
 
-function RoundTable({ pairings, onResult }) {
+function RoundTable({ pairings, onResult, editable, standings, onSave, onDelete }) {
   const { t } = useTranslation();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState([]);
+  const [errors, setErrors] = useState([]);
+  const [warnings, setWarnings] = useState([]);
+
   if (pairings.length === 0) return <p className="muted">{t('tournamentView.noPairings')}</p>;
   const results = [...RATED_RESULTS, ...NON_RATED_RESULTS];
 
+  function startEdit() {
+    setDraft(pairings.map((m) => ({ player1_id: m.player1_id, player2_id: m.player2_id })));
+    setErrors([]);
+    setWarnings([]);
+    setEditing(true);
+  }
+
+  async function save() {
+    setErrors([]);
+    try {
+      const r = await onSave(draft);
+      setWarnings(r.warnings || []);
+      setEditing(false);
+    } catch (e) {
+      // Server returns per-rule violations in e.data.errors.
+      setErrors(e.data?.errors?.length ? e.data.errors : [{ message: e.message }]);
+      setWarnings(e.data?.warnings || []);
+    }
+  }
+
+  const setSeat = (row, seat, value) =>
+    setDraft((d) => d.map((p, i) => (i === row ? { ...p, [seat]: value ? Number(value) : null } : p)));
+
+  const playerOptions = standings.map((s) => (
+    <option key={s.player_id} value={s.player_id}>#{s.player_id} {s.full_name}</option>
+  ));
+
   return (
-    <div className="table-wrap round-table">
-      <table className="cr-table">
-        <thead>
-          <tr>
-            <th>{t('fields.board')}</th>
-            <th>{t('fields.player')} 1</th>
-            <th>{t('fields.result')}</th>
-            <th>{t('fields.player')} 2</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pairings.map((m) => (
-            <tr key={m.id} className={m.player2_id && !m.result ? 'row-pending' : ''}>
-              <td className="cr-result">{m.board_number ?? '—'}</td>
-              <td><strong>{m.player1_name}</strong></td>
-              <td className="cr-result">
-                {m.player2_id ? (
-                  <select
-                    className="result-select"
-                    value={m.result || ''}
-                    onChange={(e) => e.target.value && onResult(m.id, e.target.value)}
-                  >
-                    <option value="">—</option>
-                    {results.map((r) => <option key={r} value={r}>{r}</option>)}
-                  </select>
-                ) : (
-                  m.result
-                )}
-              </td>
-              <td>{m.player2_id ? <strong>{m.player2_name}</strong> : <span className="muted">{t('tournamentView.bye')}</span>}</td>
+    <div>
+      {editable && !editing && (
+        <div className="round-actions no-print">
+          <button type="button" className="chip" onClick={startEdit}>{t('admin.editPairings')}</button>
+          <button type="button" className="chip chip-danger" onClick={onDelete}>{t('admin.deleteRound')}</button>
+        </div>
+      )}
+      {editing && (
+        <div className="round-actions no-print">
+          <button type="button" onClick={save}>{t('admin.savePairings')}</button>
+          <button type="button" className="chip" onClick={() => setEditing(false)}>{t('common.cancel')}</button>
+        </div>
+      )}
+      {errors.map((e, i) => <p key={i} className="error">{e.message}</p>)}
+      {warnings.map((w, i) => <p key={i} className="warning">{w.message}</p>)}
+
+      <div className="table-wrap round-table">
+        <table className="cr-table results-table">
+          <thead>
+            <tr>
+              <th className="col-board">{t('fields.board')}</th>
+              <th>{t('fields.player')} 1</th>
+              <th className="col-result">{t('fields.result')}</th>
+              <th>{t('fields.player')} 2</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {editing
+              ? draft.map((p, i) => (
+                  <tr key={i}>
+                    <td className="cr-result">{p.player2_id ? i + 1 : '—'}</td>
+                    <td>
+                      <select value={p.player1_id ?? ''} onChange={(e) => setSeat(i, 'player1_id', e.target.value)}>
+                        {playerOptions}
+                      </select>
+                    </td>
+                    <td className="cr-result">vs</td>
+                    <td>
+                      <select value={p.player2_id ?? ''} onChange={(e) => setSeat(i, 'player2_id', e.target.value)}>
+                        <option value="">{t('tournamentView.bye')}</option>
+                        {playerOptions}
+                      </select>
+                    </td>
+                  </tr>
+                ))
+              : pairings.map((m) => (
+                  <tr key={m.id} className={m.player2_id && !m.result ? 'row-pending' : ''}>
+                    <td className="cr-result">{m.board_number ?? '—'}</td>
+                    <td><strong>{m.player1_name}</strong></td>
+                    <td className="cr-result">
+                      {m.player2_id ? (
+                        <select
+                          className="result-select"
+                          value={m.result || ''}
+                          onChange={(e) => e.target.value && onResult(m.id, e.target.value)}
+                        >
+                          <option value="">—</option>
+                          {results.map((r) => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                      ) : (
+                        m.result
+                      )}
+                    </td>
+                    <td>{m.player2_id ? <strong>{m.player2_name}</strong> : <span className="muted">{t('tournamentView.bye')}</span>}</td>
+                  </tr>
+                ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

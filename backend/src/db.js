@@ -161,13 +161,20 @@ export const db = {
       return res.rows;
     },
   }),
+  // fn receives a `tx` whose run/get/all execute on the SAME client as
+  // BEGIN/COMMIT — using db.* inside would escape the transaction.
   transaction: (fn) => {
     return async (...args) => {
       await ensureSchema();
       const client = await pool.connect();
+      const tx = {
+        run: (sql, params = []) => client.query(sql, params),
+        get: async (sql, params = []) => (await client.query(sql, params)).rows[0] || null,
+        all: async (sql, params = []) => (await client.query(sql, params)).rows,
+      };
       try {
         await client.query('BEGIN');
-        const result = await fn(...args);
+        const result = await fn(tx, ...args);
         await client.query('COMMIT');
         return result;
       } catch (e) {

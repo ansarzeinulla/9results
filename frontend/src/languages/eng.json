@@ -176,7 +176,13 @@
     "find": "Find",
     "notFound": "No player with this ID.",
     "confirmAdd": "Add to tournament",
-    "playerFound": "Player found"
+    "playerFound": "Player found",
+    "editPairings": "Edit pairings",
+    "savePairings": "Save pairings",
+    "deleteRound": "Delete round",
+    "deleteRoundConfirm": "Delete round {{n}} completely? Its results will be reverted.",
+    "pairingsSaved": "Pairings saved.",
+    "roundDeleted": "Round deleted."
   },
   "changeRatings": {
     "title": "Change Ratings",

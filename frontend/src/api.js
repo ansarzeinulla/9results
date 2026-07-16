@@ -14,7 +14,11 @@ function authHeaders() {
 
 async function handle(res) {
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+  if (!res.ok) {
+    const err = new Error(data.error || `Request failed (${res.status})`);
+    err.data = data; // full payload (e.g. Swiss validation errors/warnings)
+    throw err;
+  }
   return data;
 }
 
