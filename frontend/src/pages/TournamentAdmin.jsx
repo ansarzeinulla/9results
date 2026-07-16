@@ -53,14 +53,16 @@ export default function TournamentAdmin({ user }) {
 
   return (
     <div className="page">
-      <p><Link to="/organizer">← {t('admin.backToList')}</Link></p>
-      <h1>{tournament.name}</h1>
-      <p className="muted">
-        {tournament.federation} · {tournament.city} ·{' '}
-        <span className={`badge badge-${tournament.status}`}>{statusLabel(t, tournament.status)}</span> ·{' '}
-        {levelLabel(t, tournament.level)} · {ratingTypeLabel(t, tournament.rating_type)} ·{' '}
-        {genderLabel(t, tournament.gender)} · {ageLabel(t, tournament.age_category)}
-      </p>
+      <div className="t-head">
+        <Link to="/organizer" className="no-print">←</Link>
+        <h1>{tournament.name}</h1>
+        <span className="muted t-meta">
+          {tournament.federation} · {tournament.city} ·{' '}
+          <span className={`badge badge-${tournament.status}`}>{statusLabel(t, tournament.status)}</span> ·{' '}
+          {levelLabel(t, tournament.level)} · {ratingTypeLabel(t, tournament.rating_type)} ·{' '}
+          {genderLabel(t, tournament.gender)} · {ageLabel(t, tournament.age_category)}
+        </span>
+      </div>
 
       <div className="tabs">
         {[['settings', t('admin.settings')], ['participants', t('admin.participants')], ['results', t('admin.resultsEntry')]].map(([key, label]) => (

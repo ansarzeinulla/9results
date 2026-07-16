@@ -83,7 +83,7 @@ export default function OrganizerDashboard({ user }) {
 
       {tournaments && tournaments.length > 0 && (
         <div className="table-wrap" style={{ marginBottom: '1.5rem' }}>
-          <table>
+          <table className="dash-table">
             <thead>
               <tr>
                 <th>{t('fields.name')}</th><th>{t('fields.city')}</th><th>{t('fields.level')}</th>
@@ -94,7 +94,7 @@ export default function OrganizerDashboard({ user }) {
             <tbody>
               {tournaments.map((tt) => (
                 <tr key={tt.id}>
-                  <td><Link to={`/organizer/tournaments/${tt.id}`}>{tt.name}</Link></td>
+                  <td className="cell-name" title={tt.name}><Link to={`/organizer/tournaments/${tt.id}`}>{tt.name}</Link></td>
                   <td>{tt.city}</td>
                   <td>{levelLabel(t, tt.level)}</td>
                   <td>{ratingTypeLabel(t, tt.rating_type)}</td>
