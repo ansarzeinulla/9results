@@ -2,20 +2,24 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiGet, apiPost } from '../api.js';
-import { CITIES_BY_FEDERATION, LEVELS, RATING_TYPES } from '../constants.js';
-import { statusLabel, levelLabel, ratingTypeLabel } from '../labels.js';
+import { LEVELS, RATING_TYPES, GENDERS, AGE_CATEGORIES } from '../constants.js';
+import { useFederations, citiesOf } from '../federations.js';
+import { statusLabel, levelLabel, ratingTypeLabel, genderLabel, ageLabel } from '../labels.js';
 
 export default function OrganizerDashboard({ user }) {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const federations = useFederations();
   const [tournaments, setTournaments] = useState(null);
   const [error, setError] = useState('');
-  const [form, setForm] = useState({ name: '', city: '', level: 'Regional', rating_type: 'non_rated', system_type: 'swiss' });
+  const [form, setForm] = useState({
+    name: '', city: '', level: 'Regional', rating_type: 'non_rated', gender: 'all', age_category: 'all',
+  });
 
-  const cities = user ? CITIES_BY_FEDERATION[user.federation] || [] : [];
+  const cities = user ? citiesOf(federations, user.federation) : [];
 
   useEffect(() => {
-    if (!user) { navigate('/login'); return; }
+    if (!user || user.role !== 'organizer') { navigate('/login'); return; }
     apiGet('/my/tournaments').then(setTournaments).catch((e) => setError(e.message));
   }, [user, navigate]);
 
@@ -30,7 +34,7 @@ export default function OrganizerDashboard({ user }) {
     }
   }
 
-  if (!user) return null;
+  if (!user || user.role !== 'organizer') return null;
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   return (
@@ -44,7 +48,8 @@ export default function OrganizerDashboard({ user }) {
             <thead>
               <tr>
                 <th>{t('fields.name')}</th><th>{t('fields.city')}</th><th>{t('fields.level')}</th>
-                <th>{t('fields.ratingType')}</th><th>{t('fields.status')}</th><th>{t('fields.players')}</th><th></th>
+                <th>{t('fields.ratingType')}</th><th>{t('fields.gender')}</th><th>{t('fields.ageCategory')}</th>
+                <th>{t('fields.status')}</th><th>{t('fields.players')}</th><th></th>
               </tr>
             </thead>
             <tbody>
@@ -54,6 +59,8 @@ export default function OrganizerDashboard({ user }) {
                   <td>{tt.city}</td>
                   <td>{levelLabel(t, tt.level)}</td>
                   <td>{ratingTypeLabel(t, tt.rating_type)}</td>
+                  <td>{genderLabel(t, tt.gender)}</td>
+                  <td>{ageLabel(t, tt.age_category)}</td>
                   <td><span className={`badge badge-${tt.status}`}>{statusLabel(t, tt.status)}</span></td>
                   <td>{tt.player_count}</td>
                   <td><Link to={`/tournaments/${tt.id}`}>{t('common.publicPage')}</Link></td>
@@ -90,10 +97,14 @@ export default function OrganizerDashboard({ user }) {
               {RATING_TYPES.map((r) => <option key={r} value={r}>{ratingTypeLabel(t, r)}</option>)}
             </select>
           </label>
-          <label>{t('fields.system')}
-            <select value={form.system_type} onChange={(e) => set('system_type', e.target.value)}>
-              <option value="swiss">{t('system.swiss')}</option>
-              <option value="round_robin">{t('system.round_robin')}</option>
+          <label>{t('fields.gender')}
+            <select value={form.gender} onChange={(e) => set('gender', e.target.value)}>
+              {GENDERS.map((g) => <option key={g} value={g}>{genderLabel(t, g)}</option>)}
+            </select>
+          </label>
+          <label>{t('fields.ageCategory')}
+            <select value={form.age_category} onChange={(e) => set('age_category', e.target.value)}>
+              {AGE_CATEGORIES.map((a) => <option key={a} value={a}>{ageLabel(t, a)}</option>)}
             </select>
           </label>
           <button type="submit">{t('dashboard.createBtn')}</button>

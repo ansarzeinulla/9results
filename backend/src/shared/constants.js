@@ -1,46 +1,13 @@
-// Shared domain constants. Mirror kept in frontend/src/constants.js.
-
-export const FEDERATIONS = ['KAZ', 'WDF'];
-
-// Cities available per federation (used for the dependent location dropdown).
-export const CITIES_BY_FEDERATION = {
-  KAZ: [
-    'Almaty',
-    'Astana',
-    'Shymkent',
-    'Karaganda',
-    'Aktobe',
-    'Taraz',
-    'Pavlodar',
-    'Oskemen',
-    'Semey',
-    'Atyrau',
-    'Kostanay',
-    'Kyzylorda',
-    'Oral',
-    'Petropavl',
-    'Aktau',
-    'Turkistan',
-    'Kokshetau',
-    'Taldykorgan',
-  ],
-  WDF: [
-    'Istanbul',
-    'Bishkek',
-    'Tashkent',
-    'Ulaanbaatar',
-    'Moscow',
-    'Kazan',
-    'Baku',
-    'Ankara',
-    'Dushanbe',
-    'Ashgabat',
-  ],
-};
+// Shared domain constants. Federations/cities live in ../federations/*.json.
+export { FEDERATIONS, CITIES_BY_FEDERATION, FEDERATION_LIST } from '../federations/index.js';
 
 export const LEVELS = ['International', 'National', 'Regional', 'School', 'Test'];
 
 export const RATING_TYPES = ['blitz', 'rapid', 'classic', 'non_rated'];
+
+// Tournament audience attributes (informational, like level).
+export const GENDERS = ['all', 'male', 'female'];
+export const AGE_CATEGORIES = ['all', 'U6', 'U8', 'U10', 'U12', 'U14', 'U16', 'U18', 'U20'];
 
 // Column on users that a given tournament rating_type updates.
 export const RATING_COLUMN = {

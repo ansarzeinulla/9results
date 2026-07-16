@@ -1,13 +1,9 @@
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import LangDropdown from './LangDropdown.jsx';
 
-export default function Navbar({ user }) {
-  const { t, i18n } = useTranslation();
-
-  const setLang = (lng) => {
-    i18n.changeLanguage(lng);
-    localStorage.setItem('lang', lng);
-  };
+export default function Navbar({ user, onLogout }) {
+  const { t } = useTranslation();
 
   return (
     <nav className="navbar">
@@ -16,16 +12,14 @@ export default function Navbar({ user }) {
         <NavLink to="/" end>{t('nav.home')}</NavLink>
         <NavLink to="/tournaments">{t('nav.tournaments')}</NavLink>
         <NavLink to="/players">{t('nav.players')}</NavLink>
-        <NavLink to="/register-player">{t('nav.registerPlayer')}</NavLink>
+        {user?.role === 'admin' && <NavLink to="/admin">{t('nav.adminPanel')}</NavLink>}
+        {user?.role === 'organizer' && <NavLink to="/organizer">{t('nav.dashboard')}</NavLink>}
         {user ? (
-          <NavLink to="/organizer" className="login-link">{t('nav.dashboard')}</NavLink>
+          <button type="button" className="logout-btn" onClick={onLogout}>{t('nav.logout')}</button>
         ) : (
-          <NavLink to="/login" className="login-link">{t('nav.organizerLogin')}</NavLink>
+          <NavLink to="/login" className="login-link">{t('nav.login')}</NavLink>
         )}
-        <span className="lang-switch">
-          <button className={i18n.language === 'en' ? 'active' : ''} onClick={() => setLang('en')}>EN</button>
-          <button className={i18n.language === 'ru' ? 'active' : ''} onClick={() => setLang('ru')}>RU</button>
-        </span>
+        <LangDropdown />
       </div>
     </nav>
   );

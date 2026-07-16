@@ -5,6 +5,7 @@ import authRoutes from './routes/auth.js';
 import publicRoutes from './routes/public.js';
 import organizerRoutes from './routes/organizer.js';
 import playerRoutes from './routes/players.js';
+import adminRoutes from './routes/admin.js';
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use(express.json());
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 app.use('/api', authRoutes);
 app.use('/api', organizerRoutes);
+app.use('/api', adminRoutes);
 app.use('/api', playerRoutes);
 app.use('/api', publicRoutes);
 

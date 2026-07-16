@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiGet } from '../api.js';
-import { statusLabel, levelLabel, ratingTypeLabel, systemLabel } from '../labels.js';
+import { statusLabel, levelLabel, ratingTypeLabel, genderLabel, ageLabel } from '../labels.js';
 
 function exportCsv(name, standings, rated) {
   const esc = (v) => {
@@ -74,7 +74,8 @@ export default function TournamentView() {
     [t('fields.city'), detail.city],
     [t('fields.level'), levelLabel(t, detail.level)],
     [t('fields.timeControl'), ratingTypeLabel(t, detail.rating_type)],
-    [t('fields.system'), systemLabel(t, detail.system_type)],
+    [t('fields.gender'), genderLabel(t, detail.gender)],
+    [t('fields.ageCategory'), ageLabel(t, detail.age_category)],
     [t('fields.rounds'), detail.number_of_rounds],
     [t('fields.tieBreak'), 'Buchholz (TB1)'],
     [t('fields.players'), detail.player_count],
@@ -167,7 +168,7 @@ export default function TournamentView() {
                 <tbody>
                   {pairings.map((m, i) => (
                     <tr key={m.id}>
-                      <td>{i + 1}</td>
+                      <td>{m.board_number ?? i + 1}</td>
                       <td><Link to={`/players/${m.player1_id}`}>{m.player1_name}</Link></td>
                       <td className="cr-result">{m.result || '—'}</td>
                       <td>{m.player2_id ? <Link to={`/players/${m.player2_id}`}>{m.player2_name}</Link> : t('tournamentView.bye')}</td>

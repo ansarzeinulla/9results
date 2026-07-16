@@ -1,5 +1,8 @@
 {
-  "app": { "title": "results.togyz", "tagline": "Togyzkumalak tournament results and player ratings" },
+  "app": {
+    "title": "results.togyz",
+    "tagline": "Togyzkumalak tournament results and player ratings"
+  },
   "nav": {
     "home": "Home",
     "tournaments": "Tournaments",
@@ -7,7 +10,9 @@
     "registerPlayer": "Register Player",
     "organizerLogin": "Organizer Login",
     "dashboard": "Dashboard",
-    "logout": "Log out"
+    "logout": "Log out",
+    "adminPanel": "Admin",
+    "login": "Sign in"
   },
   "common": {
     "search": "Search",
@@ -39,7 +44,6 @@
     "status": "Status",
     "level": "Level",
     "ratingType": "Rating type",
-    "system": "System",
     "players": "Players",
     "firstName": "First name",
     "lastName": "Second name",
@@ -69,7 +73,10 @@
     "tieBreak": "Tie-break",
     "rounds": "Number of rounds",
     "timeControl": "Time control",
-    "lastUpdate": "Last update"
+    "lastUpdate": "Last update",
+    "gender": "Gender",
+    "ageCategory": "Age",
+    "playerId": "Player ID"
   },
   "view": {
     "label": "Select view",
@@ -78,7 +85,11 @@
     "rankingAfter": "Ranking after round",
     "finalRanking": "Final Ranking crosstable"
   },
-  "status": { "setup": "Upcoming", "ongoing": "Live", "finished": "Finished" },
+  "status": {
+    "setup": "Upcoming",
+    "ongoing": "Live",
+    "finished": "Finished"
+  },
   "level": {
     "International": "International",
     "National": "National",
@@ -86,8 +97,12 @@
     "School": "School",
     "Test": "Test"
   },
-  "ratingType": { "blitz": "Blitz", "rapid": "Rapid", "classic": "Classic", "non_rated": "Non-rated" },
-  "system": { "swiss": "Swiss", "round_robin": "Round Robin" },
+  "ratingType": {
+    "blitz": "Blitz",
+    "rapid": "Rapid",
+    "classic": "Classic",
+    "non_rated": "Non-rated"
+  },
   "tournaments": {
     "title": "Tournaments",
     "filters": "Filters",
@@ -96,7 +111,11 @@
     "anyStatus": "Any status",
     "anyLevel": "Any level",
     "anyRatingType": "Any rating type",
-    "empty": "No tournaments."
+    "empty": "No tournaments.",
+    "anyGender": "Any gender",
+    "anyAge": "Any age",
+    "createdFrom": "Created from",
+    "createdTo": "Created to"
   },
   "tournamentView": {
     "standings": "Standings",
@@ -123,7 +142,7 @@
     "hint": "Create a player profile. No password needed — organizers add you to tournaments."
   },
   "login": {
-    "title": "Organizer sign in",
+    "title": "Sign in",
     "username": "Username",
     "password": "Password",
     "signIn": "Sign in",
@@ -151,7 +170,13 @@
     "ratedResults": "Rated results",
     "nonRatedResults": "Non-rated (no rating effect)",
     "backToList": "My Tournaments",
-    "federationFixed": "Federation (fixed)"
+    "federationFixed": "Federation (fixed)",
+    "addById": "Add player by ID",
+    "enterId": "Enter player ID…",
+    "find": "Find",
+    "notFound": "No player with this ID.",
+    "confirmAdd": "Add to tournament",
+    "playerFound": "Player found"
   },
   "changeRatings": {
     "title": "Change Ratings",
@@ -163,5 +188,22 @@
     "applied": "Ratings have been applied.",
     "nonRated": "This tournament is non-rated — no rating changes.",
     "confirm": "Apply these rating changes permanently?"
+  },
+  "gender": {
+    "all": "All",
+    "male": "Male",
+    "female": "Female"
+  },
+  "adminPanel": {
+    "title": "Player Administration",
+    "searchPlaceholder": "Search by name, club or ID…",
+    "addPlayer": "Add New Player",
+    "editPlayer": "Edit Player #{{id}}",
+    "created": "Player created:",
+    "saved": "Player saved.",
+    "total": "{{count}} players",
+    "edit": "Edit",
+    "prev": "← Prev",
+    "next": "Next →"
   }
 }

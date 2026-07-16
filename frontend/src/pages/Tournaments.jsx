@@ -2,25 +2,28 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiGet } from '../api.js';
-import { FEDERATIONS, CITIES_BY_FEDERATION, LEVELS, RATING_TYPES } from '../constants.js';
-import { statusLabel, levelLabel, ratingTypeLabel, systemLabel } from '../labels.js';
+import { LEVELS, RATING_TYPES, GENDERS, AGE_CATEGORIES } from '../constants.js';
+import { useFederations, citiesOf } from '../federations.js';
+import { statusLabel, levelLabel, ratingTypeLabel, genderLabel, ageLabel } from '../labels.js';
 
 const STATUSES = ['upcoming', 'live', 'finished'];
 
 export default function Tournaments() {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
+  const federations = useFederations();
   const [filters, setFilters] = useState({
     q: searchParams.get('q') || '',
     federation: '', city: '', status: '', level: '', rating_type: '',
+    gender: '', age_category: '',
     created_from: '', created_to: '',
   });
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const cities = useMemo(
-    () => (filters.federation ? CITIES_BY_FEDERATION[filters.federation] || [] : []),
-    [filters.federation]
+    () => (filters.federation ? citiesOf(federations, filters.federation) : []),
+    [federations, filters.federation]
   );
 
   useEffect(() => {
@@ -43,7 +46,7 @@ export default function Tournaments() {
       <div className="filter-grid">
         <select value={filters.federation} onChange={(e) => set('federation', e.target.value)}>
           <option value="">{t('tournaments.anyFederation')}</option>
-          {FEDERATIONS.map((f) => <option key={f} value={f}>{f}</option>)}
+          {federations.map((f) => <option key={f.code} value={f.code}>{f.code}</option>)}
         </select>
         <select value={filters.city} onChange={(e) => set('city', e.target.value)} disabled={!filters.federation}>
           <option value="">{t('tournaments.anyCity')}</option>
@@ -61,10 +64,20 @@ export default function Tournaments() {
           <option value="">{t('tournaments.anyRatingType')}</option>
           {RATING_TYPES.map((r) => <option key={r} value={r}>{ratingTypeLabel(t, r)}</option>)}
         </select>
-        <label className="date-filter">{t('fields.createdAt')}
+        <select value={filters.gender} onChange={(e) => set('gender', e.target.value)}>
+          <option value="">{t('tournaments.anyGender')}</option>
+          {GENDERS.filter((g) => g !== 'all').map((g) => <option key={g} value={g}>{genderLabel(t, g)}</option>)}
+        </select>
+        <select value={filters.age_category} onChange={(e) => set('age_category', e.target.value)}>
+          <option value="">{t('tournaments.anyAge')}</option>
+          {AGE_CATEGORIES.filter((a) => a !== 'all').map((a) => <option key={a} value={a}>{ageLabel(t, a)}</option>)}
+        </select>
+        <label className="date-filter">
+          <span>{t('tournaments.createdFrom')}</span>
           <input type="date" value={filters.created_from} onChange={(e) => set('created_from', e.target.value)} />
         </label>
-        <label className="date-filter">→
+        <label className="date-filter">
+          <span>{t('tournaments.createdTo')}</span>
           <input type="date" value={filters.created_to} onChange={(e) => set('created_to', e.target.value)} />
         </label>
       </div>
@@ -79,8 +92,9 @@ export default function Tournaments() {
             <thead>
               <tr>
                 <th>{t('fields.name')}</th><th>{t('fields.federation')}</th><th>{t('fields.city')}</th>
-                <th>{t('fields.level')}</th><th>{t('fields.ratingType')}</th><th>{t('fields.status')}</th>
-                <th>{t('fields.system')}</th><th>{t('fields.players')}</th>
+                <th>{t('fields.level')}</th><th>{t('fields.ratingType')}</th>
+                <th>{t('fields.gender')}</th><th>{t('fields.ageCategory')}</th>
+                <th>{t('fields.status')}</th><th>{t('fields.players')}</th>
               </tr>
             </thead>
             <tbody>
@@ -91,8 +105,9 @@ export default function Tournaments() {
                   <td>{tt.city}</td>
                   <td>{levelLabel(t, tt.level)}</td>
                   <td>{ratingTypeLabel(t, tt.rating_type)}</td>
+                  <td>{genderLabel(t, tt.gender)}</td>
+                  <td>{ageLabel(t, tt.age_category)}</td>
                   <td><span className={`badge badge-${tt.status}`}>{statusLabel(t, tt.status)}</span></td>
-                  <td>{systemLabel(t, tt.system_type)}</td>
                   <td>{tt.player_count}</td>
                 </tr>
               ))}

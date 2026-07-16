@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiGet, apiPost, apiPut } from '../api.js';
-import { CITIES_BY_FEDERATION, LEVELS, RATING_TYPES, RATED_RESULTS, NON_RATED_RESULTS } from '../constants.js';
-import { statusLabel, levelLabel, ratingTypeLabel } from '../labels.js';
+import { LEVELS, RATING_TYPES, GENDERS, AGE_CATEGORIES, RATED_RESULTS, NON_RATED_RESULTS } from '../constants.js';
+import { useFederations, citiesOf } from '../federations.js';
+import { statusLabel, levelLabel, ratingTypeLabel, genderLabel, ageLabel } from '../labels.js';
 
 export default function TournamentAdmin({ user }) {
   const { id } = useParams();
@@ -12,29 +13,26 @@ export default function TournamentAdmin({ user }) {
   const [tab, setTab] = useState('settings');
   const [tournament, setTournament] = useState(null);
   const [standings, setStandings] = useState([]);
-  const [matches, setMatches] = useState([]);
-  const [allPlayers, setAllPlayers] = useState([]);
+  const [rounds, setRounds] = useState([]);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
   const reload = useCallback(async () => {
-    const [s, r, p] = await Promise.all([
+    const [s, r] = await Promise.all([
       apiGet(`/tournaments/${id}/standings`),
       apiGet(`/tournaments/${id}/rounds`),
-      apiGet('/players'),
     ]);
     setTournament(s.tournament);
     setStandings(s.standings);
-    setMatches(r.rounds.flatMap((rd) => rd.pairings.map((m) => ({ ...m, round_number: rd.round_number }))));
-    setAllPlayers(p);
+    setRounds(r.rounds);
   }, [id]);
 
   useEffect(() => {
-    if (!user) { navigate('/login'); return; }
+    if (!user || user.role !== 'organizer') { navigate('/login'); return; }
     reload().catch((e) => setError(e.message));
   }, [user, navigate, reload]);
 
-  if (!user) return null;
+  if (!user || user.role !== 'organizer') return null;
   if (error && !tournament) return <div className="page"><p className="error">{error}</p></div>;
   if (!tournament) return <div className="page"><p className="muted">{t('common.loading')}</p></div>;
 
@@ -60,7 +58,8 @@ export default function TournamentAdmin({ user }) {
       <p className="muted">
         {tournament.federation} · {tournament.city} ·{' '}
         <span className={`badge badge-${tournament.status}`}>{statusLabel(t, tournament.status)}</span> ·{' '}
-        {levelLabel(t, tournament.level)} · {ratingTypeLabel(t, tournament.rating_type)}
+        {levelLabel(t, tournament.level)} · {ratingTypeLabel(t, tournament.rating_type)} ·{' '}
+        {genderLabel(t, tournament.gender)} · {ageLabel(t, tournament.age_category)}
       </p>
 
       <div className="tabs">
@@ -81,14 +80,12 @@ export default function TournamentAdmin({ user }) {
       {tab === 'participants' && (
         <ParticipantsTab
           standings={standings}
-          allPlayers={allPlayers}
           onAdd={(player_id) => act(() => apiPost(`/tournaments/${id}/add-player`, { player_id }))}
         />
       )}
       {tab === 'results' && (
         <ResultsTab
-          matches={matches}
-          standings={standings}
+          rounds={rounds}
           onResult={(match_id, result) => act(() => apiPost(`/tournaments/${id}/results`, { match_id, result }))}
           onGenerate={() => act(async () => {
             const r = await apiPost(`/tournaments/${id}/generate-round`, {});
@@ -102,13 +99,15 @@ export default function TournamentAdmin({ user }) {
 
 function SettingsTab({ tournament, onSave }) {
   const { t } = useTranslation();
-  const cities = CITIES_BY_FEDERATION[tournament.federation] || [];
+  const federations = useFederations();
+  const cities = citiesOf(federations, tournament.federation);
   const [form, setForm] = useState({
     name: tournament.name,
     city: tournament.city || '',
     level: tournament.level,
     rating_type: tournament.rating_type,
-    system_type: tournament.system_type,
+    gender: tournament.gender,
+    age_category: tournament.age_category,
     status: tournament.status,
   });
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -138,10 +137,14 @@ function SettingsTab({ tournament, onSave }) {
             {RATING_TYPES.map((r) => <option key={r} value={r}>{ratingTypeLabel(t, r)}</option>)}
           </select>
         </label>
-        <label>{t('fields.system')}
-          <select value={form.system_type} onChange={(e) => set('system_type', e.target.value)}>
-            <option value="swiss">{t('system.swiss')}</option>
-            <option value="round_robin">{t('system.round_robin')}</option>
+        <label>{t('fields.gender')}
+          <select value={form.gender} onChange={(e) => set('gender', e.target.value)}>
+            {GENDERS.map((g) => <option key={g} value={g}>{genderLabel(t, g)}</option>)}
+          </select>
+        </label>
+        <label>{t('fields.ageCategory')}
+          <select value={form.age_category} onChange={(e) => set('age_category', e.target.value)}>
+            {AGE_CATEGORIES.map((a) => <option key={a} value={a}>{ageLabel(t, a)}</option>)}
           </select>
         </label>
         <label>{t('fields.status')}
@@ -157,28 +160,61 @@ function SettingsTab({ tournament, onSave }) {
   );
 }
 
-function ParticipantsTab({ standings, allPlayers, onAdd }) {
+// Organizers add players by typing the player ID, then confirming.
+function ParticipantsTab({ standings, onAdd }) {
   const { t } = useTranslation();
+  const [idInput, setIdInput] = useState('');
+  const [found, setFound] = useState(null);
+  const [lookupError, setLookupError] = useState('');
   const registered = new Set(standings.map((s) => s.player_id));
-  const available = allPlayers.filter((p) => !registered.has(p.id));
-  const [selected, setSelected] = useState('');
+
+  async function find(e) {
+    e.preventDefault();
+    setLookupError('');
+    setFound(null);
+    try {
+      const { player } = await apiGet(`/players/${Number(idInput)}`);
+      setFound(player);
+    } catch {
+      setLookupError(t('admin.notFound'));
+    }
+  }
+
+  function add() {
+    onAdd(found.id);
+    setFound(null);
+    setIdInput('');
+  }
 
   return (
     <>
       <div className="card">
-        <h2>{t('admin.addPlayer')}</h2>
-        {available.length === 0 ? (
-          <p className="muted">{t('admin.allRegistered')}</p>
-        ) : (
-          <form className="form-row" onSubmit={(e) => { e.preventDefault(); if (selected) onAdd(Number(selected)); setSelected(''); }}>
-            <select value={selected} onChange={(e) => setSelected(e.target.value)} required>
-              <option value="">{t('admin.selectPlayer')}</option>
-              {available.map((p) => (
-                <option key={p.id} value={p.id}>{p.first_name} {p.last_name} ({p.federation})</option>
-              ))}
-            </select>
-            <button type="submit">{t('admin.add')}</button>
-          </form>
+        <h2>{t('admin.addById')}</h2>
+        <form className="form-row" onSubmit={find}>
+          <input
+            type="number"
+            min="1"
+            placeholder={t('admin.enterId')}
+            value={idInput}
+            onChange={(e) => { setIdInput(e.target.value); setFound(null); setLookupError(''); }}
+            required
+          />
+          <button type="submit">{t('admin.find')}</button>
+        </form>
+        {lookupError && <p className="error">{lookupError}</p>}
+        {found && (
+          <div className="player-confirm">
+            <p>
+              <strong>#{found.id} {found.first_name} {found.last_name}</strong> · {found.federation}
+              {found.club ? ` · ${found.club}` : ''}
+              {' · '}{t('fields.ratingClassic')}: {found.rating_classic}
+            </p>
+            {registered.has(found.id) ? (
+              <p className="muted">{t('admin.allRegistered')}</p>
+            ) : (
+              <button type="button" onClick={add}>{t('admin.confirmAdd')}</button>
+            )}
+          </div>
         )}
       </div>
 
@@ -186,11 +222,11 @@ function ParticipantsTab({ standings, allPlayers, onAdd }) {
       {standings.length > 0 && (
         <div className="table-wrap">
           <table>
-            <thead><tr><th>{t('fields.rank')}</th><th>{t('fields.player')}</th><th>{t('fields.startRating')}</th><th>{t('fields.points')}</th></tr></thead>
+            <thead><tr><th>{t('fields.rank')}</th><th>ID</th><th>{t('fields.player')}</th><th>{t('fields.startRating')}</th><th>{t('fields.points')}</th></tr></thead>
             <tbody>
               {standings.map((s, i) => (
                 <tr key={s.player_id}>
-                  <td>{i + 1}</td><td>{s.full_name}</td><td>{s.start_rating ?? '—'}</td><td>{s.current_points}</td>
+                  <td>{i + 1}</td><td>{s.player_id}</td><td>{s.full_name}</td><td>{s.start_rating ?? '—'}</td><td>{s.current_points}</td>
                 </tr>
               ))}
             </tbody>
@@ -201,13 +237,14 @@ function ParticipantsTab({ standings, allPlayers, onAdd }) {
   );
 }
 
-function ResultsTab({ matches, standings, onResult, onGenerate }) {
+// One table per round, newest first, with board numbers and a result select.
+function ResultsTab({ rounds, onResult, onGenerate }) {
   const { t } = useTranslation();
-  const currentRound = matches.length ? Math.max(...matches.map((m) => m.round_number)) : 0;
-  const currentMatches = matches.filter((m) => m.round_number === currentRound);
-  const pending = currentMatches.filter((m) => m.player2_id && !m.result).length;
+  const currentRound = rounds.length ? rounds[rounds.length - 1].round_number : 0;
+  const currentPairings = rounds.find((r) => r.round_number === currentRound)?.pairings || [];
+  const pending = currentPairings.filter((m) => m.player2_id && !m.result).length;
 
-  const statusMsg = matches.length === 0
+  const statusMsg = rounds.length === 0
     ? t('admin.noRounds')
     : pending > 0
       ? t('admin.roundPending', { count: pending, n: currentRound })
@@ -216,47 +253,60 @@ function ResultsTab({ matches, standings, onResult, onGenerate }) {
   return (
     <>
       <div className="card generate-card">
-        <div>
-          <h2>{t('tournamentView.standings')}</h2>
-          <p className="muted" style={{ margin: 0 }}>{statusMsg}</p>
-        </div>
+        <p className="muted" style={{ margin: 0 }}>{statusMsg}</p>
         <button onClick={onGenerate} disabled={pending > 0}>{t('admin.generateRound')}</button>
       </div>
 
-      {[...new Set(matches.map((m) => m.round_number))].sort((a, b) => b - a).map((rn) => (
-        <div key={rn}>
-          <h2>{t('tournamentView.round', { n: rn })}</h2>
-          <MatchList matches={matches.filter((m) => m.round_number === rn)} onResult={onResult} />
+      {[...rounds].sort((a, b) => b.round_number - a.round_number).map((round) => (
+        <div key={round.round_number}>
+          <h2>{t('tournamentView.round', { n: round.round_number })}</h2>
+          <RoundTable pairings={round.pairings} onResult={onResult} />
         </div>
       ))}
     </>
   );
 }
 
-function MatchList({ matches, onResult }) {
+function RoundTable({ pairings, onResult }) {
   const { t } = useTranslation();
-  if (matches.length === 0) return <p className="muted">{t('tournamentView.noPairings')}</p>;
+  if (pairings.length === 0) return <p className="muted">{t('tournamentView.noPairings')}</p>;
+  const results = [...RATED_RESULTS, ...NON_RATED_RESULTS];
+
   return (
-    <div className="match-list">
-      {matches.map((m) => (
-        <div className="match-row" key={m.id}>
-          <span className="match-players">
-            <strong>{m.player1_name}</strong> vs <strong>{m.player2_name || t('tournamentView.bye')}</strong>
-            {m.result && <span className="badge badge-finished" style={{ marginLeft: '0.5rem' }}>{m.result}</span>}
-          </span>
-          {m.player2_id && (
-            <span className="match-buttons">
-              {RATED_RESULTS.map((r) => (
-                <button key={r} className={`chip ${m.result === r ? 'chip-active' : ''}`} onClick={() => onResult(m.id, r)}>{r}</button>
-              ))}
-              <span className="result-sep" />
-              {NON_RATED_RESULTS.map((r) => (
-                <button key={r} className={`chip chip-alt ${m.result === r ? 'chip-active' : ''}`} onClick={() => onResult(m.id, r)}>{r}</button>
-              ))}
-            </span>
-          )}
-        </div>
-      ))}
+    <div className="table-wrap round-table">
+      <table className="cr-table">
+        <thead>
+          <tr>
+            <th>{t('fields.board')}</th>
+            <th>{t('fields.player')} 1</th>
+            <th>{t('fields.result')}</th>
+            <th>{t('fields.player')} 2</th>
+          </tr>
+        </thead>
+        <tbody>
+          {pairings.map((m) => (
+            <tr key={m.id} className={m.player2_id && !m.result ? 'row-pending' : ''}>
+              <td className="cr-result">{m.board_number ?? '—'}</td>
+              <td><strong>{m.player1_name}</strong></td>
+              <td className="cr-result">
+                {m.player2_id ? (
+                  <select
+                    className="result-select"
+                    value={m.result || ''}
+                    onChange={(e) => e.target.value && onResult(m.id, e.target.value)}
+                  >
+                    <option value="">—</option>
+                    {results.map((r) => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                ) : (
+                  m.result
+                )}
+              </td>
+              <td>{m.player2_id ? <strong>{m.player2_name}</strong> : <span className="muted">{t('tournamentView.bye')}</span>}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

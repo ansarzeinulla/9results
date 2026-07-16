@@ -1,5 +1,8 @@
 {
-  "app": { "title": "results.togyz", "tagline": "Результаты турниров по тогызкумалаку и рейтинги игроков" },
+  "app": {
+    "title": "results.togyz",
+    "tagline": "Результаты турниров по тогызкумалаку и рейтинги игроков"
+  },
   "nav": {
     "home": "Главная",
     "tournaments": "Турниры",
@@ -7,7 +10,9 @@
     "registerPlayer": "Регистрация игрока",
     "organizerLogin": "Вход для организатора",
     "dashboard": "Панель",
-    "logout": "Выйти"
+    "logout": "Выйти",
+    "adminPanel": "Админ",
+    "login": "Войти"
   },
   "common": {
     "search": "Поиск",
@@ -39,7 +44,6 @@
     "status": "Статус",
     "level": "Уровень",
     "ratingType": "Тип рейтинга",
-    "system": "Система",
     "players": "Игроки",
     "firstName": "Имя",
     "lastName": "Фамилия",
@@ -69,7 +73,10 @@
     "tieBreak": "Тай-брейк",
     "rounds": "Число туров",
     "timeControl": "Контроль",
-    "lastUpdate": "Обновлено"
+    "lastUpdate": "Обновлено",
+    "gender": "Пол",
+    "ageCategory": "Возраст",
+    "playerId": "ID игрока"
   },
   "view": {
     "label": "Выбрать вид",
@@ -78,7 +85,11 @@
     "rankingAfter": "Положение после тура",
     "finalRanking": "Итоговая таблица"
   },
-  "status": { "setup": "Предстоящий", "ongoing": "Идёт", "finished": "Завершён" },
+  "status": {
+    "setup": "Предстоящий",
+    "ongoing": "Идёт",
+    "finished": "Завершён"
+  },
   "level": {
     "International": "Международный",
     "National": "Национальный",
@@ -86,8 +97,12 @@
     "School": "Школьный",
     "Test": "Тестовый"
   },
-  "ratingType": { "blitz": "Блиц", "rapid": "Рапид", "classic": "Классика", "non_rated": "Без рейтинга" },
-  "system": { "swiss": "Швейцарская", "round_robin": "Круговая" },
+  "ratingType": {
+    "blitz": "Блиц",
+    "rapid": "Рапид",
+    "classic": "Классика",
+    "non_rated": "Без рейтинга"
+  },
   "tournaments": {
     "title": "Турниры",
     "filters": "Фильтры",
@@ -96,7 +111,11 @@
     "anyStatus": "Любой статус",
     "anyLevel": "Любой уровень",
     "anyRatingType": "Любой тип рейтинга",
-    "empty": "Нет турниров."
+    "empty": "Нет турниров.",
+    "anyGender": "Любой пол",
+    "anyAge": "Любой возраст",
+    "createdFrom": "Создан с",
+    "createdTo": "Создан по"
   },
   "tournamentView": {
     "standings": "Турнирная таблица",
@@ -123,7 +142,7 @@
     "hint": "Создайте профиль игрока. Пароль не нужен — организаторы добавят вас в турниры."
   },
   "login": {
-    "title": "Вход для организатора",
+    "title": "Вход",
     "username": "Логин",
     "password": "Пароль",
     "signIn": "Войти",
@@ -151,7 +170,13 @@
     "ratedResults": "Рейтинговые результаты",
     "nonRatedResults": "Без рейтинга (не влияют на рейтинг)",
     "backToList": "Мои турниры",
-    "federationFixed": "Федерация (фиксирована)"
+    "federationFixed": "Федерация (фиксирована)",
+    "addById": "Добавить игрока по ID",
+    "enterId": "Введите ID игрока…",
+    "find": "Найти",
+    "notFound": "Игрок с таким ID не найден.",
+    "confirmAdd": "Добавить в турнир",
+    "playerFound": "Игрок найден"
   },
   "changeRatings": {
     "title": "Изменение рейтингов",
@@ -163,5 +188,22 @@
     "applied": "Рейтинги применены.",
     "nonRated": "Турнир без рейтинга — изменений нет.",
     "confirm": "Применить эти изменения рейтинга навсегда?"
+  },
+  "gender": {
+    "all": "Все",
+    "male": "Мужской",
+    "female": "Женский"
+  },
+  "adminPanel": {
+    "title": "Управление игроками",
+    "searchPlaceholder": "Поиск по имени, клубу или ID…",
+    "addPlayer": "Добавить игрока",
+    "editPlayer": "Редактировать игрока #{{id}}",
+    "created": "Игрок создан:",
+    "saved": "Игрок сохранён.",
+    "total": "Игроков: {{count}}",
+    "edit": "Изменить",
+    "prev": "← Назад",
+    "next": "Вперёд →"
   }
 }

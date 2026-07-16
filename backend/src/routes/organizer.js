@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import db from '../db.js';
-import { requireAuth } from '../middleware/auth.js';
-import { generateRound, PairingError } from '../pairingEngine.js';
+import { requireRole } from '../middleware/auth.js';
+import { generateSwissRound, PairingError } from '../swissEngine.js';
 import { calculateTournamentRatings } from '../ratingEngine.js';
-import { POINTS, LEVELS, RATING_TYPES, RATING_COLUMN } from '../shared/constants.js';
+import { POINTS, LEVELS, RATING_TYPES, RATING_COLUMN, GENDERS, AGE_CATEGORIES } from '../shared/constants.js';
+
+const requireOrganizer = requireRole('organizer');
 
 const router = Router();
 
@@ -20,7 +22,7 @@ async function ownedTournament(req, res) {
   return t;
 }
 
-router.get('/my/tournaments', requireAuth, async (req, res) => {
+router.get('/my/tournaments', requireOrganizer, async (req, res) => {
   const rows = await db.all(
     `SELECT t.*, COUNT(tp.id) AS player_count
      FROM tournaments t LEFT JOIN tournament_players tp ON tp.tournament_id = t.id
@@ -31,20 +33,21 @@ router.get('/my/tournaments', requireAuth, async (req, res) => {
 });
 
 // Create tournament. Federation is inherited from the organizer (not client-set).
-router.post('/tournaments', requireAuth, async (req, res) => {
-  const { name, city, level, rating_type, system_type } = req.body || {};
+router.post('/tournaments', requireOrganizer, async (req, res) => {
+  const { name, city, level, rating_type, gender, age_category } = req.body || {};
   if (!name) return res.status(400).json({ error: 'name is required' });
   const org = await db.get('SELECT federation FROM users WHERE id = $1', [req.user.id]);
   const result = await db.run(
-    `INSERT INTO tournaments (name, federation, city, level, rating_type, system_type, organizer_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+    `INSERT INTO tournaments (name, federation, city, level, rating_type, gender, age_category, organizer_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
     [
       name,
       org.federation,
       city || null,
       LEVELS.includes(level) ? level : 'Regional',
       RATING_TYPES.includes(rating_type) ? rating_type : 'non_rated',
-      system_type === 'round_robin' ? 'round_robin' : 'swiss',
+      GENDERS.includes(gender) ? gender : 'all',
+      AGE_CATEGORIES.includes(age_category) ? age_category : 'all',
       req.user.id,
     ]
   );
@@ -52,30 +55,31 @@ router.post('/tournaments', requireAuth, async (req, res) => {
 });
 
 // Update settings. Federation stays fixed; finishing just stamps finished_at.
-router.put('/tournaments/:id', requireAuth, async (req, res) => {
+router.put('/tournaments/:id', requireOrganizer, async (req, res) => {
   const t = await ownedTournament(req, res);
   if (!t) return;
-  const { name, city, level, rating_type, system_type, status } = req.body || {};
+  const { name, city, level, rating_type, gender, age_category, status } = req.body || {};
   const next = {
     name: name ?? t.name,
     city: city ?? t.city,
     level: LEVELS.includes(level) ? level : t.level,
     rating_type: RATING_TYPES.includes(rating_type) ? rating_type : t.rating_type,
-    system_type: ['swiss', 'round_robin'].includes(system_type) ? system_type : t.system_type,
+    gender: GENDERS.includes(gender) ? gender : t.gender,
+    age_category: AGE_CATEGORIES.includes(age_category) ? age_category : t.age_category,
     status: ['setup', 'ongoing', 'finished'].includes(status) ? status : t.status,
   };
   const finishedAt = next.status === 'finished' ? (t.finished_at ?? new Date().toISOString()) : null;
 
   const result = await db.run(
-    `UPDATE tournaments SET name=$1, city=$2, level=$3, rating_type=$4, system_type=$5, status=$6, finished_at=$7
-     WHERE id=$8 RETURNING *`,
-    [next.name, next.city, next.level, next.rating_type, next.system_type, next.status, finishedAt, t.id]
+    `UPDATE tournaments SET name=$1, city=$2, level=$3, rating_type=$4, gender=$5, age_category=$6, status=$7, finished_at=$8
+     WHERE id=$9 RETURNING *`,
+    [next.name, next.city, next.level, next.rating_type, next.gender, next.age_category, next.status, finishedAt, t.id]
   );
   res.json(result.rows[0]);
 });
 
 // Add a player, snapshotting their start_rating for the tournament's rating type.
-router.post('/tournaments/:id/add-player', requireAuth, async (req, res) => {
+router.post('/tournaments/:id/add-player', requireOrganizer, async (req, res) => {
   const t = await ownedTournament(req, res);
   if (!t) return;
   const { player_id } = req.body || {};
@@ -94,7 +98,7 @@ router.post('/tournaments/:id/add-player', requireAuth, async (req, res) => {
   res.status(201).json({ ok: true });
 });
 
-router.post('/tournaments/:id/matches', requireAuth, async (req, res) => {
+router.post('/tournaments/:id/matches', requireOrganizer, async (req, res) => {
   const t = await ownedTournament(req, res);
   if (!t) return;
   const { round_number, player1_id, player2_id } = req.body || {};
@@ -141,7 +145,7 @@ const submitResult = db.transaction(async (tournamentId, match, result) => {
   await db.run('UPDATE matches SET result = $1 WHERE id = $2', [result, match.id]);
 });
 
-router.post('/tournaments/:id/results', requireAuth, async (req, res) => {
+router.post('/tournaments/:id/results', requireOrganizer, async (req, res) => {
   const t = await ownedTournament(req, res);
   if (!t) return;
   const { match_id, result } = req.body || {};
@@ -171,7 +175,7 @@ async function ratingDeltas(tournamentId) {
   return { deltas: calculateTournamentRatings(players, matches), players: parts };
 }
 
-router.get('/tournaments/:id/rating-preview', requireAuth, async (req, res) => {
+router.get('/tournaments/:id/rating-preview', requireOrganizer, async (req, res) => {
   const t = await ownedTournament(req, res);
   if (!t) return;
   if (t.rating_type === 'non_rated') return res.status(400).json({ error: 'Tournament is non-rated' });
@@ -209,7 +213,7 @@ const applyRatings = db.transaction(async (tournament) => {
   await db.run('UPDATE tournaments SET ratings_applied = true WHERE id = $1', [tournament.id]);
 });
 
-router.post('/tournaments/:id/apply-ratings', requireAuth, async (req, res) => {
+router.post('/tournaments/:id/apply-ratings', requireOrganizer, async (req, res) => {
   const t = await ownedTournament(req, res);
   if (!t) return;
   if (t.rating_type === 'non_rated') return res.status(400).json({ error: 'Tournament is non-rated' });
@@ -227,7 +231,7 @@ const insertRound = db.transaction(async (tournamentId, roundNumber, pairings) =
     let result;
     if (p.player2_id == null) {
       result = await db.run(
-        "INSERT INTO matches (tournament_id, round_number, player1_id, player2_id, result) VALUES ($1, $2, $3, NULL, '1-0') RETURNING id",
+        "INSERT INTO matches (tournament_id, round_number, board_number, player1_id, player2_id, result) VALUES ($1, $2, NULL, $3, NULL, '1-0') RETURNING id",
         [tournamentId, roundNumber, p.player1_id]
       );
       await db.run(
@@ -236,8 +240,8 @@ const insertRound = db.transaction(async (tournamentId, roundNumber, pairings) =
       );
     } else {
       result = await db.run(
-        'INSERT INTO matches (tournament_id, round_number, player1_id, player2_id) VALUES ($1, $2, $3, $4) RETURNING id',
-        [tournamentId, roundNumber, p.player1_id, p.player2_id]
+        'INSERT INTO matches (tournament_id, round_number, board_number, player1_id, player2_id) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+        [tournamentId, roundNumber, p.board_number ?? null, p.player1_id, p.player2_id]
       );
     }
     ids.push(result.rows[0].id);
@@ -253,7 +257,7 @@ const insertRound = db.transaction(async (tournamentId, roundNumber, pairings) =
   );
 });
 
-router.post('/tournaments/:id/generate-round', requireAuth, async (req, res) => {
+router.post('/tournaments/:id/generate-round', requireOrganizer, async (req, res) => {
   const t = await ownedTournament(req, res);
   if (!t) return;
 
@@ -275,7 +279,7 @@ router.post('/tournaments/:id/generate-round', requireAuth, async (req, res) => 
   const roundNumber = previousMatches.reduce((max, m) => Math.max(max, m.round_number), 0) + 1;
   let pairings;
   try {
-    ({ pairings } = generateRound({ systemType: t.system_type, players, previousMatches, roundNumber }));
+    ({ pairings } = generateSwissRound(players, previousMatches, roundNumber));
   } catch (e) {
     if (e instanceof PairingError) return res.status(409).json({ error: e.message });
     throw e;

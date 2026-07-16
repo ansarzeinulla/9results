@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiGet } from '../api.js';
-import { FEDERATIONS } from '../constants.js';
+import { useFederations } from '../federations.js';
 
 export default function Players() {
   const { t } = useTranslation();
+  const federations = useFederations();
   const [players, setPlayers] = useState(null);
   const [federation, setFederation] = useState('');
 
@@ -20,7 +21,7 @@ export default function Players() {
       <div className="filter-grid">
         <select value={federation} onChange={(e) => setFederation(e.target.value)}>
           <option value="">{t('tournaments.anyFederation')}</option>
-          {FEDERATIONS.map((f) => <option key={f} value={f}>{f}</option>)}
+          {federations.map((f) => <option key={f.code} value={f.code}>{f.code}</option>)}
         </select>
       </div>
       {!players ? (

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import db from '../db.js';
-import { POINTS, RATED_RESULTS, RATING_COLUMN } from '../shared/constants.js';
+import { POINTS, RATED_RESULTS, RATING_COLUMN, FEDERATION_LIST } from '../shared/constants.js';
 import { calculateElo } from '../ratingEngine.js';
 
 const router = Router();
@@ -13,9 +13,12 @@ function playerName(row, prefix) {
   return f ? `${f} ${l}` : null;
 }
 
+// Federation codes + city lists (from backend/src/federations/*.json).
+router.get('/federations', (_req, res) => res.json(FEDERATION_LIST));
+
 // GET /api/tournaments — faceted search.
 router.get('/tournaments', async (req, res) => {
-  const { q, federation, city, status, level, rating_type, created_from, created_to, ended_from, ended_to } = req.query;
+  const { q, federation, city, status, level, rating_type, gender, age_category, created_from, created_to, ended_from, ended_to } = req.query;
   const where = [];
   const params = [];
   const add = (clause, value) => {
@@ -29,6 +32,8 @@ router.get('/tournaments', async (req, res) => {
   if (status) add('t.status = ?', STATUS_MAP[String(status).toLowerCase()] || status);
   if (level) add('t.level = ?', level);
   if (rating_type) add('t.rating_type = ?', rating_type);
+  if (gender && gender !== 'all') add('t.gender = ?', gender);
+  if (age_category && age_category !== 'all') add('t.age_category = ?', age_category);
   if (created_from) add('t.created_at >= ?', created_from);
   if (created_to) add('t.created_at <= ?', created_to);
   if (ended_from) add('t.finished_at >= ?', ended_from);
@@ -90,14 +95,14 @@ router.get('/tournaments/:id/rounds', async (req, res) => {
   const t = await db.get('SELECT id FROM tournaments WHERE id = $1', [req.params.id]);
   if (!t) return res.status(404).json({ error: 'Tournament not found' });
   const matches = await db.all(
-    `SELECT m.id, m.round_number, m.player1_id, m.player2_id, m.result,
+    `SELECT m.id, m.round_number, m.board_number, m.player1_id, m.player2_id, m.result,
             p1.first_name AS p1_first, p1.last_name AS p1_last,
             p2.first_name AS p2_first, p2.last_name AS p2_last
      FROM matches m
      LEFT JOIN users p1 ON p1.id = m.player1_id
      LEFT JOIN users p2 ON p2.id = m.player2_id
      WHERE m.tournament_id = $1
-     ORDER BY m.round_number, m.id`,
+     ORDER BY m.round_number, m.board_number NULLS LAST, m.id`,
     [req.params.id]
   );
   const byRound = new Map();
@@ -105,6 +110,7 @@ router.get('/tournaments/:id/rounds', async (req, res) => {
     if (!byRound.has(m.round_number)) byRound.set(m.round_number, []);
     byRound.get(m.round_number).push({
       id: m.id,
+      board_number: m.board_number,
       player1_id: m.player1_id,
       player2_id: m.player2_id,
       player1_name: playerName(m, 'p1'),

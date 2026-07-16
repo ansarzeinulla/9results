@@ -1,7 +1,8 @@
 -- =====================================================================
--- Phase 8 production migration for Supabase.
+-- Swiss-only schema migration for Supabase.
 -- Run this ONCE in the Supabase SQL Editor (Dashboard → SQL Editor → New query).
--- It drops the old schema and rebuilds the merged-users schema + seed data.
+-- It drops the old schema and rebuilds it: admin role, tournament
+-- gender/age attributes, Swiss-only (no system_type), match board numbers.
 -- WARNING: this deletes existing tournaments/players/matches (throwaway test data).
 -- =====================================================================
 
@@ -13,7 +14,7 @@ DROP TABLE IF EXISTS users CASCADE;
 
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
-  role TEXT NOT NULL DEFAULT 'player' CHECK (role IN ('organizer','player')),
+  role TEXT NOT NULL DEFAULT 'player' CHECK (role IN ('admin','organizer','player')),
   username TEXT UNIQUE,
   password_hash TEXT,
   first_name TEXT NOT NULL,
@@ -36,7 +37,8 @@ CREATE TABLE tournaments (
   level TEXT NOT NULL DEFAULT 'Regional' CHECK (level IN ('International','National','Regional','School','Test')),
   rating_type TEXT NOT NULL DEFAULT 'non_rated' CHECK (rating_type IN ('blitz','rapid','classic','non_rated')),
   status TEXT NOT NULL DEFAULT 'setup' CHECK (status IN ('setup','ongoing','finished')),
-  system_type TEXT NOT NULL DEFAULT 'swiss' CHECK (system_type IN ('swiss','round_robin')),
+  gender TEXT NOT NULL DEFAULT 'all' CHECK (gender IN ('all','male','female')),
+  age_category TEXT NOT NULL DEFAULT 'all' CHECK (age_category IN ('all','U6','U8','U10','U12','U14','U16','U18','U20')),
   organizer_id INTEGER REFERENCES users(id),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   finished_at TIMESTAMPTZ,
@@ -57,10 +59,15 @@ CREATE TABLE matches (
   id SERIAL PRIMARY KEY,
   tournament_id INTEGER NOT NULL REFERENCES tournaments(id),
   round_number INTEGER NOT NULL,
+  board_number INTEGER,
   player1_id INTEGER REFERENCES users(id),
   player2_id INTEGER REFERENCES users(id),
   result TEXT CHECK (result IS NULL OR result IN ('1-0','0-1','0.5-0.5','+--','--+','=-=','---'))
 );
+
+-- Admin (username: admin, password: password123)
+INSERT INTO users (role, username, password_hash, first_name, last_name, federation)
+VALUES ('admin', 'admin', '$2b$10$4.Tw6opY6JyfpprLZDSSVu.I4mGySY0Pb8fBtKybXkdne3UhFuDNm', 'Site', 'Admin', 'KAZ');
 
 -- Organizer (username: organizer, password: password123), federation KAZ
 INSERT INTO users (role, username, password_hash, first_name, last_name, federation)
@@ -79,8 +86,8 @@ INSERT INTO users (role, first_name, last_name, birth_year, federation, club, ti
   ('player', 'Timur',   'Abenov',      1985, 'WDF', 'Bishkek DC',   'CM',  1530, 1520, 1550),
   ('player', 'Madina',  'Yesimova',    2001, 'WDF', 'Tashkent DC',  NULL,  1445, 1430, 1460);
 
--- Demo tournaments (organizer id = 1)
-INSERT INTO tournaments (name, federation, city, level, rating_type, status, system_type, organizer_id) VALUES
-  ('Almaty Open 2026',            'KAZ', 'Almaty',   'National', 'classic',   'ongoing',  'swiss',       1),
-  ('Astana Blitz Cup 2026',       'KAZ', 'Astana',   'Regional', 'blitz',     'finished', 'round_robin', 1),
-  ('Shymkent School Championship','KAZ', 'Shymkent', 'School',   'non_rated', 'setup',    'swiss',       1);
+-- Demo tournaments (organizer id = 2)
+INSERT INTO tournaments (name, federation, city, level, rating_type, status, gender, age_category, organizer_id) VALUES
+  ('Almaty Open 2026',            'KAZ', 'Almaty',   'National', 'classic',   'ongoing',  'all',    'all', 2),
+  ('Astana Blitz Cup 2026',       'KAZ', 'Astana',   'Regional', 'blitz',     'finished', 'all',    'all', 2),
+  ('Shymkent School Championship','KAZ', 'Shymkent', 'School',   'non_rated', 'setup',    'all',    'U12', 2);
