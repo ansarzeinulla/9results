@@ -82,7 +82,9 @@ export default function TournamentAdmin({ user }) {
       {tab === 'participants' && (
         <ParticipantsTab
           standings={standings}
+          hasRounds={rounds.length > 0}
           onAdd={(player_id) => act(() => apiPost(`/tournaments/${id}/add-player`, { player_id }))}
+          onRemove={(player_id) => act(() => apiSend('DELETE', `/tournaments/${id}/players/${player_id}`))}
         />
       )}
       {tab === 'results' && (
@@ -173,7 +175,7 @@ function SettingsTab({ tournament, onSave }) {
 }
 
 // Organizers add players by typing the player ID, then confirming.
-function ParticipantsTab({ standings, onAdd }) {
+function ParticipantsTab({ standings, hasRounds, onAdd, onRemove }) {
   const { t } = useTranslation();
   const [idInput, setIdInput] = useState('');
   const [found, setFound] = useState(null);
@@ -234,11 +236,18 @@ function ParticipantsTab({ standings, onAdd }) {
       {standings.length > 0 && (
         <div className="table-wrap">
           <table>
-            <thead><tr><th>{t('fields.rank')}</th><th>ID</th><th>{t('fields.player')}</th><th>{t('fields.startRating')}</th><th>{t('fields.points')}</th></tr></thead>
+            <thead><tr><th>{t('fields.rank')}</th><th>ID</th><th>{t('fields.player')}</th><th>{t('fields.startRating')}</th><th>{t('fields.points')}</th>{!hasRounds && <th></th>}</tr></thead>
             <tbody>
               {standings.map((s, i) => (
                 <tr key={s.player_id}>
                   <td>{i + 1}</td><td>{s.player_id}</td><td>{s.full_name}</td><td>{s.start_rating ?? '—'}</td><td>{s.current_points}</td>
+                  {!hasRounds && (
+                    <td>
+                      <button type="button" className="chip chip-danger" onClick={() => onRemove(s.player_id)}>
+                        {t('adminPanel.delete')}
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

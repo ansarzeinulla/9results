@@ -7,18 +7,21 @@ import { useFederations } from '../federations.js';
 export default function Players() {
   const { t } = useTranslation();
   const federations = useFederations();
-  const [players, setPlayers] = useState(null);
+  const [data, setData] = useState(null);
+  const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({ federation: '', q: '', birth_year: '', title: '', id: '' });
 
   useEffect(() => {
-    const qs = Object.entries(filters)
+    const qs = Object.entries({ ...filters, page })
       .filter(([, v]) => v)
       .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
       .join('&');
-    apiGet(`/players${qs ? '?' + qs : ''}`).then(setPlayers);
-  }, [filters]);
+    apiGet(`/players${qs ? '?' + qs : ''}`).then(setData);
+  }, [filters, page]);
 
-  const set = (k, v) => setFilters((f) => ({ ...f, [k]: v }));
+  const set = (k, v) => { setPage(1); setFilters((f) => ({ ...f, [k]: v })); };
+  const players = data?.players;
+  const pages = data ? Math.max(1, Math.ceil(data.total / data.page_size)) : 1;
 
   return (
     <div className="page">
@@ -80,6 +83,13 @@ export default function Players() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      {pages > 1 && (
+        <div className="filter-row" style={{ marginTop: '1rem' }}>
+          <button type="button" className="chip" disabled={page <= 1} onClick={() => setPage(page - 1)}>{t('adminPanel.prev')}</button>
+          <span className="muted">{page} / {pages}</span>
+          <button type="button" className="chip" disabled={page >= pages} onClick={() => setPage(page + 1)}>{t('adminPanel.next')}</button>
         </div>
       )}
     </div>

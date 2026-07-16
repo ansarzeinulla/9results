@@ -157,7 +157,8 @@
     "title": "My Tournaments",
     "create": "Create Tournament",
     "empty": "No tournaments yet — create one below.",
-    "createBtn": "Create"
+    "createBtn": "Create",
+    "deleteConfirm": "Delete tournament \"{{name}}\" completely?"
   },
   "admin": {
     "settings": "Settings",
@@ -215,7 +216,13 @@
     "total": "{{count}} players",
     "edit": "Edit",
     "prev": "← Prev",
-    "next": "Next →"
+    "next": "Next →",
+    "delete": "Delete",
+    "deleted": "Deleted.",
+    "deleteConfirm": "Delete player {{name}}?",
+    "organizers": "Organizers",
+    "addOrganizer": "Add Organizer",
+    "organizerCreated": "Organizer account created."
   },
   "swiss": {
     "REMATCH": "{{a}} and {{b}} have already played each other",

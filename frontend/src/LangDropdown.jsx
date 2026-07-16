@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 const LANGUAGES = [
   { code: 'en', flag: '🇬🇧', name: 'English' },
   { code: 'ru', flag: '🇷🇺', name: 'Русский' },
+  { code: 'kk', flag: '🇰🇿', name: 'Қазақша' },
 ];
 
 export default function LangDropdown() {

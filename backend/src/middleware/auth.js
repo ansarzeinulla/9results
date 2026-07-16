@@ -1,5 +1,9 @@
 import jwt from 'jsonwebtoken';
 
+// In production the secret MUST come from the environment.
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required in production');
+}
 export const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 
 export function requireAuth(req, res, next) {

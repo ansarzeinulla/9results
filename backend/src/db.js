@@ -90,7 +90,6 @@ async function initSchema() {
         tournament_id INTEGER NOT NULL REFERENCES tournaments(id),
         player_id INTEGER NOT NULL REFERENCES players(id),
         current_points DECIMAL NOT NULL DEFAULT 0,
-        tiebreak_score DECIMAL NOT NULL DEFAULT 0,
         start_rating INTEGER,
         UNIQUE (tournament_id, player_id)
       );
@@ -116,6 +115,9 @@ async function initSchema() {
         result TEXT CHECK (result IS NULL OR result IN ('1-0','0-1','0.5-0.5','+--','--+','=-=','---'))
       );
     `);
+
+    // Tie-breaks are computed on the fly; drop the never-used stored column.
+    await client.query('ALTER TABLE tournament_players DROP COLUMN IF EXISTS tiebreak_score');
 
     // Seed login accounts so a fresh database is usable immediately.
     await client.query(

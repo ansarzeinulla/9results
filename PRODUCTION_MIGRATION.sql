@@ -59,7 +59,6 @@ CREATE TABLE tournament_players (
   tournament_id INTEGER NOT NULL REFERENCES tournaments(id),
   player_id INTEGER NOT NULL REFERENCES players(id),
   current_points DECIMAL NOT NULL DEFAULT 0,
-  tiebreak_score DECIMAL NOT NULL DEFAULT 0,
   start_rating INTEGER,
   UNIQUE (tournament_id, player_id)
 );

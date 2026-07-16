@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { apiGet, apiPost, apiPut } from '../api.js';
+import { apiGet, apiPost, apiPut, apiSend } from '../api.js';
 import { useFederations } from '../federations.js';
 
 const EMPTY = {
@@ -101,6 +101,16 @@ export default function AdminPanel({ user }) {
     } catch (e) { setError(e.message); }
   }
 
+  async function deletePlayer(p) {
+    if (!window.confirm(t('adminPanel.deleteConfirm', { name: `${p.first_name} ${p.last_name}` }))) return;
+    setError('');
+    try {
+      await apiSend('DELETE', `/admin/players/${p.id}`);
+      flash(t('adminPanel.deleted'));
+      load();
+    } catch (e) { setError(e.message); }
+  }
+
   const pages = Math.max(1, Math.ceil(data.total / data.page_size));
 
   return (
@@ -169,6 +179,9 @@ export default function AdminPanel({ user }) {
                 <td>
                   <button type="button" className="chip" onClick={() => { setEditing(p); setShowAdd(false); window.scrollTo(0, 0); }}>
                     {t('adminPanel.edit')}
+                  </button>{' '}
+                  <button type="button" className="chip chip-danger" onClick={() => deletePlayer(p)}>
+                    {t('adminPanel.delete')}
                   </button>
                 </td>
               </tr>
@@ -184,6 +197,92 @@ export default function AdminPanel({ user }) {
           <button type="button" className="chip" disabled={page >= pages} onClick={() => setPage(page + 1)}>{t('adminPanel.next')}</button>
         </div>
       )}
+
+      <OrganizersSection onError={setError} onNotice={flash} federations={federations} />
     </div>
+  );
+}
+
+// Admin manages organizer login accounts.
+function OrganizersSection({ onError, onNotice, federations }) {
+  const { t } = useTranslation();
+  const [organizers, setOrganizers] = useState([]);
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState({ username: '', password: '', first_name: '', last_name: '', federation: 'KAZ' });
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const load = useCallback(() => {
+    apiGet('/admin/organizers').then(setOrganizers).catch((e) => onError(e.message));
+  }, [onError]);
+  useEffect(() => { load(); }, [load]);
+
+  async function create(e) {
+    e.preventDefault();
+    onError('');
+    try {
+      await apiPost('/admin/organizers', form);
+      setForm({ username: '', password: '', first_name: '', last_name: '', federation: 'KAZ' });
+      setShowAdd(false);
+      onNotice(t('adminPanel.organizerCreated'));
+      load();
+    } catch (e2) { onError(e2.message); }
+  }
+
+  return (
+    <>
+      <div className="db-header" style={{ marginTop: '2rem' }}>
+        <h2>{t('adminPanel.organizers')}</h2>
+        <button type="button" onClick={() => setShowAdd((s) => !s)}>
+          {showAdd ? t('common.cancel') : t('adminPanel.addOrganizer')}
+        </button>
+      </div>
+
+      {showAdd && (
+        <div className="card">
+          <form className="form-grid form-grid-wide" onSubmit={create}>
+            <label>{t('login.username')}
+              <input value={form.username} onChange={(e) => set('username', e.target.value)} required autoComplete="off" />
+            </label>
+            <label>{t('login.password')} <span className="muted">(min 8)</span>
+              <input type="password" value={form.password} onChange={(e) => set('password', e.target.value)} minLength={8} required autoComplete="new-password" />
+            </label>
+            <label>{t('fields.firstName')}
+              <input value={form.first_name} onChange={(e) => set('first_name', e.target.value)} required />
+            </label>
+            <label>{t('fields.lastName')}
+              <input value={form.last_name} onChange={(e) => set('last_name', e.target.value)} required />
+            </label>
+            <label>{t('fields.federation')}
+              <select value={form.federation} onChange={(e) => set('federation', e.target.value)}>
+                {federations.map((f) => <option key={f.code} value={f.code}>{f.code}</option>)}
+              </select>
+            </label>
+            <button type="submit">{t('adminPanel.addOrganizer')}</button>
+          </form>
+        </div>
+      )}
+
+      <div className="table-wrap">
+        <table className="cr-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>{t('login.username')}</th><th>{t('fields.player')}</th>
+              <th>{t('fields.federation')}</th><th>{t('nav.tournaments')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {organizers.map((o) => (
+              <tr key={o.id}>
+                <td>{o.id}</td>
+                <td><strong>{o.username}</strong></td>
+                <td>{o.first_name} {o.last_name}</td>
+                <td>{o.federation}</td>
+                <td>{o.tournament_count}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }

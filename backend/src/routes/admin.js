@@ -1,7 +1,8 @@
 import { Router } from 'express';
+import bcrypt from 'bcryptjs';
 import db from '../db.js';
 import { requireRole } from '../middleware/auth.js';
-import { FEDERATIONS } from '../shared/constants.js';
+import { FEDERATIONS, RATING_COLUMN } from '../shared/constants.js';
 
 const router = Router();
 const requireAdmin = requireRole('admin');
@@ -90,17 +91,86 @@ router.put('/admin/players/:id', requireAdmin, async (req, res) => {
     rating_classic: 'rating_classic' in b ? clampRating(b.rating_classic, player.rating_classic) : player.rating_classic,
   };
 
-  const result = await db.run(
-    `UPDATE players SET first_name=$1, last_name=$2, middle_name=$3, birth_year=$4, federation=$5,
-                        club=$6, title=$7, rating_blitz=$8, rating_rapid=$9, rating_classic=$10
-     WHERE id=$11 RETURNING ${PLAYER_COLS}`,
-    [
-      next.first_name, next.last_name, next.middle_name, next.birth_year, next.federation,
-      next.club, next.title, next.rating_blitz, next.rating_rapid, next.rating_classic,
-      player.id,
-    ]
+  const updatePlayer = db.transaction(async (tx) => {
+    const result = await tx.run(
+      `UPDATE players SET first_name=$1, last_name=$2, middle_name=$3, birth_year=$4, federation=$5,
+                          club=$6, title=$7, rating_blitz=$8, rating_rapid=$9, rating_classic=$10
+       WHERE id=$11 RETURNING ${PLAYER_COLS}`,
+      [
+        next.first_name, next.last_name, next.middle_name, next.birth_year, next.federation,
+        next.club, next.title, next.rating_blitz, next.rating_rapid, next.rating_classic,
+        player.id,
+      ]
+    );
+    // Manual rating corrections are logged too (tournament_id NULL).
+    for (const [type, col] of Object.entries(RATING_COLUMN)) {
+      if (next[col] !== player[col]) {
+        await tx.run(
+          `INSERT INTO rating_history (player_id, tournament_id, rating_type, old_rating, delta, new_rating)
+           VALUES ($1, NULL, $2, $3, $4, $5)`,
+          [player.id, type, player[col], next[col] - player[col], next[col]]
+        );
+      }
+    }
+    return result.rows[0];
+  });
+  res.json(await updatePlayer());
+});
+
+// Delete a player. Refused once they appear in any tournament — history
+// must stay intact.
+router.delete('/admin/players/:id', requireAdmin, async (req, res) => {
+  const player = await db.get('SELECT id FROM players WHERE id = $1', [req.params.id]);
+  if (!player) return res.status(404).json({ error: 'Player not found' });
+  const used = await db.get(
+    `SELECT 1 FROM tournament_players WHERE player_id = $1
+     UNION SELECT 1 FROM matches WHERE player1_id = $1 OR player2_id = $1 LIMIT 1`,
+    [player.id]
   );
-  res.json(result.rows[0]);
+  if (used) {
+    return res.status(409).json({ error: 'Player has tournament history and cannot be deleted' });
+  }
+  await db.run('DELETE FROM rating_history WHERE player_id = $1', [player.id]);
+  await db.run('DELETE FROM players WHERE id = $1', [player.id]);
+  res.json({ ok: true });
+});
+
+// --- Organizer account management (admin-only) ---
+
+router.get('/admin/organizers', requireAdmin, async (_req, res) => {
+  const rows = await db.all(
+    `SELECT id, username, first_name, last_name, federation,
+            (SELECT COUNT(*)::int FROM tournaments t WHERE t.organizer_id = users.id) AS tournament_count
+     FROM users WHERE role = 'organizer' ORDER BY id`
+  );
+  res.json(rows);
+});
+
+router.post('/admin/organizers', requireAdmin, async (req, res) => {
+  const { username, password, first_name, last_name, federation } = req.body || {};
+  if (!username?.trim() || !password || password.length < 8 || !first_name || !last_name) {
+    return res.status(400).json({
+      error: 'username, first_name, last_name and a password of at least 8 characters are required',
+    });
+  }
+  try {
+    const result = await db.run(
+      `INSERT INTO users (role, username, password_hash, first_name, last_name, federation)
+       VALUES ('organizer', $1, $2, $3, $4, $5)
+       RETURNING id, username, first_name, last_name, federation`,
+      [
+        username.trim(),
+        bcrypt.hashSync(password, 10),
+        first_name.trim(),
+        last_name.trim(),
+        FEDERATIONS.includes(federation) ? federation : 'KAZ',
+      ]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (e) {
+    if (e.code === '23505') return res.status(409).json({ error: 'Username already taken' });
+    throw e;
+  }
 });
 
 export default router;

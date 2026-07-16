@@ -33,11 +33,17 @@ router.get('/players', async (req, res) => {
     params.push(Number(id));
     where.push(`id = $${params.length}`);
   }
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const pageSize = 50;
+  const cond = where.join(' AND ');
+  const total = await db.get(`SELECT COUNT(*)::int AS n FROM players WHERE ${cond}`, params);
   const rows = await db.all(
-    `SELECT ${PLAYER_COLS} FROM players WHERE ${where.join(' AND ')} ORDER BY rating_classic DESC LIMIT 500`,
+    `SELECT ${PLAYER_COLS} FROM players WHERE ${cond}
+     ORDER BY rating_classic DESC, id
+     LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`,
     params
   );
-  res.json(rows);
+  res.json({ players: rows, total: total.n, page, page_size: pageSize });
 });
 
 // Player profile + tournament history. Also used by organizers to confirm an

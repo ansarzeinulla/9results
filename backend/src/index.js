@@ -9,12 +9,10 @@ import adminRoutes from './routes/admin.js';
 
 const app = express();
 
-// CORS configuration
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'https://9results.vercel.app',
-];
+// CORS: comma-separated CORS_ORIGINS env var extends/overrides the defaults.
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)
+  : ['http://localhost:5173', 'http://localhost:3000', 'https://9results.vercel.app'];
 
 app.use(
   cors({

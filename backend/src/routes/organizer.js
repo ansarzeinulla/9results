@@ -68,7 +68,9 @@ router.put('/tournaments/:id', requireOrganizer, async (req, res) => {
     age_category: AGE_CATEGORIES.includes(age_category) ? age_category : t.age_category,
     status: ['setup', 'ongoing', 'finished'].includes(status) ? status : t.status,
   };
-  const finishedAt = next.status === 'finished' ? (t.finished_at ?? new Date().toISOString()) : null;
+  // Keep the original end date across reopen/re-finish cycles; it is only
+  // (re)stamped when a tournament without one becomes finished.
+  const finishedAt = next.status === 'finished' ? (t.finished_at ?? new Date().toISOString()) : t.finished_at;
 
   const result = await db.run(
     `UPDATE tournaments SET name=$1, city=$2, level=$3, rating_type=$4, gender=$5, age_category=$6, status=$7, finished_at=$8
@@ -98,23 +100,40 @@ router.post('/tournaments/:id/add-player', requireOrganizer, async (req, res) =>
   res.status(201).json({ ok: true });
 });
 
-router.post('/tournaments/:id/matches', requireOrganizer, async (req, res) => {
+// Remove a participant — only while they have no games in this tournament.
+router.delete('/tournaments/:id/players/:playerId', requireOrganizer, async (req, res) => {
   const t = await ownedTournament(req, res);
   if (!t) return;
-  const { round_number, player1_id, player2_id } = req.body || {};
-  if (!round_number || !player1_id) {
-    return res.status(400).json({ error: 'round_number and player1_id are required' });
-  }
-  const inT = async (pid) =>
-    db.get('SELECT 1 FROM tournament_players WHERE tournament_id = $1 AND player_id = $2', [t.id, pid]);
-  if (!(await inT(player1_id))) return res.status(400).json({ error: 'Player1 not in tournament' });
-  if (player2_id && !(await inT(player2_id))) return res.status(400).json({ error: 'Player2 not in tournament' });
-
-  const result = await db.run(
-    'INSERT INTO matches (tournament_id, round_number, player1_id, player2_id) VALUES ($1, $2, $3, $4) RETURNING *',
-    [t.id, round_number, player1_id, player2_id || null]
+  const pid = Number(req.params.playerId);
+  const entry = await db.get(
+    'SELECT 1 FROM tournament_players WHERE tournament_id = $1 AND player_id = $2',
+    [t.id, pid]
   );
-  res.status(201).json(result.rows[0]);
+  if (!entry) return res.status(404).json({ error: 'Player is not in this tournament' });
+  const played = await db.get(
+    'SELECT 1 FROM matches WHERE tournament_id = $1 AND (player1_id = $2 OR player2_id = $2) LIMIT 1',
+    [t.id, pid]
+  );
+  if (played) {
+    return res.status(409).json({ error: 'Player already has games in this tournament' });
+  }
+  await db.run('DELETE FROM tournament_players WHERE tournament_id = $1 AND player_id = $2', [t.id, pid]);
+  res.json({ ok: true });
+});
+
+// Delete an entire tournament (its rating history entries are kept, unlinked).
+const deleteTournament = db.transaction(async (tx, tournamentId) => {
+  await tx.run('UPDATE rating_history SET tournament_id = NULL WHERE tournament_id = $1', [tournamentId]);
+  await tx.run('DELETE FROM matches WHERE tournament_id = $1', [tournamentId]);
+  await tx.run('DELETE FROM tournament_players WHERE tournament_id = $1', [tournamentId]);
+  await tx.run('DELETE FROM tournaments WHERE id = $1', [tournamentId]);
+});
+
+router.delete('/tournaments/:id', requireOrganizer, async (req, res) => {
+  const t = await ownedTournament(req, res);
+  if (!t) return;
+  await deleteTournament(t.id);
+  res.json({ ok: true });
 });
 
 const submitResult = db.transaction(async (tx, tournamentId, match, result) => {
@@ -270,7 +289,7 @@ router.post('/tournaments/:id/generate-round', requireOrganizer, async (req, res
   if (!t) return;
 
   const players = await db.all(
-    `SELECT tp.player_id, tp.current_points, tp.tiebreak_score, COALESCE(tp.start_rating, 1200) AS current_rating
+    `SELECT tp.player_id, tp.current_points, COALESCE(tp.start_rating, 1200) AS current_rating
      FROM tournament_players tp WHERE tp.tournament_id = $1`,
     [t.id]
   );

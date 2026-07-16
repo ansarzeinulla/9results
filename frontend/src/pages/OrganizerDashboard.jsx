@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { apiGet, apiPost } from '../api.js';
+import { apiGet, apiPost, apiSend } from '../api.js';
 import { LEVELS, RATING_TYPES, GENDERS, AGE_CATEGORIES } from '../constants.js';
 import { useFederations, citiesOf } from '../federations.js';
 import { statusLabel, levelLabel, ratingTypeLabel, genderLabel, ageLabel } from '../labels.js';
@@ -36,6 +36,17 @@ export default function OrganizerDashboard({ user }) {
 
   if (!user || user.role !== 'organizer') return null;
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  async function deleteTournament(tt) {
+    if (!window.confirm(t('dashboard.deleteConfirm', { name: tt.name }))) return;
+    setError('');
+    try {
+      await apiSend('DELETE', `/tournaments/${tt.id}`);
+      setTournaments((list) => list.filter((x) => x.id !== tt.id));
+    } catch (e) {
+      setError(e.message);
+    }
+  }
 
   return (
     <div className="page">
@@ -88,7 +99,7 @@ export default function OrganizerDashboard({ user }) {
               <tr>
                 <th>{t('fields.name')}</th><th>{t('fields.city')}</th><th>{t('fields.level')}</th>
                 <th>{t('fields.ratingType')}</th><th>{t('fields.gender')}</th><th>{t('fields.ageCategory')}</th>
-                <th>{t('fields.status')}</th><th>{t('fields.players')}</th><th></th>
+                <th>{t('fields.status')}</th><th>{t('fields.players')}</th><th></th><th></th>
               </tr>
             </thead>
             <tbody>
@@ -103,6 +114,11 @@ export default function OrganizerDashboard({ user }) {
                   <td><span className={`badge badge-${tt.status}`}>{statusLabel(t, tt.status)}</span></td>
                   <td>{tt.player_count}</td>
                   <td><Link to={`/tournaments/${tt.id}`}>{t('common.publicPage')}</Link></td>
+                  <td>
+                    <button type="button" className="chip chip-danger" onClick={() => deleteTournament(tt)}>
+                      {t('adminPanel.delete')}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
