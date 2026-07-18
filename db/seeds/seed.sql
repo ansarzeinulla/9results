@@ -2,7 +2,7 @@
 
 INSERT INTO languages (id) VALUES ('RUS'), ('ENG'), ('KAZ');
 
-INSERT INTO federations (id) VALUES ('KAZ'), ('WTF');
+INSERT INTO federations (id) VALUES ('KAZ'), ('WTF'), ('WDF');
 
 INSERT INTO user_roles (id) VALUES ('ADMIN'), ('ORGANIZER');
 
