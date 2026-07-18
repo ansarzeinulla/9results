@@ -1,12 +1,6 @@
 {
-  "buildCommand": "npm run build --prefix frontend",
-  "outputDirectory": "frontend/dist",
-  "framework": "vite",
-  "installCommand": "npm install --prefix frontend",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
+  "buildCommand": "npm run build --prefix frontend-next",
+  "outputDirectory": "frontend-next/.next",
+  "framework": "nextjs",
+  "installCommand": "npm install --prefix frontend-next"
 }
