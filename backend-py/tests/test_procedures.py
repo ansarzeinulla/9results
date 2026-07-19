@@ -254,7 +254,7 @@ def test_finalize_tournament_applies_deltas(db):
     assert hist == (1950, 1962)
     assert db.execute(
         "SELECT status FROM tournaments WHERE id = %s", (tid,)
-    ).fetchone()[0] == "FINISHED"
+    ).fetchone()[0] == "COMPLETED"
 
 
 def test_search_tournaments_lang(db):

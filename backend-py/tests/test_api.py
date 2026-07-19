@@ -131,7 +131,7 @@ def test_full_tournament_lifecycle(client, admin_token, migrated_db):
         status = db.execute(
             "SELECT status FROM tournaments WHERE id=%s", (tid,)
         ).fetchone()[0]
-        assert status == "FINISHED"
+        assert status == "COMPLETED"
         n_hist = db.execute(
             "SELECT COUNT(*) FROM rating_history WHERE tournament_id=%s", (tid,)
         ).fetchone()[0]

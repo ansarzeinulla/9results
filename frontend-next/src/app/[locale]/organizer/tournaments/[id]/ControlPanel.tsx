@@ -36,7 +36,7 @@ export default function ControlPanel({
   const lastRound = rounds[rounds.length - 1] ?? null;
   const allDone =
     lastRoundPairings.length > 0 && lastRoundPairings.every((p) => p.result_id);
-  const finished = tournament.status === "FINISHED";
+  const finished = tournament.status === "COMPLETED";
 
   const run = async (fn: () => Promise<unknown>) => {
     setBusy(true);

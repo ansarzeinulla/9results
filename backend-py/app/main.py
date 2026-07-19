@@ -3,7 +3,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import auth_routes, organizer_routes
+from app.routers import admin_routes, auth_routes, organizer_routes
 
 app = FastAPI(title="results.togyz API")
 
@@ -16,6 +16,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_routes.router, prefix="/api")
+app.include_router(admin_routes.router, prefix="/api")
 app.include_router(organizer_routes.router, prefix="/api")
 
 

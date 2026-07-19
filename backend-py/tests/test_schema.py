@@ -30,7 +30,7 @@ def test_lookup_tables_are_extensible_no_check_lists(db):
     # New reference values can be inserted without ALTER (no CHECK IN lists)
     db.execute("INSERT INTO locations (id) VALUES ('Volgograd')")
     db.execute("INSERT INTO federations (id) VALUES ('RUS')")
-    db.execute("INSERT INTO languages (id) VALUES ('TUR')")
+    db.execute("INSERT INTO languages (id) VALUES ('DEU')")
     db.execute("INSERT INTO titles (id, description) VALUES ('XX', 'test')")
     db.execute(
         "INSERT INTO official_titles (id, description) VALUES ('ZZ', 'test')"

@@ -39,7 +39,7 @@ def create_tournament(body: TournamentBody):
                    rating_type_id, tournament_type_id, start_date, end_date,
                    rounds, level_id, participant_type_id, time_control, status)
                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                       COALESCE(%s, 'ACTIVE'))
+                       COALESCE(%s, 'REGISTRATION'))
                RETURNING id, slug""",
             (body.name, body.slug, body.federation_id, body.location_id,
              body.rating_type_id, body.tournament_type_id, body.start_date,
@@ -75,24 +75,8 @@ def update_tournament(tid: int, body: TournamentBody):
     return row
 
 
-class PlayerBody(BaseModel):
-    id: str
-    first_name: str
-    last_name: str
-    federation_id: str
-    rating_classic: int = 0
-
-
-@router.post("/players")
-def upsert_player(body: PlayerBody):
-    with db.connect() as conn:
-        conn.execute(
-            "CALL admin_upsert_player(%s, %s, %s, %s, %s)",
-            (body.id, body.first_name, body.last_name,
-             body.federation_id, body.rating_classic),
-        )
-        conn.commit()
-    return {"ok": True}
+# Creating and editing players lives in admin_routes (admin-only). Organizers
+# may only add an existing player to their own tournament, by id.
 
 
 class AddPlayerBody(BaseModel):
@@ -339,9 +323,11 @@ def finalize(tid: int):
                 for m in matches
             ],
         )
+        # calculate_tournament_ratings works on its own copy, so the new rating
+        # is the starting rating plus the accumulated delta.
         payload = [
             {"player_id": pid, "delta": delta,
-             "new_rating": int(ratings[pid])}
+             "new_rating": int(ratings[pid] + delta)}
             for pid, delta in deltas.items()
         ]
         # even players with 0 delta get a history row

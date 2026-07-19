@@ -74,19 +74,39 @@ END;
 $$;
 
 
+-- Full player profile upsert. The id is supplied by the admin, never generated.
+-- There is deliberately no delete counterpart: players are permanent records.
 CREATE OR REPLACE PROCEDURE admin_upsert_player(
     p_id VARCHAR(50), p_first VARCHAR(50), p_last VARCHAR(50),
-    p_fed VARCHAR(4), p_rating INT
+    p_fed VARCHAR(4), p_rating INT,
+    p_middle VARCHAR(50) DEFAULT NULL,
+    p_gender VARCHAR(1) DEFAULT NULL,
+    p_year INT DEFAULT NULL,
+    p_title VARCHAR(10) DEFAULT NULL,
+    p_club VARCHAR(100) DEFAULT NULL,
+    p_rating_rapid INT DEFAULT 0,
+    p_rating_blitz INT DEFAULT 0
 )
 LANGUAGE plpgsql AS $$
 BEGIN
-    INSERT INTO players (id, first_name, last_name, federation_id, rating_classic)
-    VALUES (p_id, p_first, p_last, p_fed, p_rating)
+    INSERT INTO players (id, first_name, last_name, middle_name, federation_id,
+                         gender_id, year_of_birth, title_id, club,
+                         rating_classic, rating_rapid, rating_blitz)
+    VALUES (p_id, p_first, p_last, p_middle, p_fed,
+            p_gender, p_year, p_title, p_club,
+            p_rating, p_rating_rapid, p_rating_blitz)
     ON CONFLICT (id) DO UPDATE
     SET first_name = EXCLUDED.first_name,
         last_name = EXCLUDED.last_name,
+        middle_name = EXCLUDED.middle_name,
         federation_id = EXCLUDED.federation_id,
-        rating_classic = EXCLUDED.rating_classic;
+        gender_id = EXCLUDED.gender_id,
+        year_of_birth = EXCLUDED.year_of_birth,
+        title_id = EXCLUDED.title_id,
+        club = EXCLUDED.club,
+        rating_classic = EXCLUDED.rating_classic,
+        rating_rapid = EXCLUDED.rating_rapid,
+        rating_blitz = EXCLUDED.rating_blitz;
 END;
 $$;
 
@@ -298,7 +318,7 @@ BEGIN
                 v_before, rec.new_rating);
     END LOOP;
 
-    UPDATE tournaments SET status = 'FINISHED' WHERE id = p_tour_id;
+    UPDATE tournaments SET status = 'COMPLETED' WHERE id = p_tour_id;
 END;
 $$;
 
