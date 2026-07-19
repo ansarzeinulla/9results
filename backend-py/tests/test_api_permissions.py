@@ -69,7 +69,7 @@ def test_withdrawn_player_excluded_from_pairing(client, admin_token, migrated_db
         "name": "Withdraw Cup", "slug": "withdraw-cup", "federation_id": "KAZ",
         "location_id": "Astana", "rating_type_id": "Classic",
         "tournament_type_id": "Swiss", "start_date": "2026-11-01",
-        "end_date": "2026-11-02", "rounds": 2,
+        "end_date": "2026-11-02", "rounds": 3,
     })
     tid = r.json()["id"]
     for i in range(1, 6):

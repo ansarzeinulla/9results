@@ -40,6 +40,17 @@ def test_protected_route_requires_token(client):
     assert r.status_code in (401, 403)
 
 
+def test_even_round_tournament_rejected(client, admin_token):
+    r = client.post("/api/tournaments", headers=auth(admin_token), json={
+        "name": "Even Cup", "slug": "even-cup", "federation_id": "KAZ",
+        "location_id": "Astana", "rating_type_id": "Classic",
+        "tournament_type_id": "Swiss", "start_date": "2026-12-01",
+        "end_date": "2026-12-05", "rounds": 6,
+    })
+    assert r.status_code == 422
+    assert "odd" in r.json()["detail"].lower()
+
+
 def test_admin_can_create_organizer_and_login(client, admin_token):
     r = client.post("/api/officials", headers=auth(admin_token), json={
         "first_name": "Org", "last_name": "One", "title": "NA",
@@ -138,7 +149,7 @@ def test_validate_pairings_endpoint(client, admin_token):
         "name": "Val Cup", "slug": "val-cup", "federation_id": "KAZ",
         "location_id": "Astana", "rating_type_id": "Classic",
         "tournament_type_id": "Swiss", "start_date": "2026-09-01",
-        "end_date": "2026-09-02", "rounds": 2,
+        "end_date": "2026-09-02", "rounds": 3,
     })
     tid = r.json()["id"]
     for i in range(1, 3):

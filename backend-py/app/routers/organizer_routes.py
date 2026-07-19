@@ -5,7 +5,8 @@ from pydantic import BaseModel
 from app import db
 from app.auth import require_organizer
 from app.engines.rating import calculate_tournament_ratings
-from app.engines.swiss import PairingError, generate_swiss_round, validate_round_pairings
+from app.engines.swiss import PairingError, validate_round_pairings
+from app.engines.swiss_rules import generate_swiss_round, validate_total_rounds
 
 router = APIRouter(dependencies=[Depends(require_organizer)])
 
@@ -28,6 +29,10 @@ class TournamentBody(BaseModel):
 
 @router.post("/tournaments")
 def create_tournament(body: TournamentBody):
+    try:
+        validate_total_rounds(body.rounds)
+    except PairingError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     with db.connect() as conn:
         row = conn.execute(
             """INSERT INTO tournaments (name, slug, federation_id, location_id,
@@ -47,6 +52,10 @@ def create_tournament(body: TournamentBody):
 
 @router.put("/tournaments/{tid}")
 def update_tournament(tid: int, body: TournamentBody):
+    try:
+        validate_total_rounds(body.rounds)
+    except PairingError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     with db.connect() as conn:
         row = conn.execute(
             """UPDATE tournaments SET name=%s, slug=%s, federation_id=%s,
@@ -132,10 +141,13 @@ def withdraw_player(tid: int, player_id: str):
 
 def _tournament_state(conn, tid):
     players = conn.execute(
-        """SELECT player_id, points AS current_points,
-                  rating_at_tournament AS current_rating
-           FROM tournament_participants
-           WHERE tournament_id = %s AND status = 'ACTIVE'""",
+        """SELECT tp.player_id, tp.points AS current_points,
+                  tp.rating_at_tournament AS current_rating,
+                  tp.starting_rank AS seed_number,
+                  (p.last_name || ' ' || p.first_name) AS name
+           FROM tournament_participants tp
+           JOIN players p ON p.id = tp.player_id
+           WHERE tp.tournament_id = %s AND tp.status = 'ACTIVE'""",
         (tid,),
     ).fetchall()
     matches = conn.execute(
