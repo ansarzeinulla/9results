@@ -174,11 +174,22 @@ export async function listTournaments(locale: string, f: TournamentFilters = {})
   return { rows, total: rows.length ? Number(rows[0].total) : 0 };
 }
 
-export async function getTournamentBySlug(locale: string, slug: string) {
+export async function getTournamentBySlug(locale: string, rawSlug: string) {
+  // Route params arrive percent-encoded for non-Latin slugs (e.g. Cyrillic
+  // tournament names), and the dashboard links `slug ?? id`, so a tournament
+  // without a slug is addressed by its numeric id.
+  const slug = decodeURIComponent(rawSlug);
+  const asId = /^\d+$/.test(slug) ? Number(slug) : null;
+
   if (useSupabase) {
-    const data = unwrap(
+    let data = unwrap(
       await supabase().from("tournaments").select("*").eq("slug", slug).maybeSingle()
     );
+    if (!data && asId !== null) {
+      data = unwrap(
+        await supabase().from("tournaments").select("*").eq("id", asId).maybeSingle()
+      );
+    }
     if (!data) return null;
     const index = await locationNameIndex([data.location_id]);
     return {
@@ -191,8 +202,9 @@ export async function getTournamentBySlug(locale: string, slug: string) {
      FROM tournaments t
      LEFT JOIN location_translations lt
        ON lt.location_id = t.location_id AND lt.lang_code = $1
-     WHERE t.slug = $2`,
-    [dbLang(locale), slug]
+     WHERE t.slug = $2 OR ($3::int IS NOT NULL AND t.id = $3::int)
+     LIMIT 1`,
+    [dbLang(locale), slug, asId]
   );
   return rows[0] ?? null;
 }

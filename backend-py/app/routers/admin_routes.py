@@ -49,6 +49,23 @@ def _upsert(body: PlayerBody, player_id: str):
     return {"ok": True, "id": player_id}
 
 
+@router.get("/players/{player_id}")
+def get_player(player_id: str):
+    """Fetch one player by id — the admin edit flow, indexed on the PK so it
+    stays constant-time no matter how large the registry grows."""
+    with db.connect() as conn:
+        row = conn.execute(
+            """SELECT id, first_name, last_name, middle_name, federation_id,
+                      gender_id, year_of_birth, title_id, club,
+                      rating_classic, rating_rapid, rating_blitz
+               FROM players WHERE id = %s""",
+            (player_id,),
+        ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Player not found")
+    return row
+
+
 @router.post("/players")
 def create_player(body: PlayerBody):
     return _upsert(body, body.id)

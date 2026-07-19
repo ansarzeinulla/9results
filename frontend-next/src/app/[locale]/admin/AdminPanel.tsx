@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { api, getUser } from "@/lib/api";
-import type { PlayerRow } from "@/lib/data";
 
 interface Lookup {
   id: string;
@@ -31,18 +30,45 @@ const EMPTY = {
 
 type Form = typeof EMPTY;
 
-export default function AdminPanel({
-  players,
-  federations,
-}: {
-  players: PlayerRow[];
-  federations: Lookup[];
-}) {
+interface PlayerRecord {
+  id: string;
+  first_name: string;
+  last_name: string;
+  middle_name: string | null;
+  federation_id: string | null;
+  gender_id: string | null;
+  year_of_birth: number | null;
+  title_id: string | null;
+  club: string | null;
+  rating_classic: number;
+  rating_rapid: number;
+  rating_blitz: number;
+}
+
+const toForm = (p: PlayerRecord): Form => ({
+  id: p.id,
+  first_name: p.first_name,
+  last_name: p.last_name,
+  middle_name: p.middle_name ?? "",
+  federation_id: p.federation_id ?? "KAZ",
+  gender_id: p.gender_id ?? "",
+  year_of_birth: p.year_of_birth ? String(p.year_of_birth) : "",
+  title_id: p.title_id ?? "",
+  club: p.club ?? "",
+  rating_classic: p.rating_classic,
+  rating_rapid: p.rating_rapid,
+  rating_blitz: p.rating_blitz,
+});
+
+export default function AdminPanel({ federations }: { federations: Lookup[] }) {
   const t = useTranslations();
   const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
+
+  // "edit" is reached by typing an ID; "create" is a separate deliberate action.
+  const [mode, setMode] = useState<"idle" | "create" | "edit">("idle");
+  const [lookupId, setLookupId] = useState("");
   const [form, setForm] = useState<Form>(EMPTY);
-  const [editing, setEditing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -58,29 +84,38 @@ export default function AdminPanel({
 
   const set = (k: keyof Form, v: string | number) => setForm({ ...form, [k]: v });
 
-  const startEdit = (p: PlayerRow) => {
-    setEditing(p.id);
-    setForm({
-      id: p.id,
-      first_name: p.first_name,
-      last_name: p.last_name,
-      middle_name: p.middle_name ?? "",
-      federation_id: p.federation_id ?? "KAZ",
-      gender_id: p.gender_id ?? "",
-      year_of_birth: p.year_of_birth ? String(p.year_of_birth) : "",
-      title_id: p.title_id ?? "",
-      club: p.club ?? "",
-      rating_classic: p.rating_classic,
-      rating_rapid: p.rating_rapid,
-      rating_blitz: p.rating_blitz,
-    });
-    setError(null);
-    setNotice(null);
+  const reset = () => {
+    setMode("idle");
+    setForm(EMPTY);
+    setLookupId("");
   };
 
-  const cancelEdit = () => {
-    setEditing(null);
-    setForm(EMPTY);
+  /** Type an ID, press Find — loads exactly that player, nothing else. */
+  const find = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const id = lookupId.trim();
+    if (!id) return;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const player = await api<PlayerRecord>(`/players/${encodeURIComponent(id)}`);
+      setForm(toForm(player));
+      setMode("edit");
+      setNotice(t("admin.playerFound"));
+    } catch (err) {
+      const msg = (err as Error).message;
+      if (/not found/i.test(msg)) {
+        setError(t("admin.notFound"));
+        // offer to create it with the id they typed
+        setForm({ ...EMPTY, id });
+        setMode("create");
+      } else {
+        setError(msg);
+      }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -100,8 +135,8 @@ export default function AdminPanel({
       rating_blitz: Number(form.rating_blitz),
     };
     try {
-      if (editing) {
-        await api(`/players/${encodeURIComponent(editing)}`, {
+      if (mode === "edit") {
+        await api(`/players/${encodeURIComponent(form.id)}`, {
           method: "PUT",
           body: JSON.stringify(body),
         });
@@ -109,8 +144,8 @@ export default function AdminPanel({
       } else {
         await api("/players", { method: "POST", body: JSON.stringify(body) });
         setNotice(`${t("adminPanel.created")} ${form.id}`);
+        reset();
       }
-      cancelEdit();
       router.refresh();
     } catch (err) {
       setError((err as Error).message);
@@ -146,8 +181,41 @@ export default function AdminPanel({
     "w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-950";
 
   return (
-    <div className="mx-auto max-w-4xl space-y-10">
+    <div className="mx-auto max-w-3xl space-y-8">
       <h1 className="text-2xl font-bold">{t("adminPanel.title")}</h1>
+
+      {/* Find by ID — the primary way in */}
+      <section className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
+        <h2 className="mb-3 text-lg font-semibold">{t("admin.addById")}</h2>
+        <form onSubmit={find} className="flex flex-wrap gap-2">
+          <input
+            className={`${cls} flex-1`}
+            placeholder={t("admin.enterId")}
+            value={lookupId}
+            onChange={(e) => setLookupId(e.target.value)}
+            autoFocus
+          />
+          <button
+            disabled={busy || !lookupId.trim()}
+            className="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {t("admin.find")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setForm(EMPTY);
+              setMode("create");
+              setError(null);
+              setNotice(null);
+            }}
+            className="rounded-lg border border-neutral-300 px-4 py-2 text-sm dark:border-neutral-700"
+          >
+            {t("adminPanel.addPlayer")}
+          </button>
+        </form>
+        <p className="mt-2 text-xs text-neutral-500">{t("admin.enterId")}</p>
+      </section>
 
       {error && (
         <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
@@ -160,168 +228,132 @@ export default function AdminPanel({
         </p>
       )}
 
-      {/* Player add / edit */}
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">
-          {editing
-            ? t("adminPanel.editPlayer", { id: editing })
-            : t("adminPanel.addPlayer")}
-        </h2>
-        <form onSubmit={submit} className="grid gap-3 sm:grid-cols-3">
-          <input
-            className={cls}
-            placeholder={t("fields.playerId")}
-            value={form.id}
-            onChange={(e) => set("id", e.target.value)}
-            disabled={!!editing}
-            required
-          />
-          <input
-            className={cls}
-            placeholder={t("fields.lastName")}
-            value={form.last_name}
-            onChange={(e) => set("last_name", e.target.value)}
-            required
-          />
-          <input
-            className={cls}
-            placeholder={t("fields.firstName")}
-            value={form.first_name}
-            onChange={(e) => set("first_name", e.target.value)}
-            required
-          />
-          <input
-            className={cls}
-            placeholder={t("fields.middleName")}
-            value={form.middle_name}
-            onChange={(e) => set("middle_name", e.target.value)}
-          />
-          <select
-            className={cls}
-            value={form.federation_id}
-            onChange={(e) => set("federation_id", e.target.value)}
-          >
-            {federations.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.name}
-              </option>
-            ))}
-          </select>
-          <select
-            className={cls}
-            value={form.gender_id}
-            onChange={(e) => set("gender_id", e.target.value)}
-          >
-            {GENDERS.map((g) => (
-              <option key={g} value={g}>
-                {g === "" ? t("common.none") : g === "M" ? t("gender.male") : t("gender.female")}
-              </option>
-            ))}
-          </select>
-          <input
-            className={cls}
-            type="number"
-            placeholder={t("fields.birthYear")}
-            value={form.year_of_birth}
-            onChange={(e) => set("year_of_birth", e.target.value)}
-          />
-          <select
-            className={cls}
-            value={form.title_id}
-            onChange={(e) => set("title_id", e.target.value)}
-          >
-            {TITLES.map((ti) => (
-              <option key={ti} value={ti}>
-                {ti === "" ? t("common.none") : ti}
-              </option>
-            ))}
-          </select>
-          <input
-            className={cls}
-            placeholder={t("fields.club")}
-            value={form.club}
-            onChange={(e) => set("club", e.target.value)}
-          />
-          <input
-            className={cls}
-            type="number"
-            placeholder={t("fields.ratingClassic")}
-            value={form.rating_classic}
-            onChange={(e) => set("rating_classic", e.target.value)}
-          />
-          <input
-            className={cls}
-            type="number"
-            placeholder={t("fields.ratingRapid")}
-            value={form.rating_rapid}
-            onChange={(e) => set("rating_rapid", e.target.value)}
-          />
-          <input
-            className={cls}
-            type="number"
-            placeholder={t("fields.ratingBlitz")}
-            value={form.rating_blitz}
-            onChange={(e) => set("rating_blitz", e.target.value)}
-          />
-          <div className="flex gap-2 sm:col-span-3">
-            <button
-              disabled={busy}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+      {/* The form only appears once a player is loaded or a create is started */}
+      {mode !== "idle" && (
+        <section>
+          <h2 className="mb-3 text-lg font-semibold">
+            {mode === "edit"
+              ? t("adminPanel.editPlayer", { id: form.id })
+              : t("adminPanel.addPlayer")}
+          </h2>
+          <form onSubmit={submit} className="grid gap-3 sm:grid-cols-3">
+            <input
+              className={cls}
+              placeholder={t("fields.playerId")}
+              value={form.id}
+              onChange={(e) => set("id", e.target.value)}
+              disabled={mode === "edit"}
+              required
+            />
+            <input
+              className={cls}
+              placeholder={t("fields.lastName")}
+              value={form.last_name}
+              onChange={(e) => set("last_name", e.target.value)}
+              required
+            />
+            <input
+              className={cls}
+              placeholder={t("fields.firstName")}
+              value={form.first_name}
+              onChange={(e) => set("first_name", e.target.value)}
+              required
+            />
+            <input
+              className={cls}
+              placeholder={t("fields.middleName")}
+              value={form.middle_name}
+              onChange={(e) => set("middle_name", e.target.value)}
+            />
+            <select
+              className={cls}
+              value={form.federation_id}
+              onChange={(e) => set("federation_id", e.target.value)}
             >
-              {editing ? t("common.save") : t("adminPanel.addPlayer")}
-            </button>
-            {editing && (
+              {federations.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name}
+                </option>
+              ))}
+            </select>
+            <select
+              className={cls}
+              value={form.gender_id}
+              onChange={(e) => set("gender_id", e.target.value)}
+            >
+              {GENDERS.map((g) => (
+                <option key={g} value={g}>
+                  {g === ""
+                    ? t("common.none")
+                    : g === "M"
+                      ? t("gender.male")
+                      : t("gender.female")}
+                </option>
+              ))}
+            </select>
+            <input
+              className={cls}
+              type="number"
+              placeholder={t("fields.birthYear")}
+              value={form.year_of_birth}
+              onChange={(e) => set("year_of_birth", e.target.value)}
+            />
+            <select
+              className={cls}
+              value={form.title_id}
+              onChange={(e) => set("title_id", e.target.value)}
+            >
+              {TITLES.map((ti) => (
+                <option key={ti} value={ti}>
+                  {ti === "" ? t("common.none") : ti}
+                </option>
+              ))}
+            </select>
+            <input
+              className={cls}
+              placeholder={t("fields.club")}
+              value={form.club}
+              onChange={(e) => set("club", e.target.value)}
+            />
+            <input
+              className={cls}
+              type="number"
+              placeholder={t("fields.ratingClassic")}
+              value={form.rating_classic}
+              onChange={(e) => set("rating_classic", e.target.value)}
+            />
+            <input
+              className={cls}
+              type="number"
+              placeholder={t("fields.ratingRapid")}
+              value={form.rating_rapid}
+              onChange={(e) => set("rating_rapid", e.target.value)}
+            />
+            <input
+              className={cls}
+              type="number"
+              placeholder={t("fields.ratingBlitz")}
+              value={form.rating_blitz}
+              onChange={(e) => set("rating_blitz", e.target.value)}
+            />
+            <div className="flex gap-2 sm:col-span-3">
+              <button
+                disabled={busy}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {mode === "edit" ? t("common.save") : t("adminPanel.addPlayer")}
+              </button>
               <button
                 type="button"
-                onClick={cancelEdit}
+                onClick={reset}
                 className="rounded-lg border border-neutral-300 px-4 py-2 text-sm dark:border-neutral-700"
               >
                 {t("common.cancel")}
               </button>
-            )}
-          </div>
-        </form>
-      </section>
-
-      {/* Player list */}
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">
-          {t("adminPanel.total", { count: players.length })}
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-neutral-300 text-left text-neutral-500 dark:border-neutral-700">
-                <th className="py-2 pr-3">{t("fields.playerId")}</th>
-                <th className="py-2 pr-3">{t("fields.player")}</th>
-                <th className="py-2 pr-3">{t("fields.title")}</th>
-                <th className="py-2 pr-3">{t("fields.rating")}</th>
-                <th className="py-2">{t("common.actions")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {players.map((p) => (
-                <tr key={p.id} className="border-b border-neutral-100 dark:border-neutral-900">
-                  <td className="py-2 pr-3 font-mono text-xs">{p.id}</td>
-                  <td className="py-2 pr-3">
-                    {p.last_name} {p.first_name}
-                  </td>
-                  <td className="py-2 pr-3 text-neutral-500">{p.title_id ?? ""}</td>
-                  <td className="py-2 pr-3">{p.rating_classic}</td>
-                  <td className="py-2">
-                    <button
-                      onClick={() => startEdit(p)}
-                      className="text-emerald-600 hover:underline"
-                    >
-                      {t("adminPanel.edit")}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+            </div>
+          </form>
+        </section>
+      )}
 
       {/* Organizer accounts */}
       <section>
@@ -364,6 +396,13 @@ export default function AdminPanel({
           </button>
         </form>
       </section>
+
+      <p className="text-xs text-neutral-500">
+        {t("players.title")}:{" "}
+        <a href="/en/players" className="text-emerald-600 hover:underline">
+          {t("common.search")}
+        </a>
+      </p>
     </div>
   );
 }
