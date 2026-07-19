@@ -10,6 +10,35 @@ from app.engines.swiss_rules import generate_swiss_round, validate_total_rounds
 
 router = APIRouter(dependencies=[Depends(require_organizer)])
 
+# Postgres constraint names mapped to messages an organizer can act on.
+_CONSTRAINT_MESSAGES = {
+    "chk_tourn_dates": "The end date must not be earlier than the start date",
+    "chk_tourn_rounds": "The number of rounds must be between 1 and 50",
+    "chk_tourn_status": "Unknown tournament status",
+}
+
+
+def _tournament_write_error(e: Exception) -> HTTPException:
+    """Turn a constraint violation into an actionable 4xx."""
+    if isinstance(e, psycopg.errors.UniqueViolation):
+        return HTTPException(
+            status_code=409, detail="A tournament with this slug already exists"
+        )
+    if isinstance(e, psycopg.errors.CheckViolation):
+        name = getattr(e.diag, "constraint_name", None) or ""
+        return HTTPException(
+            status_code=422,
+            detail=_CONSTRAINT_MESSAGES.get(name, f"Invalid value ({name or e})"),
+        )
+    if isinstance(e, psycopg.errors.ForeignKeyViolation):
+        return HTTPException(
+            status_code=422,
+            detail="Unknown federation, location, level, rating type or status",
+        )
+    if isinstance(e, psycopg.errors.DataError):
+        return HTTPException(status_code=422, detail=str(e))
+    raise e
+
 
 class TournamentBody(BaseModel):
     name: str
@@ -34,18 +63,21 @@ def create_tournament(body: TournamentBody):
     except PairingError as e:
         raise HTTPException(status_code=422, detail=str(e))
     with db.connect() as conn:
-        row = conn.execute(
-            """INSERT INTO tournaments (name, slug, federation_id, location_id,
-                   rating_type_id, tournament_type_id, start_date, end_date,
-                   rounds, level_id, participant_type_id, time_control, status)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                       COALESCE(%s, 'REGISTRATION'))
-               RETURNING id, slug""",
-            (body.name, body.slug, body.federation_id, body.location_id,
-             body.rating_type_id, body.tournament_type_id, body.start_date,
-             body.end_date, body.rounds, body.level_id,
-             body.participant_type_id, body.time_control, body.status),
-        ).fetchone()
+        try:
+            row = conn.execute(
+                """INSERT INTO tournaments (name, slug, federation_id, location_id,
+                       rating_type_id, tournament_type_id, start_date, end_date,
+                       rounds, level_id, participant_type_id, time_control, status)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                           COALESCE(%s, 'REGISTRATION'))
+                   RETURNING id, slug""",
+                (body.name, body.slug, body.federation_id, body.location_id,
+                 body.rating_type_id, body.tournament_type_id, body.start_date,
+                 body.end_date, body.rounds, body.level_id,
+                 body.participant_type_id, body.time_control, body.status),
+            ).fetchone()
+        except psycopg.Error as e:
+            raise _tournament_write_error(e)
         conn.commit()
     return row
 
@@ -57,18 +89,21 @@ def update_tournament(tid: int, body: TournamentBody):
     except PairingError as e:
         raise HTTPException(status_code=422, detail=str(e))
     with db.connect() as conn:
-        row = conn.execute(
-            """UPDATE tournaments SET name=%s, slug=%s, federation_id=%s,
-                   location_id=%s, rating_type_id=%s, tournament_type_id=%s,
-                   start_date=%s, end_date=%s, rounds=%s, level_id=%s,
-                   participant_type_id=%s, time_control=%s,
-                   status=COALESCE(%s, status)
-               WHERE id=%s RETURNING id""",
-            (body.name, body.slug, body.federation_id, body.location_id,
-             body.rating_type_id, body.tournament_type_id, body.start_date,
-             body.end_date, body.rounds, body.level_id,
-             body.participant_type_id, body.time_control, body.status, tid),
-        ).fetchone()
+        try:
+            row = conn.execute(
+                """UPDATE tournaments SET name=%s, slug=%s, federation_id=%s,
+                       location_id=%s, rating_type_id=%s, tournament_type_id=%s,
+                       start_date=%s, end_date=%s, rounds=%s, level_id=%s,
+                       participant_type_id=%s, time_control=%s,
+                       status=COALESCE(%s, status)
+                   WHERE id=%s RETURNING id""",
+                (body.name, body.slug, body.federation_id, body.location_id,
+                 body.rating_type_id, body.tournament_type_id, body.start_date,
+                 body.end_date, body.rounds, body.level_id,
+                 body.participant_type_id, body.time_control, body.status, tid),
+            ).fetchone()
+        except psycopg.Error as e:
+            raise _tournament_write_error(e)
         conn.commit()
     if row is None:
         raise HTTPException(status_code=404, detail="Tournament not found")

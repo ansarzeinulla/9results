@@ -141,6 +141,7 @@ export default function EditTournament({
         type="date"
         className={cls}
         value={form.end_date}
+        min={form.start_date || undefined}
         onChange={(e) => set("end_date", e.target.value)}
         required
       />
