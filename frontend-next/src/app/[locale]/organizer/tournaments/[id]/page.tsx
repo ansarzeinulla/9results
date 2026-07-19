@@ -1,6 +1,7 @@
 import { setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import {
+  getLookups,
   getPairings,
   getParticipants,
   getRounds,
@@ -19,9 +20,10 @@ export default async function TournamentAdminPage({
   setRequestLocale(locale);
   const tournament = await getTournamentById(locale, Number(id));
   if (!tournament) notFound();
-  const [participants, rounds] = await Promise.all([
+  const [participants, rounds, lookups] = await Promise.all([
     getParticipants(tournament.id, "starting"),
     getRounds(tournament.id),
+    getLookups(locale),
   ]);
   const lastRound = rounds[rounds.length - 1] ?? null;
   const pairings = lastRound ? await getPairings(lastRound.id) : [];
@@ -32,6 +34,7 @@ export default async function TournamentAdminPage({
       participants={participants}
       rounds={rounds}
       lastRoundPairings={pairings}
+      lookups={lookups}
     />
   );
 }

@@ -83,6 +83,14 @@ export default function Header() {
           <ThemeToggle />
           {user ? (
             <div className="flex items-center gap-2 text-sm">
+              {user.role === "ADMIN" && (
+                <Link
+                  href="/admin"
+                  className="rounded-lg border border-emerald-600 px-3 py-1.5 font-medium text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950"
+                >
+                  {t("nav.adminPanel")}
+                </Link>
+              )}
               <Link
                 href="/organizer"
                 className="rounded-lg bg-emerald-600 px-3 py-1.5 font-medium text-white hover:bg-emerald-700"

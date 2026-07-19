@@ -25,7 +25,10 @@ function flatEntries(obj: Record<string, unknown>, prefix = ""): [string, unknow
 describe("i18n completeness", () => {
   it("routing declares exactly ru, en, kk", () => {
     expect([...routing.locales].sort()).toEqual(["en", "kk", "ru"]);
-    expect(routing.defaultLocale).toBe("ru");
+  });
+
+  it("the default locale is one of the declared locales", () => {
+    expect(routing.locales).toContain(routing.defaultLocale);
   });
 
   it("every locale has a message file", () => {

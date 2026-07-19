@@ -5,12 +5,19 @@ import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import ResultChip from "@/components/ResultChip";
+import EditTournament from "./EditTournament";
+import PairingEditor from "./PairingEditor";
 import type {
   PairingRow,
   ParticipantRow,
   RoundRow,
   TournamentRow,
 } from "@/lib/data";
+
+interface Lookup {
+  id: string;
+  name: string;
+}
 
 const SPECIALS = ["+--", "--+", "1BYE", "0.5BYE", "0BYE", "---"];
 
@@ -19,11 +26,18 @@ export default function ControlPanel({
   participants,
   rounds,
   lastRoundPairings,
+  lookups,
 }: {
   tournament: TournamentRow;
   participants: ParticipantRow[];
   rounds: RoundRow[];
   lastRoundPairings: PairingRow[];
+  lookups: {
+    locations: Lookup[];
+    levels: Lookup[];
+    ratingTypes: Lookup[];
+    federations: Lookup[];
+  };
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -32,6 +46,7 @@ export default function ControlPanel({
   const [newPlayerId, setNewPlayerId] = useState("");
   const [savedPairing, setSavedPairing] = useState<number | null>(null);
   const [specialFor, setSpecialFor] = useState<number | null>(null);
+  const [editingPairings, setEditingPairings] = useState(false);
 
   const lastRound = rounds[rounds.length - 1] ?? null;
   const allDone =
@@ -76,6 +91,9 @@ export default function ControlPanel({
           >
             {t("common.publicPage")}
           </Link>
+        </div>
+        <div className="mt-3">
+          <EditTournament tournament={tournament} lookups={lookups} />
         </div>
       </div>
 
@@ -186,6 +204,19 @@ export default function ControlPanel({
             {lastRound.is_closed ? " ✓" : ""}
           </p>
         )}
+        {editingPairings && lastRound && (
+          <div className="mb-4">
+            <PairingEditor
+              roundId={lastRound.id}
+              roundNumber={lastRound.round_number}
+              tournamentId={tournament.id}
+              pairings={lastRoundPairings}
+              participants={participants.filter((p) => p.status === "ACTIVE")}
+              onClose={() => setEditingPairings(false)}
+            />
+          </div>
+        )}
+
         <div className="space-y-2">
           {lastRoundPairings.map((m) => (
             <div
@@ -259,6 +290,14 @@ export default function ControlPanel({
               className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
             >
               {t("admin.generateRound")}
+            </button>
+          )}
+          {lastRound && !lastRound.is_closed && !finished && (
+            <button
+              onClick={() => setEditingPairings((v) => !v)}
+              className="rounded-lg border border-amber-400 px-4 py-2 text-sm text-amber-700 dark:text-amber-400"
+            >
+              {t("admin.editPairings")}
             </button>
           )}
           {lastRound && !lastRound.is_closed && (
