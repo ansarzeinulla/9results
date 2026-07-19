@@ -6,6 +6,30 @@
  */
 import { Pool } from "pg";
 import { createClient } from "@supabase/supabase-js";
+import { indexTranslations, localizedName } from "./translations";
+
+/** Throw on Supabase errors instead of silently returning empty results. */
+function unwrap<T>(res: { data: T; error: unknown }): T {
+  if (res.error) {
+    const msg =
+      typeof res.error === "object" && res.error && "message" in res.error
+        ? (res.error as { message: string }).message
+        : String(res.error);
+    throw new Error(`Supabase query failed: ${msg}`);
+  }
+  return res.data;
+}
+
+/** Fetch location names for the given ids in one query; returns a lang index. */
+async function locationNameIndex(locationIds: (string | null)[]) {
+  const ids = [...new Set(locationIds.filter((x): x is string => !!x))];
+  if (ids.length === 0) return indexTranslations([]);
+  const res = await supabase()
+    .from("location_translations")
+    .select("location_id, lang_code, name")
+    .in("location_id", ids);
+  return indexTranslations(unwrap(res) ?? []);
+}
 
 const useSupabase = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
 
@@ -103,11 +127,7 @@ export async function listTournaments(locale: string, f: TournamentFilters = {})
   if (useSupabase) {
     let q = supabase()
       .from("tournaments")
-      .select(
-        "id, name, slug, federation_id, location_id, start_date, end_date, rounds, status, level_id, rating_type_id, tournament_type_id, time_control, last_updated, location_translations:location_translations!inner(name, lang_code)",
-        { count: "exact" }
-      )
-      .eq("location_translations.lang_code", dbLang(locale))
+      .select("*", { count: "exact" })
       .neq("status", "DRAFT")
       .order("start_date", { ascending: false })
       .range(offset, offset + pageSize - 1);
@@ -118,14 +138,14 @@ export async function listTournaments(locale: string, f: TournamentFilters = {})
     if (f.ratingType) q = q.eq("rating_type_id", f.ratingType);
     if (f.dateFrom) q = q.gte("start_date", f.dateFrom);
     if (f.dateTo) q = q.lte("start_date", f.dateTo);
-    const { data, count } = await q;
-    const rows = (data ?? []).map((t) => ({
+    const res = await q;
+    const data = unwrap(res) ?? [];
+    const index = await locationNameIndex(data.map((t) => t.location_id));
+    const rows = data.map((t) => ({
       ...t,
-      location_name:
-        (t.location_translations as unknown as { name: string }[])?.[0]?.name ??
-        t.location_id,
+      location_name: localizedName(index, t.location_id, dbLang(locale)),
     }));
-    return { rows: rows as unknown as TournamentRow[], total: count ?? 0 };
+    return { rows: rows as unknown as TournamentRow[], total: res.count ?? 0 };
   }
   const conds: string[] = ["t.status <> 'DRAFT'"];
   const params: unknown[] = [dbLang(locale)];
@@ -156,20 +176,14 @@ export async function listTournaments(locale: string, f: TournamentFilters = {})
 
 export async function getTournamentBySlug(locale: string, slug: string) {
   if (useSupabase) {
-    const { data } = await supabase()
-      .from("tournaments")
-      .select("*, location_translations:location_translations(name, lang_code)")
-      .eq("slug", slug)
-      .maybeSingle();
+    const data = unwrap(
+      await supabase().from("tournaments").select("*").eq("slug", slug).maybeSingle()
+    );
     if (!data) return null;
-    const trs = (data.location_translations ?? []) as {
-      name: string;
-      lang_code: string;
-    }[];
+    const index = await locationNameIndex([data.location_id]);
     return {
       ...data,
-      location_name:
-        trs.find((x) => x.lang_code === dbLang(locale))?.name ?? data.location_id,
+      location_name: localizedName(index, data.location_id, dbLang(locale)),
     } as TournamentRow;
   }
   const rows = await sql<TournamentRow>(
@@ -281,25 +295,75 @@ export interface PairingRow {
 
 export async function getPairings(roundId: number): Promise<PairingRow[]> {
   if (useSupabase) {
-    const { data } = await supabase()
-      .from("pairings")
-      .select(
-        "id, board_number, white_player_id, black_player_id, result_id, white:players!pairings_white_player_id_fkey(first_name, last_name), black:players!pairings_black_player_id_fkey(first_name, last_name)"
-      )
-      .eq("round_id", roundId)
-      .order("board_number");
-    return (data ?? []).map((r) => {
-      const w = r.white as unknown as { first_name: string; last_name: string };
-      const b = r.black as unknown as {
-        first_name: string;
-        last_name: string;
-      } | null;
-      return {
-        ...r,
-        white_name: w ? `${w.last_name} ${w.first_name}` : r.white_player_id,
-        black_name: b ? `${b.last_name} ${b.first_name}` : null,
-      } as unknown as PairingRow;
-    });
+    const sb = supabase();
+    const pairings = unwrap(
+      await sb
+        .from("pairings")
+        .select("id, board_number, white_player_id, black_player_id, result_id, round_id")
+        .eq("round_id", roundId)
+        .order("board_number")
+    ) as {
+      id: number;
+      board_number: number;
+      white_player_id: string;
+      black_player_id: string | null;
+      result_id: string | null;
+      round_id: number;
+    }[];
+    if (pairings.length === 0) return [];
+
+    const round = unwrap(
+      await sb.from("rounds").select("tournament_id").eq("id", roundId).maybeSingle()
+    ) as { tournament_id: number } | null;
+
+    const ids = [
+      ...new Set(
+        pairings.flatMap((p) =>
+          [p.white_player_id, p.black_player_id].filter((x): x is string => !!x)
+        )
+      ),
+    ];
+    const players = unwrap(
+      await sb.from("players").select("id, first_name, last_name").in("id", ids)
+    ) as { id: string; first_name: string; last_name: string }[];
+    const nameById = new Map(
+      players.map((p) => [p.id, `${p.last_name} ${p.first_name}`])
+    );
+
+    const tps = round
+      ? ((unwrap(
+          await sb
+            .from("tournament_participants")
+            .select("player_id, rating_at_tournament, points")
+            .eq("tournament_id", round.tournament_id)
+            .in("player_id", ids)
+        ) ?? []) as {
+          player_id: string;
+          rating_at_tournament: number | null;
+          points: string;
+        }[])
+      : [];
+    const tpById = new Map(tps.map((t) => [t.player_id, t]));
+
+    return pairings.map((p) => ({
+      id: p.id,
+      board_number: p.board_number,
+      white_player_id: p.white_player_id,
+      black_player_id: p.black_player_id,
+      result_id: p.result_id,
+      white_name: nameById.get(p.white_player_id) ?? p.white_player_id,
+      black_name: p.black_player_id
+        ? (nameById.get(p.black_player_id) ?? p.black_player_id)
+        : null,
+      white_rating: tpById.get(p.white_player_id)?.rating_at_tournament ?? null,
+      black_rating: p.black_player_id
+        ? (tpById.get(p.black_player_id)?.rating_at_tournament ?? null)
+        : null,
+      white_points: tpById.get(p.white_player_id)?.points,
+      black_points: p.black_player_id
+        ? tpById.get(p.black_player_id)?.points
+        : null,
+    }));
   }
   return sql<PairingRow>(
     `SELECT pr.id, pr.board_number, pr.white_player_id, pr.black_player_id,
