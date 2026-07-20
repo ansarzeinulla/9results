@@ -2,7 +2,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { cachedPairings } from "@/lib/cached";
-import ResultChip from "@/components/ResultChip";
+import PairingCard from "@/components/PairingCard";
 
 export default async function RoundPairings({
   params,
@@ -43,35 +43,7 @@ export default async function RoundPairings({
       ) : (
         <div className="space-y-2">
           {pairings.map((m) => (
-            <div
-              key={m.id}
-              className="flex items-center gap-2 rounded-xl border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-800"
-            >
-              <span className="w-8 shrink-0 text-center font-mono text-neutral-400">
-                {m.board_number === 999 ? "—" : m.board_number}
-              </span>
-              <div className="flex-1 text-right">
-                <span className="font-medium">{m.white_name}</span>{" "}
-                <span className="text-neutral-400">
-                  [{m.white_rating ?? 0}
-                  {m.white_points != null ? ` · ${Number(m.white_points)}` : ""}]
-                </span>
-              </div>
-              <ResultChip result={m.result_id} />
-              <div className="flex-1">
-                {m.black_player_id ? (
-                  <>
-                    <span className="text-neutral-400">
-                      [{m.black_rating ?? 0}
-                      {m.black_points != null ? ` · ${Number(m.black_points)}` : ""}]
-                    </span>{" "}
-                    <span className="font-medium">{m.black_name}</span>
-                  </>
-                ) : (
-                  <span className="text-neutral-400">{t("tournamentView.bye")}</span>
-                )}
-              </div>
-            </div>
+            <PairingCard key={m.id} pairing={m} byeLabel={t("tournamentView.bye")} />
           ))}
         </div>
       )}

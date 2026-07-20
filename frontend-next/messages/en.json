@@ -253,5 +253,17 @@
   "theme": {
     "light": "Light",
     "dark": "Dark"
+  },
+  "offline": {
+    "title": "You are offline",
+    "hint": "The last loaded pages are still available. Reconnect to see fresh results."
+  },
+  "search": {
+    "placeholder": "Find a player…",
+    "nowPlaying": "Now playing",
+    "round": "Round",
+    "board": "Board",
+    "notPlaying": "Not playing right now",
+    "noResults": "Nobody found"
   }
 }

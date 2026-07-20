@@ -4,6 +4,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
 import { getUser, logout } from "@/lib/api";
+import OmniSearch from "./OmniSearch";
 
 const LOCALES = [
   { code: "ru", label: "RU" },
@@ -79,6 +80,7 @@ export default function Header() {
           </span>
         </nav>
         <div className="ml-auto flex items-center gap-2">
+          <OmniSearch />
           <LangSwitcher />
           <ThemeToggle />
           {user ? (

@@ -549,6 +549,14 @@ export async function getRatingHistory(id: string, limit = 20) {
   );
 }
 
+export async function omniSearch(q: string, limit = 8) {
+  if (useSupabase) {
+    const res = await supabase().rpc("omni_search", { p_q: q, p_limit: limit });
+    return unwrap(res) ?? [];
+  }
+  return sql("SELECT * FROM omni_search($1, $2)", [q, limit]);
+}
+
 export async function getTournamentById(locale: string, id: number) {
   if (useSupabase) {
     const { data } = await supabase()
