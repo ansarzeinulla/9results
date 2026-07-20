@@ -449,13 +449,29 @@ export interface PlayerRow {
 export async function listPlayers(f: PlayerFilters = {}) {
   const pageSize = f.pageSize ?? 25;
   const offset = ((f.page ?? 1) - 1) * pageSize;
+  // A name query goes through the transliteration-aware fuzzy search, so
+  // "Nurlanova" finds «Нұрланова» and vice versa (typos included).
+  if (f.q) {
+    if (useSupabase) {
+      const res = await supabase().rpc("search_players_fuzzy", {
+        p_q: f.q,
+        p_limit: pageSize,
+      });
+      const rows = (unwrap(res) ?? []) as PlayerRow[];
+      return { rows, total: rows.length };
+    }
+    const rows = await sql<PlayerRow>(
+      "SELECT * FROM search_players_fuzzy($1, $2)",
+      [f.q, pageSize]
+    );
+    return { rows, total: rows.length };
+  }
   if (useSupabase) {
     let q = supabase()
       .from("players")
       .select("*", { count: "exact" })
       .order("rating_classic", { ascending: false })
       .range(offset, offset + pageSize - 1);
-    if (f.q) q = q.or(`last_name.ilike.%${f.q}%,first_name.ilike.%${f.q}%,id.ilike.%${f.q}%`);
     if (f.federation) q = q.eq("federation_id", f.federation);
     if (f.birthYear) q = q.eq("year_of_birth", Number(f.birthYear));
     const { data, count } = await q;
@@ -463,12 +479,6 @@ export async function listPlayers(f: PlayerFilters = {}) {
   }
   const conds: string[] = ["TRUE"];
   const params: unknown[] = [];
-  if (f.q) {
-    params.push(`%${f.q}%`);
-    conds.push(
-      `(p.last_name ILIKE $${params.length} OR p.first_name ILIKE $${params.length} OR p.id ILIKE $${params.length})`
-    );
-  }
   if (f.federation) {
     params.push(f.federation);
     conds.push(`p.federation_id = $${params.length}`);

@@ -224,7 +224,8 @@
     "organizers": "Organizers",
     "addOrganizer": "Add Organizer",
     "organizerCreated": "Organizer account created.",
-    "deletePlayer": "Delete player"
+    "deletePlayer": "Delete player",
+    "aliases": "Other spellings (Cyrillic/Latin), comma-separated"
   },
   "swiss": {
     "REMATCH": "{a} and {b} have already played each other",

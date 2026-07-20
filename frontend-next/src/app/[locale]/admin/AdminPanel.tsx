@@ -26,6 +26,7 @@ const EMPTY = {
   rating_classic: 0,
   rating_rapid: 0,
   rating_blitz: 0,
+  aliases: "",
 };
 
 type Form = typeof EMPTY;
@@ -43,6 +44,7 @@ interface PlayerRecord {
   rating_classic: number;
   rating_rapid: number;
   rating_blitz: number;
+  aliases?: string[];
 }
 
 const toForm = (p: PlayerRecord): Form => ({
@@ -58,6 +60,7 @@ const toForm = (p: PlayerRecord): Form => ({
   rating_classic: p.rating_classic,
   rating_rapid: p.rating_rapid,
   rating_blitz: p.rating_blitz,
+  aliases: (p.aliases ?? []).join(", "),
 });
 
 export default function AdminPanel({ federations }: { federations: Lookup[] }) {
@@ -133,6 +136,11 @@ export default function AdminPanel({ federations }: { federations: Lookup[] }) {
       rating_classic: Number(form.rating_classic),
       rating_rapid: Number(form.rating_rapid),
       rating_blitz: Number(form.rating_blitz),
+      // other-alphabet spellings, comma or newline separated
+      aliases: form.aliases
+        .split(/[,\n]+/)
+        .map((a) => a.trim())
+        .filter(Boolean),
     };
     try {
       if (mode === "edit") {
@@ -353,6 +361,13 @@ export default function AdminPanel({ federations }: { federations: Lookup[] }) {
               placeholder={t("fields.ratingBlitz")}
               value={form.rating_blitz}
               onChange={(e) => set("rating_blitz", e.target.value)}
+            />
+            <textarea
+              className={`${cls} sm:col-span-3`}
+              rows={2}
+              placeholder={t("adminPanel.aliases")}
+              value={form.aliases}
+              onChange={(e) => set("aliases", e.target.value)}
             />
             <div className="flex gap-2 sm:col-span-3">
               <button

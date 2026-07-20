@@ -3,12 +3,15 @@
 Players are created and edited here (never deleted) — organizers may only add
 an existing player to their own tournament by id.
 """
+import json
+
 import psycopg
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app import db
 from app.auth import require_admin
+from app.translit import default_aliases
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 
@@ -26,18 +29,27 @@ class PlayerBody(BaseModel):
     rating_classic: int = 0
     rating_rapid: int = 0
     rating_blitz: int = 0
+    # Alternative spellings (other alphabets); None = keep the stored value.
+    aliases: list[str] | None = None
 
 
-def _upsert(body: PlayerBody, player_id: str):
+def _upsert(body: PlayerBody, player_id: str, is_create: bool = False):
+    aliases = body.aliases
+    if is_create and aliases is None:
+        # auto-add Latin spellings for Cyrillic names so the player is
+        # findable in both alphabets from day one
+        aliases = default_aliases(body.first_name, body.last_name,
+                                  body.middle_name)
     with db.connect() as conn:
         try:
             conn.execute(
                 """CALL admin_upsert_player(%s, %s, %s, %s, %s, %s, %s, %s,
-                                            %s, %s, %s, %s)""",
+                                            %s, %s, %s, %s, %s::jsonb)""",
                 (player_id, body.first_name, body.last_name, body.federation_id,
                  body.rating_classic, body.middle_name, body.gender_id,
                  body.year_of_birth, body.title_id, body.club,
-                 body.rating_rapid, body.rating_blitz),
+                 body.rating_rapid, body.rating_blitz,
+                 None if aliases is None else json.dumps(aliases)),
             )
         except psycopg.errors.ForeignKeyViolation as e:
             # unknown federation / gender / title
@@ -57,7 +69,7 @@ def get_player(player_id: str):
         row = conn.execute(
             """SELECT id, first_name, last_name, middle_name, federation_id,
                       gender_id, year_of_birth, title_id, club,
-                      rating_classic, rating_rapid, rating_blitz
+                      rating_classic, rating_rapid, rating_blitz, aliases
                FROM players WHERE id = %s""",
             (player_id,),
         ).fetchone()
@@ -68,7 +80,7 @@ def get_player(player_id: str):
 
 @router.post("/players")
 def create_player(body: PlayerBody):
-    return _upsert(body, body.id)
+    return _upsert(body, body.id, is_create=True)
 
 
 @router.delete("/players/{player_id}")
