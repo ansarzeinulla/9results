@@ -3,3 +3,7 @@ backend/database.db
 .env
 dist/
 .DS_Store
+.aider*
+.repomixignore
+.claudeignore
+repomix-output.xml

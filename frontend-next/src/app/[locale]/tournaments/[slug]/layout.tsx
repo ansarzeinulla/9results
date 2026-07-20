@@ -4,6 +4,9 @@ import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { cachedTournament } from "@/lib/cached";
 import TabNav from "./TabNav";
+import SwipeNavigator from "@/components/SwipeNavigator";
+import PullToRefresh from "@/components/PullToRefresh";
+import ShareButton from "@/components/ShareButton";
 
 export default async function TournamentLayout({
   children,
@@ -19,12 +22,15 @@ export default async function TournamentLayout({
   if (!tournament) notFound();
 
   return (
-    <div>
+    <PullToRefresh>
       <div className="mb-4">
         <Link href="/tournaments" className="text-sm text-neutral-500 hover:underline">
           ← {t("tournaments.title")}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold md:text-3xl">{tournament.name}</h1>
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-2xl font-bold md:text-3xl">{tournament.name}</h1>
+          <ShareButton title={tournament.name} />
+        </div>
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-neutral-500">
           <span>📍 {tournament.location_name ?? tournament.location_id}</span>
           <span>📅 {tournament.start_date} — {tournament.end_date}</span>
@@ -33,7 +39,9 @@ export default async function TournamentLayout({
         </div>
       </div>
       <TabNav slug={slug} />
-      <div className="mt-4">{children}</div>
-    </div>
+      <SwipeNavigator slug={slug}>
+        <div className="mt-4">{children}</div>
+      </SwipeNavigator>
+    </PullToRefresh>
   );
 }

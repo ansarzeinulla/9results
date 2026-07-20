@@ -265,5 +265,9 @@
     "board": "Board",
     "notPlaying": "Not playing right now",
     "noResults": "Nobody found"
+  },
+  "share": {
+    "share": "Share",
+    "copied": "Link copied!"
   }
 }
