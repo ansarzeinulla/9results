@@ -1,8 +1,6 @@
 import { setRequestLocale } from "next-intl/server";
-import { getLookups } from "@/lib/data";
+import { cachedLookups } from "@/lib/cached";
 import AdminPanel from "./AdminPanel";
-
-export const dynamic = "force-dynamic";
 
 export default async function AdminPage({
   params,
@@ -13,7 +11,7 @@ export default async function AdminPage({
   setRequestLocale(locale);
   // No player list is loaded here on purpose: the registry is expected to grow
   // to millions of rows, so players are reached by id, not by listing them.
-  const lookups = await getLookups(locale);
+  const lookups = await cachedLookups(locale);
 
   return <AdminPanel federations={lookups.federations} />;
 }

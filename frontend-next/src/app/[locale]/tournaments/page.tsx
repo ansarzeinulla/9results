@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { getLookups, listTournaments } from "@/lib/data";
+import { cachedLookups, cachedTournamentList } from "@/lib/cached";
 import FiltersPanel from "./FiltersPanel";
 
 export default async function TournamentsPage({
@@ -16,7 +16,7 @@ export default async function TournamentsPage({
   const t = await getTranslations();
   const page = Math.max(1, Number(sp.page) || 1);
   const [{ rows, total }, lookups] = await Promise.all([
-    listTournaments(locale, {
+    cachedTournamentList(locale, {
       q: sp.q,
       federation: sp.federation,
       location: sp.location,
@@ -26,7 +26,7 @@ export default async function TournamentsPage({
       dateTo: sp.dateTo,
       page,
     }),
-    getLookups(locale),
+    cachedLookups(locale),
   ]);
   const pages = Math.max(1, Math.ceil(total / 20));
 

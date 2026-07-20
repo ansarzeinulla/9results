@@ -9,23 +9,6 @@ import { Pool } from "pg";
 import { createClient } from "@supabase/supabase-js";
 import { indexTranslations, localizedName } from "./translations";
 
-/**
- * Reference data (locations, levels, rating types, federations) changes
- * essentially never but was re-read on every organizer/admin page load — four
- * queries plus every location translation. Memoised per server instance with a
- * short TTL so it costs one round trip per window instead of per request.
- */
-const REFERENCE_TTL_MS = 10 * 60 * 1000;
-const referenceCache = new Map<string, { at: number; value: unknown }>();
-
-async function memoReference<T>(key: string, load: () => Promise<T>): Promise<T> {
-  const hit = referenceCache.get(key);
-  if (hit && Date.now() - hit.at < REFERENCE_TTL_MS) return hit.value as T;
-  const value = await load();
-  referenceCache.set(key, { at: Date.now(), value });
-  return value;
-}
-
 /** Throw on Supabase errors instead of silently returning empty results. */
 function unwrap<T>(res: { data: T; error: unknown }): T {
   if (res.error) {
@@ -604,10 +587,6 @@ export async function listAllTournaments(locale: string) {
 }
 
 export async function getLookups(locale: string) {
-  return memoReference(`lookups:${dbLang(locale)}`, () => loadLookups(locale));
-}
-
-async function loadLookups(locale: string) {
   const lang = dbLang(locale);
   if (useSupabase) {
     const sb = supabase();

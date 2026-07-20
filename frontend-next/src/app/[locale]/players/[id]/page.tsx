@@ -1,7 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
-import { getPlayer, getPlayerTournaments, getRatingHistory } from "@/lib/data";
+import { cachedPlayerProfile } from "@/lib/cached";
 
 export default async function PlayerProfile({
   params,
@@ -11,12 +11,10 @@ export default async function PlayerProfile({
   const { locale, id } = await params;
   setRequestLocale(locale);
   const t = await getTranslations();
-  const player = await getPlayer(decodeURIComponent(id));
+  const { player, tournaments, history } = await cachedPlayerProfile(
+    decodeURIComponent(id)
+  );
   if (!player) notFound();
-  const [tournaments, history] = await Promise.all([
-    getPlayerTournaments(player.id, 10),
-    getRatingHistory(player.id),
-  ]);
 
   return (
     <div className="mx-auto max-w-2xl">

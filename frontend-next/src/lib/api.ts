@@ -1,7 +1,33 @@
 /** Client-side calls to the FastAPI backend (organizer/admin actions). */
+import { tagsForMutation } from "./cache-rules";
 
 export const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+/**
+ * After a successful mutation, tell Next.js which cached tournament data is
+ * now stale. Fire-and-forget: a failure only means spectators wait out the
+ * normal SWR window instead of seeing the change instantly.
+ */
+function invalidateCache(path: string, method: string) {
+  if (method === "GET") return;
+  // round/pairing URLs carry no tournament id — take it from the organizer
+  // page the arbiter is standing on (/organizer/tournaments/{id})
+  const onScreen = window.location.pathname.match(
+    /\/organizer\/tournaments\/(\d+)/
+  );
+  const tags = tagsForMutation(
+    path,
+    onScreen ? Number(onScreen[1]) : undefined
+  );
+  if (tags.length === 0) return;
+  fetch("/api/revalidate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tags }),
+    keepalive: true,
+  }).catch(() => {});
+}
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -39,6 +65,7 @@ export async function api<T = unknown>(
     } catch {}
     throw new Error(detail);
   }
+  invalidateCache(path, (options.method ?? "GET").toUpperCase());
   return res.json();
 }
 

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
-import { getTournamentBySlug } from "@/lib/data";
+import { cachedTournament } from "@/lib/cached";
 import TabNav from "./TabNav";
 
 export default async function TournamentLayout({
@@ -15,7 +15,7 @@ export default async function TournamentLayout({
   const { locale, slug } = await params;
   setRequestLocale(locale);
   const t = await getTranslations();
-  const tournament = await getTournamentBySlug(locale, slug);
+  const tournament = await cachedTournament(locale, slug);
   if (!tournament) notFound();
 
   return (

@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { getTournamentBySlug } from "@/lib/data";
+import { cachedTournament } from "@/lib/cached";
 
 export default async function InfoTab({
   params,
@@ -10,7 +10,7 @@ export default async function InfoTab({
   const { locale, slug } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("fields");
-  const tr = await getTournamentBySlug(locale, slug);
+  const tr = await cachedTournament(locale, slug);
   if (!tr) notFound();
 
   const rows: [string, string | number | null][] = [

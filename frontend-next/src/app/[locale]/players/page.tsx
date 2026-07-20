@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { listPlayers } from "@/lib/data";
+import { cachedPlayersList } from "@/lib/cached";
 import PlayerSearch from "./PlayerSearch";
 
 export default async function PlayersPage({
@@ -15,7 +15,7 @@ export default async function PlayersPage({
   const sp = await searchParams;
   const t = await getTranslations();
   const page = Math.max(1, Number(sp.page) || 1);
-  const { rows, total } = await listPlayers({
+  const { rows, total } = await cachedPlayersList({
     q: sp.q,
     federation: sp.federation,
     birthYear: sp.birthYear,

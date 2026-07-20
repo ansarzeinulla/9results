@@ -1,15 +1,13 @@
 import { setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { cachedLookups } from "@/lib/cached";
 import {
-  getLookups,
   getPairings,
   getParticipants,
   getRounds,
   getTournamentById,
 } from "@/lib/data";
 import ControlPanel from "./ControlPanel";
-
-export const dynamic = "force-dynamic";
 
 export default async function TournamentAdminPage({
   params,
@@ -23,7 +21,7 @@ export default async function TournamentAdminPage({
   const [participants, rounds, lookups] = await Promise.all([
     getParticipants(tournament.id, "starting"),
     getRounds(tournament.id),
-    getLookups(locale),
+    cachedLookups(locale),
   ]);
   const lastRound = rounds[rounds.length - 1] ?? null;
   const pairings = lastRound ? await getPairings(lastRound.id) : [];

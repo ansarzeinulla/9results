@@ -1,8 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-
-export const dynamic = "force-dynamic";
 import { Link } from "@/i18n/navigation";
-import { getCounts, listTournaments } from "@/lib/data";
+import { cachedHome } from "@/lib/cached";
 import kaz from "@/data/kaz.json";
 import wdf from "@/data/wdf.json";
 
@@ -14,10 +12,7 @@ export default async function Home({
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations();
-  const [counts, { rows: tournaments }] = await Promise.all([
-    getCounts(),
-    listTournaments(locale, { pageSize: 4 }),
-  ]);
+  const { counts, tournaments } = await cachedHome(locale);
 
   return (
     <div className="space-y-8">

@@ -1,7 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
-import { getPairings, getRounds, getTournamentBySlug } from "@/lib/data";
+import { cachedPairings } from "@/lib/cached";
 import ResultChip from "@/components/ResultChip";
 
 export default async function RoundPairings({
@@ -12,12 +12,13 @@ export default async function RoundPairings({
   const { locale, slug, n } = await params;
   setRequestLocale(locale);
   const t = await getTranslations();
-  const tr = await getTournamentBySlug(locale, slug);
+  const { tournament: tr, rounds, current, pairings } = await cachedPairings(
+    locale,
+    slug,
+    Number(n)
+  );
   if (!tr) notFound();
-  const rounds = await getRounds(tr.id);
-  const current = rounds.find((r) => r.round_number === Number(n));
   if (!current && rounds.length > 0) notFound();
-  const pairings = current ? await getPairings(current.id) : [];
 
   return (
     <div>

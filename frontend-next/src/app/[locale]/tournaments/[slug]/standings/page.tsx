@@ -1,6 +1,6 @@
 import { setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { getParticipants, getTournamentBySlug } from "@/lib/data";
+import { cachedStartList } from "@/lib/cached";
 import ParticipantsTable from "../ParticipantsTable";
 
 export default async function StandingsTab({
@@ -10,8 +10,7 @@ export default async function StandingsTab({
 }) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
-  const tr = await getTournamentBySlug(locale, slug);
+  const { tournament: tr, rows } = await cachedStartList(locale, slug, "standings");
   if (!tr) notFound();
-  const rows = await getParticipants(tr.id, "standings");
   return <ParticipantsTable rows={rows} mode="standings" />;
 }

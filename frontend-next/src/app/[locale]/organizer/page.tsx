@@ -1,9 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { getLookups } from "@/lib/data";
+import { cachedLookups } from "@/lib/cached";
 import CreateTournament from "./CreateTournament";
 import MyTournaments from "./MyTournaments";
-
-export const dynamic = "force-dynamic";
 
 export default async function OrganizerDashboard({
   params,
@@ -15,7 +13,7 @@ export default async function OrganizerDashboard({
   const t = await getTranslations();
   // Only reference data is loaded server-side; the tournament list is fetched
   // client-side with the organizer's token so each account sees only its own.
-  const lookups = await getLookups(locale);
+  const lookups = await cachedLookups(locale);
 
   return (
     <div className="mx-auto max-w-3xl">
