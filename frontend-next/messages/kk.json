@@ -187,7 +187,8 @@
     "deleteRound": "Турды жою",
     "deleteRoundConfirm": "{n}-турды толығымен жою керек пе? Оның нәтижелері жойылады.",
     "pairingsSaved": "Жұптар сақталды.",
-    "roundDeleted": "Тур жойылды."
+    "roundDeleted": "Тур жойылды.",
+    "syncRanks": "Бастапқы нөмірлерді жаңарту"
   },
   "adminPanel": {
     "title": "Ойыншыларды басқару",
@@ -201,11 +202,12 @@
     "prev": "← Артқа",
     "next": "Алға →",
     "delete": "Жою",
-    "deleted": "Жойылды.",
-    "deleteConfirm": "{name} ойыншысын жою керек пе?",
+    "deleted": "Ойыншы жойылды.",
+    "deleteConfirm": "Ойыншы біржола жойылсын ба?",
     "organizers": "Ұйымдастырушылар",
     "addOrganizer": "Ұйымдастырушы қосу",
-    "organizerCreated": "Ұйымдастырушы құрылды."
+    "organizerCreated": "Ұйымдастырушы құрылды.",
+    "deletePlayer": "Ойыншыны жою"
   },
   "changeRatings": {
     "title": "Рейтингтерді өзгерту",

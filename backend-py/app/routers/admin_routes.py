@@ -71,6 +71,37 @@ def create_player(body: PlayerBody):
     return _upsert(body, body.id)
 
 
+@router.delete("/players/{player_id}")
+def delete_player(player_id: str):
+    """Delete a player who has never played.
+
+    Refused once the player appears in any tournament, pairing or rating
+    history: the foreign keys cascade, so deleting them would quietly take
+    finished results and standings snapshots with them. Withdraw them from the
+    tournament instead.
+    """
+    with db.connect() as conn:
+        exists = conn.execute(
+            "SELECT 1 FROM players WHERE id = %s", (player_id,)
+        ).fetchone()
+        if exists is None:
+            raise HTTPException(status_code=404, detail="Player not found")
+
+        has_history = conn.execute(
+            "SELECT player_has_history(%s) AS h", (player_id,)
+        ).fetchone()["h"]
+        if has_history:
+            raise HTTPException(
+                status_code=409,
+                detail=("This player has tournament history and cannot be "
+                        "deleted. Withdraw them from the tournament instead."),
+            )
+
+        conn.execute("DELETE FROM players WHERE id = %s", (player_id,))
+        conn.commit()
+    return {"ok": True, "deleted": player_id}
+
+
 @router.put("/players/{player_id}")
 def update_player(player_id: str, body: PlayerBody):
     with db.connect() as conn:

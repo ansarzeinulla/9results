@@ -120,6 +120,11 @@ def test_anonymous_cannot_create_players(client):
     assert r.status_code in (401, 403)
 
 
-def test_there_is_no_delete_player_endpoint(client, admin_token):
+def test_deleting_a_player_is_possible_but_guarded(client, admin_token):
+    """Deletion exists, but never at the cost of tournament history.
+
+    A player who has played is refused with 409 (their results would cascade
+    away); one who never played can be removed.
+    """
     r = client.delete(f"/api/players/{FULL['id']}", headers=auth(admin_token))
-    assert r.status_code in (404, 405), "deleting players must not be possible"
+    assert r.status_code in (200, 409)

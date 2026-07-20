@@ -154,6 +154,24 @@ export default function AdminPanel({ federations }: { federations: Lookup[] }) {
     }
   };
 
+  /** Deletion is refused server-side once the player has any history. */
+  const remove = async () => {
+    if (!window.confirm(t("adminPanel.deleteConfirm"))) return;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await api(`/players/${encodeURIComponent(form.id)}`, { method: "DELETE" });
+      setNotice(t("adminPanel.deleted"));
+      reset();
+      router.refresh();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const createOrganizer = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
@@ -350,6 +368,16 @@ export default function AdminPanel({ federations }: { federations: Lookup[] }) {
               >
                 {t("common.cancel")}
               </button>
+              {mode === "edit" && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={remove}
+                  className="ml-auto rounded-lg border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-950"
+                >
+                  {t("adminPanel.deletePlayer")}
+                </button>
+              )}
             </div>
           </form>
         </section>

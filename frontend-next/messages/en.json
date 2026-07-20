@@ -188,7 +188,8 @@
     "deleteRound": "Delete round",
     "deleteRoundConfirm": "Delete round {n} completely? Its results will be reverted.",
     "pairingsSaved": "Pairings saved.",
-    "roundDeleted": "Round deleted."
+    "roundDeleted": "Round deleted.",
+    "syncRanks": "Sync start numbers"
   },
   "changeRatings": {
     "title": "Change Ratings",
@@ -218,11 +219,12 @@
     "prev": "← Prev",
     "next": "Next →",
     "delete": "Delete",
-    "deleted": "Deleted.",
-    "deleteConfirm": "Delete player {name}?",
+    "deleted": "Player deleted.",
+    "deleteConfirm": "Delete this player permanently?",
     "organizers": "Organizers",
     "addOrganizer": "Add Organizer",
-    "organizerCreated": "Organizer account created."
+    "organizerCreated": "Organizer account created.",
+    "deletePlayer": "Delete player"
   },
   "swiss": {
     "REMATCH": "{a} and {b} have already played each other",

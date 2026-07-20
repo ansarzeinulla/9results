@@ -4,9 +4,27 @@
  * Production: supabase-js with the anon key — RLS makes it read-only.
  * Local dev/tests: direct Postgres via `pg` when DATABASE_URL is set.
  */
+import { cache } from "react";
 import { Pool } from "pg";
 import { createClient } from "@supabase/supabase-js";
 import { indexTranslations, localizedName } from "./translations";
+
+/**
+ * Reference data (locations, levels, rating types, federations) changes
+ * essentially never but was re-read on every organizer/admin page load — four
+ * queries plus every location translation. Memoised per server instance with a
+ * short TTL so it costs one round trip per window instead of per request.
+ */
+const REFERENCE_TTL_MS = 10 * 60 * 1000;
+const referenceCache = new Map<string, { at: number; value: unknown }>();
+
+async function memoReference<T>(key: string, load: () => Promise<T>): Promise<T> {
+  const hit = referenceCache.get(key);
+  if (hit && Date.now() - hit.at < REFERENCE_TTL_MS) return hit.value as T;
+  const value = await load();
+  referenceCache.set(key, { at: Date.now(), value });
+  return value;
+}
 
 /** Throw on Supabase errors instead of silently returning empty results. */
 function unwrap<T>(res: { data: T; error: unknown }): T {
@@ -174,7 +192,7 @@ export async function listTournaments(locale: string, f: TournamentFilters = {})
   return { rows, total: rows.length ? Number(rows[0].total) : 0 };
 }
 
-export async function getTournamentBySlug(locale: string, rawSlug: string) {
+async function loadTournamentBySlug(locale: string, rawSlug: string) {
   // Route params arrive percent-encoded for non-Latin slugs (e.g. Cyrillic
   // tournament names), and the dashboard links `slug ?? id`, so a tournament
   // without a slug is addressed by its numeric id.
@@ -208,6 +226,12 @@ export async function getTournamentBySlug(locale: string, rawSlug: string) {
   );
   return rows[0] ?? null;
 }
+
+/**
+ * Deduplicated per request: the tournament layout and the active tab each need
+ * the tournament, which previously issued the same query twice per page view.
+ */
+export const getTournamentBySlug = cache(loadTournamentBySlug);
 
 export interface ParticipantRow {
   player_id: string;
@@ -570,6 +594,10 @@ export async function listAllTournaments(locale: string) {
 }
 
 export async function getLookups(locale: string) {
+  return memoReference(`lookups:${dbLang(locale)}`, () => loadLookups(locale));
+}
+
+async function loadLookups(locale: string) {
   const lang = dbLang(locale);
   if (useSupabase) {
     const sb = supabase();

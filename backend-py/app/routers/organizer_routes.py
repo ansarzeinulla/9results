@@ -1,3 +1,5 @@
+import re
+
 import psycopg
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -132,6 +134,68 @@ def add_player(tid: int, body: AddPlayerBody):
             raise HTTPException(status_code=409, detail="Already registered")
         conn.commit()
     return {"ok": True}
+
+
+class BulkAddBody(BaseModel):
+    ids: str  # free text: comma, newline or space separated
+
+
+def parse_ids(raw: str) -> list[str]:
+    """Split a pasted list of ids on commas/newlines/semicolons, keeping order
+    and dropping blanks and repeats."""
+    seen: list[str] = []
+    for chunk in re.split(r"[,\n;]+", raw):
+        pid = chunk.strip()
+        if pid and pid not in seen:
+            seen.append(pid)
+    return seen
+
+
+@router.post("/tournaments/{tid}/players/bulk")
+def add_players_bulk(tid: int, body: BulkAddBody):
+    """Register many players at once. One bad id never stops the rest — each
+    failure is reported back with a reason. Start numbers are renumbered once
+    at the end rather than after every insert."""
+    ids = parse_ids(body.ids)
+    added: list[str] = []
+    errors: list[dict] = []
+
+    with db.connect() as conn:
+        known = {
+            r["id"] for r in conn.execute(
+                "SELECT id FROM players WHERE id = ANY(%s)", (ids,)
+            ).fetchall()
+        } if ids else set()
+        already = {
+            r["player_id"] for r in conn.execute(
+                "SELECT player_id FROM tournament_participants WHERE tournament_id = %s",
+                (tid,),
+            ).fetchall()
+        }
+
+        for pid in ids:
+            if pid not in known:
+                errors.append({"id": pid, "reason": "Player not found"})
+                continue
+            if pid in already:
+                errors.append({"id": pid, "reason": "Already registered"})
+                continue
+            try:
+                conn.execute(
+                    "CALL admin_add_to_tournament_nosync(%s, %s)", (tid, pid)
+                )
+                added.append(pid)
+                already.add(pid)
+            except psycopg.Error as e:
+                conn.rollback()
+                errors.append({"id": pid, "reason": str(e).strip()})
+
+        if added:
+            conn.execute("CALL sync_starting_ranks(%s)", (tid,))
+        conn.commit()
+
+    return {"added": len(added), "failed": len(errors),
+            "added_ids": added, "errors": errors}
 
 
 @router.delete("/tournaments/{tid}/players/{player_id}")
@@ -335,6 +399,64 @@ def cancel_result(pid: int):
             raise
         conn.commit()
     return {"ok": True}
+
+
+class BatchResult(BaseModel):
+    pairing_id: int
+    result: str | None = None  # None clears the result
+
+
+class BatchResultsBody(BaseModel):
+    results: list[BatchResult]
+
+
+@router.post("/rounds/{rid}/results")
+def set_results_batch(rid: int, body: BatchResultsBody):
+    """Save a whole round of results in one request.
+
+    Entering results one board at a time meant one HTTP round trip and one
+    full standings recalculation per click. Here every result is written in a
+    single transaction and the standings are recalculated exactly once. The
+    batch is all-or-nothing, so a typo cannot half-apply a round.
+    """
+    with db.connect() as conn:
+        round_row = conn.execute(
+            "SELECT tournament_id, is_closed FROM rounds WHERE id = %s", (rid,)
+        ).fetchone()
+        if round_row is None:
+            raise HTTPException(status_code=404, detail="Round not found")
+        if round_row["is_closed"]:
+            raise HTTPException(status_code=409, detail="Round is closed")
+
+        valid_ids = {
+            r["id"] for r in conn.execute(
+                "SELECT id FROM pairings WHERE round_id = %s", (rid,)
+            ).fetchall()
+        }
+        for item in body.results:
+            if item.pairing_id not in valid_ids:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Pairing {item.pairing_id} is not in this round",
+                )
+
+        try:
+            for item in body.results:
+                conn.execute(
+                    "UPDATE pairings SET result_id = %s WHERE id = %s",
+                    (item.result, item.pairing_id),
+                )
+            # recalculated once for the whole batch, not once per board
+            conn.execute("CALL calculate_standings(%s)", (round_row["tournament_id"],))
+        except psycopg.errors.ForeignKeyViolation:
+            conn.rollback()
+            raise HTTPException(status_code=422, detail="Unknown result code")
+        except psycopg.Error as e:
+            conn.rollback()
+            raise HTTPException(status_code=422, detail=str(e).strip())
+        conn.commit()
+
+    return {"saved": len(body.results)}
 
 
 @router.post("/tournaments/{tid}/rounds/{rid}/close")

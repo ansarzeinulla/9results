@@ -188,7 +188,8 @@
     "deleteRound": "Удалить тур",
     "deleteRoundConfirm": "Полностью удалить тур {n}? Его результаты будут отменены.",
     "pairingsSaved": "Пары сохранены.",
-    "roundDeleted": "Тур удалён."
+    "roundDeleted": "Тур удалён.",
+    "syncRanks": "Пересчитать стартовые номера"
   },
   "changeRatings": {
     "title": "Изменение рейтингов",
@@ -218,11 +219,12 @@
     "prev": "← Назад",
     "next": "Вперёд →",
     "delete": "Удалить",
-    "deleted": "Удалено.",
-    "deleteConfirm": "Удалить игрока {name}?",
+    "deleted": "Игрок удалён.",
+    "deleteConfirm": "Удалить игрока безвозвратно?",
     "organizers": "Организаторы",
     "addOrganizer": "Добавить организатора",
-    "organizerCreated": "Аккаунт организатора создан."
+    "organizerCreated": "Аккаунт организатора создан.",
+    "deletePlayer": "Удалить игрока"
   },
   "swiss": {
     "REMATCH": "{a} и {b} уже играли между собой",
