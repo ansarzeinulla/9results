@@ -396,7 +396,8 @@ export default function ControlPanel({
                 disabled={busy}
                 onClick={() =>
                   run(() =>
-                    api(`/rounds/${lastRound.id}/pairings`, { method: "DELETE" })
+                    // deletes the round row itself so a new round can be generated
+                    api(`/rounds/${lastRound.id}`, { method: "DELETE" })
                   )
                 }
                 className="rounded-lg border border-red-300 px-4 py-2 text-sm text-red-600"

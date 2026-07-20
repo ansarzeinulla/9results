@@ -263,3 +263,58 @@ def test_organizer_cannot_delete_a_player(client, organizer_token):
 def test_deleting_an_unknown_player_is_404(client, admin_token):
     r = client.delete("/api/players/NO-SUCH-PLAYER", headers=auth(admin_token))
     assert r.status_code == 404
+
+
+# --- deleting a whole round (cancel + reopen the previous state) ---
+
+def test_deleting_a_round_removes_it_and_allows_regeneration(
+    client, admin_token, organizer_token, migrated_db
+):
+    ids = make_players(client, admin_token, "RNDDEL", 4)
+    tid = make_tournament(client, organizer_token, "round-delete-cup")
+    client.post(f"/api/tournaments/{tid}/players/bulk",
+                headers=auth(organizer_token), json={"ids": ",".join(ids)})
+    r = client.post(f"/api/tournaments/{tid}/generate-round",
+                    headers=auth(organizer_token))
+    rid = r.json()["round_id"]
+
+    # cancelling the round removes the round row itself, not only its pairings
+    r = client.delete(f"/api/rounds/{rid}", headers=auth(organizer_token))
+    assert r.status_code == 200, r.text
+    with psycopg.connect(migrated_db) as db:
+        assert db.execute(
+            "SELECT COUNT(*) FROM rounds WHERE id=%s", (rid,)
+        ).fetchone()[0] == 0
+        pts = db.execute(
+            "SELECT SUM(points) FROM tournament_participants WHERE tournament_id=%s",
+            (tid,),
+        ).fetchone()[0]
+    assert float(pts) == 0.0, "standings must be reset"
+
+    # and a new round 1 can be generated again
+    r = client.post(f"/api/tournaments/{tid}/generate-round",
+                    headers=auth(organizer_token))
+    assert r.status_code == 200, r.text
+    assert r.json()["round_number"] == 1
+
+
+def test_a_closed_round_cannot_be_deleted(
+    client, admin_token, organizer_token, migrated_db
+):
+    ids = make_players(client, admin_token, "RNDLOCK", 4)
+    tid = make_tournament(client, organizer_token, "round-lock-cup")
+    client.post(f"/api/tournaments/{tid}/players/bulk",
+                headers=auth(organizer_token), json={"ids": ",".join(ids)})
+    r = client.post(f"/api/tournaments/{tid}/generate-round",
+                    headers=auth(organizer_token))
+    rid = r.json()["round_id"]
+    with psycopg.connect(migrated_db) as db:
+        pids_ = [x[0] for x in db.execute(
+            "SELECT id FROM pairings WHERE round_id=%s", (rid,)).fetchall()]
+    client.post(f"/api/rounds/{rid}/results", headers=auth(organizer_token), json={
+        "results": [{"pairing_id": p, "result": "1-0"} for p in pids_]
+    })
+    client.post(f"/api/tournaments/{tid}/rounds/{rid}/close",
+                headers=auth(organizer_token))
+    r = client.delete(f"/api/rounds/{rid}", headers=auth(organizer_token))
+    assert r.status_code == 409, "closed history must not be deletable"

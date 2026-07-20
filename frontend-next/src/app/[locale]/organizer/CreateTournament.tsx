@@ -48,7 +48,7 @@ export default function CreateTournament({
     setBusy(true);
     setError(null);
     try {
-      await api("/tournaments", {
+      const created = await api<{ id: number }>("/tournaments", {
         method: "POST",
         body: JSON.stringify({
           ...form,
@@ -57,8 +57,9 @@ export default function CreateTournament({
           level_id: form.level_id || null,
         }),
       });
-      router.refresh();
-      setForm({ ...form, name: "" });
+      // straight to the control panel of the new tournament — also avoids a
+      // stale dashboard list (its client-side fetch runs on mount only)
+      router.push(`/organizer/tournaments/${created.id}`);
     } catch (err) {
       setError((err as Error).message);
     } finally {

@@ -12,6 +12,51 @@ from app.engines.swiss_rules import generate_swiss_round, validate_total_rounds
 
 router = APIRouter(dependencies=[Depends(require_organizer)])
 
+
+# --- ownership ----------------------------------------------------------
+# Tournaments belong to whoever created them. Only the owner (or an admin)
+# may modify a tournament; a legacy row without an owner is admin-only.
+
+def _user_id(user: dict) -> int:
+    return int(user["sub"])
+
+
+def _check_owner_tid(conn, tid: int, user: dict) -> None:
+    if user.get("role") == "ADMIN":
+        return
+    row = conn.execute(
+        "SELECT owner_user_id FROM tournaments WHERE id = %s", (tid,)
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Tournament not found")
+    if row["owner_user_id"] != _user_id(user):
+        raise HTTPException(
+            status_code=403,
+            detail="Only the organizer who created this tournament can modify it",
+        )
+
+
+def _check_owner_rid(conn, rid: int, user: dict) -> int:
+    """Ownership check via a round id; returns the tournament id."""
+    row = conn.execute(
+        "SELECT tournament_id FROM rounds WHERE id = %s", (rid,)
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Round not found")
+    _check_owner_tid(conn, row["tournament_id"], user)
+    return row["tournament_id"]
+
+
+def _check_owner_pairing(conn, pairing_id: int, user: dict) -> None:
+    row = conn.execute(
+        """SELECT r.tournament_id FROM pairings p
+           JOIN rounds r ON r.id = p.round_id WHERE p.id = %s""",
+        (pairing_id,),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Pairing not found")
+    _check_owner_tid(conn, row["tournament_id"], user)
+
 # Postgres constraint names mapped to messages an organizer can act on.
 _CONSTRAINT_MESSAGES = {
     "chk_tourn_dates": "The end date must not be earlier than the start date",
@@ -59,7 +104,7 @@ class TournamentBody(BaseModel):
 
 
 @router.post("/tournaments")
-def create_tournament(body: TournamentBody):
+def create_tournament(body: TournamentBody, user=Depends(require_organizer)):
     try:
         validate_total_rounds(body.rounds)
     except PairingError as e:
@@ -69,14 +114,16 @@ def create_tournament(body: TournamentBody):
             row = conn.execute(
                 """INSERT INTO tournaments (name, slug, federation_id, location_id,
                        rating_type_id, tournament_type_id, start_date, end_date,
-                       rounds, level_id, participant_type_id, time_control, status)
+                       rounds, level_id, participant_type_id, time_control, status,
+                       owner_user_id)
                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                           COALESCE(%s, 'REGISTRATION'))
+                           COALESCE(%s, 'REGISTRATION'), %s)
                    RETURNING id, slug""",
                 (body.name, body.slug, body.federation_id, body.location_id,
                  body.rating_type_id, body.tournament_type_id, body.start_date,
                  body.end_date, body.rounds, body.level_id,
-                 body.participant_type_id, body.time_control, body.status),
+                 body.participant_type_id, body.time_control, body.status,
+                 _user_id(user)),
             ).fetchone()
         except psycopg.Error as e:
             raise _tournament_write_error(e)
@@ -84,13 +131,32 @@ def create_tournament(body: TournamentBody):
     return row
 
 
+@router.get("/my/tournaments")
+def my_tournaments(user=Depends(require_organizer)):
+    """The dashboard list: an organizer sees only their own tournaments,
+    an admin sees everything."""
+    with db.connect() as conn:
+        if user.get("role") == "ADMIN":
+            rows = conn.execute(
+                "SELECT * FROM tournaments ORDER BY start_date DESC"
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """SELECT * FROM tournaments WHERE owner_user_id = %s
+                   ORDER BY start_date DESC""",
+                (_user_id(user),),
+            ).fetchall()
+    return rows
+
+
 @router.put("/tournaments/{tid}")
-def update_tournament(tid: int, body: TournamentBody):
+def update_tournament(tid: int, body: TournamentBody, user=Depends(require_organizer)):
     try:
         validate_total_rounds(body.rounds)
     except PairingError as e:
         raise HTTPException(status_code=422, detail=str(e))
     with db.connect() as conn:
+        _check_owner_tid(conn, tid, user)
         try:
             row = conn.execute(
                 """UPDATE tournaments SET name=%s, slug=%s, federation_id=%s,
@@ -121,8 +187,9 @@ class AddPlayerBody(BaseModel):
 
 
 @router.post("/tournaments/{tid}/players")
-def add_player(tid: int, body: AddPlayerBody):
+def add_player(tid: int, body: AddPlayerBody, user=Depends(require_organizer)):
     with db.connect() as conn:
+        _check_owner_tid(conn, tid, user)
         exists = conn.execute(
             "SELECT 1 FROM players WHERE id = %s", (body.player_id,)
         ).fetchone()
@@ -152,7 +219,7 @@ def parse_ids(raw: str) -> list[str]:
 
 
 @router.post("/tournaments/{tid}/players/bulk")
-def add_players_bulk(tid: int, body: BulkAddBody):
+def add_players_bulk(tid: int, body: BulkAddBody, user=Depends(require_organizer)):
     """Register many players at once. One bad id never stops the rest — each
     failure is reported back with a reason. Start numbers are renumbered once
     at the end rather than after every insert."""
@@ -161,6 +228,7 @@ def add_players_bulk(tid: int, body: BulkAddBody):
     errors: list[dict] = []
 
     with db.connect() as conn:
+        _check_owner_tid(conn, tid, user)
         known = {
             r["id"] for r in conn.execute(
                 "SELECT id FROM players WHERE id = ANY(%s)", (ids,)
@@ -199,24 +267,27 @@ def add_players_bulk(tid: int, body: BulkAddBody):
 
 
 @router.delete("/tournaments/{tid}/players/{player_id}")
-def remove_player(tid: int, player_id: str):
+def remove_player(tid: int, player_id: str, user=Depends(require_organizer)):
     with db.connect() as conn:
+        _check_owner_tid(conn, tid, user)
         conn.execute("CALL admin_remove_from_tournament(%s, %s)", (tid, player_id))
         conn.commit()
     return {"ok": True}
 
 
 @router.post("/tournaments/{tid}/players/sync-ranks")
-def sync_ranks(tid: int):
+def sync_ranks(tid: int, user=Depends(require_organizer)):
     with db.connect() as conn:
+        _check_owner_tid(conn, tid, user)
         conn.execute("CALL sync_starting_ranks(%s)", (tid,))
         conn.commit()
     return {"ok": True}
 
 
 @router.post("/tournaments/{tid}/withdraw/{player_id}")
-def withdraw_player(tid: int, player_id: str):
+def withdraw_player(tid: int, player_id: str, user=Depends(require_organizer)):
     with db.connect() as conn:
+        _check_owner_tid(conn, tid, user)
         conn.execute("CALL org_withdraw_player(%s, %s)", (tid, player_id))
         conn.commit()
     return {"ok": True}
@@ -244,8 +315,9 @@ def _tournament_state(conn, tid):
 
 
 @router.post("/tournaments/{tid}/generate-round")
-def generate_round(tid: int):
+def generate_round(tid: int, user=Depends(require_organizer)):
     with db.connect() as conn:
+        _check_owner_tid(conn, tid, user)
         last = conn.execute(
             "SELECT COALESCE(MAX(round_number), 0) AS n FROM rounds WHERE tournament_id=%s",
             (tid,),
@@ -304,8 +376,9 @@ class ValidateBody(BaseModel):
 
 
 @router.post("/tournaments/{tid}/validate-pairings")
-def validate_pairings(tid: int, body: ValidateBody):
+def validate_pairings(tid: int, body: ValidateBody, user=Depends(require_organizer)):
     with db.connect() as conn:
+        _check_owner_tid(conn, tid, user)
         players, matches = _tournament_state(conn, tid)
     matches = [m for m in matches if m["result"] is not None]
     return validate_round_pairings(
@@ -319,8 +392,9 @@ class ReplacePairingsBody(BaseModel):
 
 
 @router.put("/rounds/{rid}/pairings")
-def replace_pairings(rid: int, body: ReplacePairingsBody):
+def replace_pairings(rid: int, body: ReplacePairingsBody, user=Depends(require_organizer)):
     with db.connect() as conn:
+        _check_owner_rid(conn, rid, user)
         row = conn.execute(
             "SELECT tournament_id, round_number, is_closed FROM rounds WHERE id=%s",
             (rid,),
@@ -362,9 +436,28 @@ def replace_pairings(rid: int, body: ReplacePairingsBody):
 
 
 @router.delete("/rounds/{rid}/pairings")
-def cancel_pairings(rid: int):
+def cancel_pairings(rid: int, user=Depends(require_organizer)):
     with db.connect() as conn:
+        _check_owner_rid(conn, rid, user)
         conn.execute("CALL org_cancel_pairings(%s)", (rid,))
+        conn.commit()
+    return {"ok": True}
+
+
+@router.delete("/rounds/{rid}")
+def delete_round(rid: int, user=Depends(require_organizer)):
+    """Cancel a round entirely: the round row goes away (pairings cascade)
+    and the standings are recalculated, so a new round can be generated.
+    Closed rounds are history and cannot be deleted."""
+    with db.connect() as conn:
+        tid = _check_owner_rid(conn, rid, user)
+        closed = conn.execute(
+            "SELECT is_closed FROM rounds WHERE id = %s", (rid,)
+        ).fetchone()["is_closed"]
+        if closed:
+            raise HTTPException(status_code=409, detail="Round is closed")
+        conn.execute("DELETE FROM rounds WHERE id = %s", (rid,))
+        conn.execute("CALL calculate_standings(%s)", (tid,))
         conn.commit()
     return {"ok": True}
 
@@ -374,8 +467,9 @@ class ResultBody(BaseModel):
 
 
 @router.post("/pairings/{pid}/result")
-def set_result(pid: int, body: ResultBody):
+def set_result(pid: int, body: ResultBody, user=Depends(require_organizer)):
     with db.connect() as conn:
+        _check_owner_pairing(conn, pid, user)
         try:
             conn.execute("CALL org_set_result(%s, %s)", (pid, body.result))
         except psycopg.errors.RaiseException as e:
@@ -389,8 +483,9 @@ def set_result(pid: int, body: ResultBody):
 
 
 @router.delete("/pairings/{pid}/result")
-def cancel_result(pid: int):
+def cancel_result(pid: int, user=Depends(require_organizer)):
     with db.connect() as conn:
+        _check_owner_pairing(conn, pid, user)
         try:
             conn.execute("CALL org_cancel_result(%s)", (pid,))
         except psycopg.errors.RaiseException as e:
@@ -411,7 +506,7 @@ class BatchResultsBody(BaseModel):
 
 
 @router.post("/rounds/{rid}/results")
-def set_results_batch(rid: int, body: BatchResultsBody):
+def set_results_batch(rid: int, body: BatchResultsBody, user=Depends(require_organizer)):
     """Save a whole round of results in one request.
 
     Entering results one board at a time meant one HTTP round trip and one
@@ -420,6 +515,7 @@ def set_results_batch(rid: int, body: BatchResultsBody):
     batch is all-or-nothing, so a typo cannot half-apply a round.
     """
     with db.connect() as conn:
+        _check_owner_rid(conn, rid, user)
         round_row = conn.execute(
             "SELECT tournament_id, is_closed FROM rounds WHERE id = %s", (rid,)
         ).fetchone()
@@ -460,16 +556,18 @@ def set_results_batch(rid: int, body: BatchResultsBody):
 
 
 @router.post("/tournaments/{tid}/rounds/{rid}/close")
-def close_round(tid: int, rid: int):
+def close_round(tid: int, rid: int, user=Depends(require_organizer)):
     with db.connect() as conn:
+        _check_owner_tid(conn, tid, user)
         conn.execute("CALL org_close_round(%s, %s)", (tid, rid))
         conn.commit()
     return {"ok": True}
 
 
 @router.post("/tournaments/{tid}/finalize")
-def finalize(tid: int):
+def finalize(tid: int, user=Depends(require_organizer)):
     with db.connect() as conn:
+        _check_owner_tid(conn, tid, user)
         players, matches = _tournament_state(conn, tid)
         ratings = {p["player_id"]: float(p["current_rating"] or 0) for p in players}
         deltas = calculate_tournament_ratings(
