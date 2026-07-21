@@ -7,9 +7,13 @@ import { getUser, logout } from "@/lib/api";
 import OmniSearch from "./OmniSearch";
 
 const LOCALES = [
-  { code: "ru", label: "RU" },
-  { code: "en", label: "EN" },
-  { code: "kk", label: "KZ" },
+  { code: "en", label: "🇬🇧 English" },
+  { code: "kk", label: "🇰🇿 Қазақша" },
+  { code: "ru", label: "🇷🇺 Русский" },
+  { code: "tr", label: "🇹🇷 Türkçe" },
+  { code: "ko", label: "🇰🇷 한국어" },
+  { code: "es", label: "🇨🇴 Español" },
+  { code: "cs", label: "🇨🇿 Čeština" },
 ];
 
 function ThemeToggle() {
@@ -63,7 +67,7 @@ export default function Header() {
     <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/90 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/90">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-4">
         <Link href="/" className="shrink-0 text-lg font-bold tracking-tight">
-          results<span className="text-emerald-600">.togyz</span>
+          9Ecosystem
         </Link>
         <nav className="hidden items-center gap-4 text-sm md:flex">
           <Link href="/tournaments" className="hover:text-emerald-600">
@@ -73,14 +77,19 @@ export default function Header() {
             {t("nav.players")}
           </Link>
           <span className="cursor-not-allowed text-neutral-400" title="Soon">
-            {t("nav.games")}
+            Engine
           </span>
           <span className="cursor-not-allowed text-neutral-400" title="Soon">
-            Live
+            Arena
+          </span>
+          <span className="cursor-not-allowed text-neutral-400" title="Soon">
+            Games
+          </span>
+          <span className="cursor-not-allowed text-neutral-400" title="Soon">
+            Var
           </span>
         </nav>
         <div className="ml-auto flex items-center gap-2">
-          <OmniSearch />
           <LangSwitcher />
           <ThemeToggle />
           {user ? (

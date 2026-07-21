@@ -247,6 +247,8 @@
   "hero": {
     "activePlayers": "Oyuncular",
     "tournamentsCount": "Turnuvalar",
+    "gamesCount": "Oyunlar",
+    "liveCount": "Live",
     "ongoing": "Devam eden ve yaklaşan",
     "viewPairings": "Eşleşmeleri gör",
     "contacts": "Federasyon iletişim bilgileri"

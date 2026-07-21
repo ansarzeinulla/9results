@@ -247,6 +247,8 @@
   "hero": {
     "activePlayers": "Ойыншылар",
     "tournamentsCount": "Турнирлер",
+    "gamesCount": "Ойындар",
+    "liveCount": "Live",
     "ongoing": "Өтіп жатқан және алдағы",
     "viewPairings": "Жеребені көру",
     "contacts": "Федерация байланыстары"

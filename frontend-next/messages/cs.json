@@ -247,6 +247,8 @@
   "hero": {
     "activePlayers": "Hráči",
     "tournamentsCount": "Turnaje",
+    "gamesCount": "Hry",
+    "liveCount": "Live",
     "ongoing": "Probíhající a nadcházející",
     "viewPairings": "Zobrazit nasazení",
     "contacts": "Kontakty federace"

@@ -247,6 +247,8 @@
   "hero": {
     "activePlayers": "선수",
     "tournamentsCount": "대회",
+    "gamesCount": "게임",
+    "liveCount": "라이브",
     "ongoing": "진행 중 및 예정",
     "viewPairings": "대진 보기",
     "contacts": "연맹 연락처"

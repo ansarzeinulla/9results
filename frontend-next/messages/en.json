@@ -247,6 +247,8 @@
   "hero": {
     "activePlayers": "Players",
     "tournamentsCount": "Tournaments",
+    "gamesCount": "Games",
+    "liveCount": "Live",
     "ongoing": "Ongoing & upcoming",
     "viewPairings": "View pairings",
     "contacts": "Federation contacts"

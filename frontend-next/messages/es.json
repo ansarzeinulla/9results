@@ -247,6 +247,8 @@
   "hero": {
     "activePlayers": "Jugadores",
     "tournamentsCount": "Torneos",
+    "gamesCount": "Partidas",
+    "liveCount": "Live",
     "ongoing": "En curso y próximos",
     "viewPairings": "Ver emparejamientos",
     "contacts": "Contactos de la federación"
