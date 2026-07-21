@@ -1,0 +1,273 @@
+{
+  "app": {
+    "title": "results.togyz",
+    "tagline": "Výsledky turnajů v togyzkumalaku a rating hráčů"
+  },
+  "nav": {
+    "home": "Domů",
+    "tournaments": "Turnaje",
+    "players": "Hráči",
+    "registerPlayer": "Registrovat hráče",
+    "organizerLogin": "Přihlášení pořadatele",
+    "dashboard": "Přehled",
+    "logout": "Odhlásit se",
+    "adminPanel": "Správa",
+    "login": "Přihlásit se"
+  },
+  "common": {
+    "search": "Hledat",
+    "loading": "Načítání…",
+    "all": "Vše",
+    "save": "Uložit",
+    "cancel": "Zrušit",
+    "back": "Zpět",
+    "none": "Žádné",
+    "yes": "Ano",
+    "no": "Ne",
+    "apply": "Použít",
+    "actions": "Akce",
+    "publicPage": "Veřejná stránka",
+    "optional": "volitelné"
+  },
+  "home": {
+    "searchPlaceholder": "Hledat turnaje nebo hráče…",
+    "tournaments": "Turnaje",
+    "players": "Hráči",
+    "noTournaments": "Nebyly nalezeny žádné turnaje.",
+    "noPlayers": "Nebyli nalezeni žádní hráči."
+  },
+  "fields": {
+    "name": "Jméno",
+    "federation": "Federace",
+    "city": "Město",
+    "location": "Místo",
+    "status": "Stav",
+    "level": "Úroveň",
+    "ratingType": "Typ ratingu",
+    "players": "Hráči",
+    "firstName": "Jméno",
+    "lastName": "Příjmení",
+    "middleName": "Prostřední jméno",
+    "birthYear": "Rok narození",
+    "club": "Klub",
+    "title": "Titul",
+    "ratingBlitz": "Bleskový rating",
+    "ratingRapid": "Rapid rating",
+    "ratingClassic": "Klasický rating",
+    "createdAt": "Vytvořeno",
+    "endedAt": "Ukončeno",
+    "rank": "Poř.",
+    "sno": "Č.",
+    "player": "Jméno",
+    "rating": "Rtg",
+    "points": "Body",
+    "buchholz": "TB1",
+    "rp": "Rp",
+    "startRating": "Rtg",
+    "projectedRating": "Rtg po",
+    "board": "Stůl",
+    "white": "Bílý",
+    "black": "Černý",
+    "result": "Výsledek",
+    "organizer": "Pořadatel",
+    "tieBreak": "Pomocné hodnocení",
+    "rounds": "Počet kol",
+    "timeControl": "Časová kontrola",
+    "lastUpdate": "Poslední aktualizace",
+    "gender": "Pohlaví",
+    "ageCategory": "Věk",
+    "playerId": "ID hráče",
+    "date": "Datum"
+  },
+  "view": {
+    "label": "Vybrat zobrazení",
+    "startingRank": "Startovní listina",
+    "pairings": "Nasazení/výsledky",
+    "rankingAfter": "Pořadí po kole",
+    "finalRanking": "Konečná výsledková tabulka"
+  },
+  "status": {
+    "setup": "Připravovaný",
+    "ongoing": "Živě",
+    "finished": "Ukončený"
+  },
+  "level": {
+    "International": "Mezinárodní",
+    "National": "Národní",
+    "Regional": "Regionální",
+    "School": "Školní",
+    "Test": "Testovací"
+  },
+  "ratingType": {
+    "blitz": "Blesk",
+    "rapid": "Rapid",
+    "classic": "Klasické",
+    "non_rated": "Bez ratingu"
+  },
+  "tournaments": {
+    "title": "Turnaje",
+    "filters": "Filtry",
+    "anyFederation": "Libovolná federace",
+    "anyCity": "Libovolné město",
+    "anyStatus": "Libovolný stav",
+    "anyLevel": "Libovolná úroveň",
+    "anyRatingType": "Libovolný typ ratingu",
+    "empty": "Žádné turnaje.",
+    "anyGender": "Libovolné pohlaví",
+    "anyAge": "Libovolný věk",
+    "createdFrom": "Vytvořeno od",
+    "createdTo": "Vytvořeno do",
+    "searchName": "Hledat podle jména…"
+  },
+  "tournamentView": {
+    "standings": "Pořadí",
+    "start": "Start",
+    "round": "{n}. kolo",
+    "final": "Konečné",
+    "pairings": "Nasazení {n}. kola",
+    "noPairings": "Pro toto kolo nejsou žádná nasazení.",
+    "noPlayers": "Zatím nejsou registrováni žádní hráči.",
+    "bye": "VOLNO",
+    "print": "Tisk",
+    "exportCsv": "Exportovat do CSV",
+    "beforeTournament": "Před turnajem"
+  },
+  "players": {
+    "title": "Hráči",
+    "history": "Historie turnajů",
+    "noHistory": "Zatím žádné turnaje.",
+    "searchName": "Hledat podle jména…",
+    "ratingHistory": "Změny ratingu",
+    "noRatingHistory": "Zatím žádné změny ratingu."
+  },
+  "playerRegister": {
+    "title": "Registrace hráče",
+    "submit": "Registrovat",
+    "success": "Registrováno! Váš hráčský profil byl vytvořen.",
+    "hint": "Vytvořte hráčský profil. Heslo není potřeba — pořadatelé vás přidají do turnajů."
+  },
+  "login": {
+    "title": "Přihlásit se",
+    "username": "Uživatelské jméno",
+    "password": "Heslo",
+    "signIn": "Přihlásit se",
+    "signingIn": "Přihlašování…"
+  },
+  "dashboard": {
+    "title": "Moje turnaje",
+    "create": "Vytvořit turnaj",
+    "empty": "Zatím žádné turnaje — vytvořte jeden níže.",
+    "createBtn": "Vytvořit",
+    "deleteConfirm": "Smazat turnaj „{name}“ úplně?"
+  },
+  "admin": {
+    "settings": "Nastavení",
+    "participants": "Účastníci",
+    "resultsEntry": "Zadávání výsledků",
+    "changeRatings": "Změnit ratingy",
+    "addPlayer": "Přidat hráče",
+    "selectPlayer": "Vyberte hráče…",
+    "add": "Přidat",
+    "allRegistered": "Všichni hráči jsou již registrováni.",
+    "generateRound": "Vygenerovat další kolo",
+    "roundComplete": "{n}. kolo dokončeno — připraveno na další kolo.",
+    "roundPending": "{count} partií v {n}. kole stále potřebuje výsledek.",
+    "noRounds": "Zatím žádná kola — vygenerujte 1. kolo.",
+    "ratedResults": "Výsledky s ratingem",
+    "nonRatedResults": "Bez ratingu (bez vlivu na rating)",
+    "backToList": "Moje turnaje",
+    "federationFixed": "Federace (pevná)",
+    "addById": "Přidat hráče podle ID",
+    "enterId": "Zadejte ID hráče…",
+    "find": "Najít",
+    "notFound": "Žádný hráč s tímto ID.",
+    "confirmAdd": "Přidat do turnaje",
+    "playerFound": "Hráč nalezen",
+    "editPairings": "Upravit nasazení",
+    "savePairings": "Uložit nasazení",
+    "deleteRound": "Smazat kolo",
+    "deleteRoundConfirm": "Smazat {n}. kolo úplně? Jeho výsledky budou vráceny zpět.",
+    "pairingsSaved": "Nasazení uložena.",
+    "roundDeleted": "Kolo smazáno.",
+    "syncRanks": "Synchronizovat startovní čísla"
+  },
+  "changeRatings": {
+    "title": "Změnit ratingy",
+    "subtitle": "Použít Elo změny pro rating {type}. Toto lze provést pouze jednou.",
+    "oldRating": "Původní",
+    "delta": "Změna",
+    "newRating": "Nový",
+    "applyBtn": "Použít změny ratingu",
+    "applied": "Ratingy byly použity.",
+    "nonRated": "Tento turnaj je bez ratingu — žádné změny ratingu.",
+    "confirm": "Použít tyto změny ratingu trvale?"
+  },
+  "gender": {
+    "all": "Vše",
+    "male": "Muž",
+    "female": "Žena"
+  },
+  "adminPanel": {
+    "title": "Správa hráčů",
+    "searchPlaceholder": "Hledat podle jména, klubu nebo ID…",
+    "addPlayer": "Přidat nového hráče",
+    "editPlayer": "Upravit hráče č. {id}",
+    "created": "Hráč vytvořen:",
+    "saved": "Hráč uložen.",
+    "total": "{count} hráčů",
+    "edit": "Upravit",
+    "prev": "← Předchozí",
+    "next": "Další →",
+    "delete": "Smazat",
+    "deleted": "Hráč smazán.",
+    "deleteConfirm": "Smazat tohoto hráče trvale?",
+    "organizers": "Pořadatelé",
+    "addOrganizer": "Přidat pořadatele",
+    "organizerCreated": "Účet pořadatele byl vytvořen.",
+    "deletePlayer": "Smazat hráče",
+    "aliases": "Jiné zápisy (cyrilice/latinka), oddělené čárkami"
+  },
+  "swiss": {
+    "REMATCH": "{a} a {b} spolu už hráli",
+    "UNKNOWN_PLAYER": "{id} není v tomto turnaji",
+    "DUPLICATE_PLAYER": "{id} se objevuje ve více než jedné dvojici",
+    "UNPAIRED_PLAYER": "{id} není v tomto kole nasazen",
+    "MULTIPLE_BYES": "Kolo může mít nejvýše jedno volno",
+    "SCORE_MISMATCH": "{a} a {b} jsou v různých bodových skupinách ({pa} vs {pb} bodů)",
+    "REPEAT_BYE": "{id} už volno měl"
+  },
+  "tabs": {
+    "info": "Info",
+    "startingRank": "Startovní listina",
+    "pairings": "Nasazení",
+    "standings": "Pořadí",
+    "alphabetical": "Abecední seznam"
+  },
+  "hero": {
+    "activePlayers": "Hráči",
+    "tournamentsCount": "Turnaje",
+    "ongoing": "Probíhající a nadcházející",
+    "viewPairings": "Zobrazit nasazení",
+    "contacts": "Kontakty federace"
+  },
+  "theme": {
+    "light": "Světlý",
+    "dark": "Tmavý"
+  },
+  "offline": {
+    "title": "Jste offline",
+    "hint": "Naposledy načtené stránky jsou stále dostupné. Připojte se znovu pro čerstvé výsledky."
+  },
+  "search": {
+    "placeholder": "Najít hráče…",
+    "nowPlaying": "Právě hraje",
+    "round": "Kolo",
+    "board": "Stůl",
+    "notPlaying": "Právě nehraje",
+    "noResults": "Nikdo nenalezen"
+  },
+  "share": {
+    "share": "Sdílet",
+    "copied": "Odkaz zkopírován!"
+  }
+}

@@ -1,0 +1,273 @@
+{
+  "app": {
+    "title": "results.togyz",
+    "tagline": "토기즈쿠말락 대회 결과 및 선수 레이팅"
+  },
+  "nav": {
+    "home": "홈",
+    "tournaments": "대회",
+    "players": "선수",
+    "registerPlayer": "선수 등록",
+    "organizerLogin": "주최자 로그인",
+    "dashboard": "대시보드",
+    "logout": "로그아웃",
+    "adminPanel": "관리자",
+    "login": "로그인"
+  },
+  "common": {
+    "search": "검색",
+    "loading": "불러오는 중…",
+    "all": "전체",
+    "save": "저장",
+    "cancel": "취소",
+    "back": "뒤로",
+    "none": "없음",
+    "yes": "예",
+    "no": "아니오",
+    "apply": "적용",
+    "actions": "작업",
+    "publicPage": "공개 페이지",
+    "optional": "선택 사항"
+  },
+  "home": {
+    "searchPlaceholder": "대회 또는 선수 검색…",
+    "tournaments": "대회",
+    "players": "선수",
+    "noTournaments": "대회를 찾을 수 없습니다.",
+    "noPlayers": "선수를 찾을 수 없습니다."
+  },
+  "fields": {
+    "name": "이름",
+    "federation": "연맹",
+    "city": "도시",
+    "location": "장소",
+    "status": "상태",
+    "level": "등급",
+    "ratingType": "레이팅 종류",
+    "players": "선수",
+    "firstName": "이름",
+    "lastName": "성",
+    "middleName": "중간 이름",
+    "birthYear": "출생 연도",
+    "club": "클럽",
+    "title": "타이틀",
+    "ratingBlitz": "블리츠 레이팅",
+    "ratingRapid": "래피드 레이팅",
+    "ratingClassic": "클래식 레이팅",
+    "createdAt": "생성일",
+    "endedAt": "종료일",
+    "rank": "순위",
+    "sno": "번호",
+    "player": "이름",
+    "rating": "레이팅",
+    "points": "점수",
+    "buchholz": "TB1",
+    "rp": "Rp",
+    "startRating": "레이팅",
+    "projectedRating": "변동 후 레이팅",
+    "board": "보드",
+    "white": "백",
+    "black": "흑",
+    "result": "결과",
+    "organizer": "주최자",
+    "tieBreak": "타이브레이크",
+    "rounds": "라운드 수",
+    "timeControl": "시간 제한",
+    "lastUpdate": "마지막 업데이트",
+    "gender": "성별",
+    "ageCategory": "연령",
+    "playerId": "선수 ID",
+    "date": "날짜"
+  },
+  "view": {
+    "label": "보기 선택",
+    "startingRank": "시작 순위표",
+    "pairings": "대진/결과",
+    "rankingAfter": "라운드 후 순위",
+    "finalRanking": "최종 순위표"
+  },
+  "status": {
+    "setup": "예정",
+    "ongoing": "진행 중",
+    "finished": "종료"
+  },
+  "level": {
+    "International": "국제",
+    "National": "전국",
+    "Regional": "지역",
+    "School": "학교",
+    "Test": "테스트"
+  },
+  "ratingType": {
+    "blitz": "블리츠",
+    "rapid": "래피드",
+    "classic": "클래식",
+    "non_rated": "레이팅 미적용"
+  },
+  "tournaments": {
+    "title": "대회",
+    "filters": "필터",
+    "anyFederation": "모든 연맹",
+    "anyCity": "모든 도시",
+    "anyStatus": "모든 상태",
+    "anyLevel": "모든 등급",
+    "anyRatingType": "모든 레이팅 종류",
+    "empty": "대회가 없습니다.",
+    "anyGender": "모든 성별",
+    "anyAge": "모든 연령",
+    "createdFrom": "생성 시작일",
+    "createdTo": "생성 종료일",
+    "searchName": "이름으로 검색…"
+  },
+  "tournamentView": {
+    "standings": "순위",
+    "start": "시작",
+    "round": "{n}라운드",
+    "final": "최종",
+    "pairings": "{n}라운드 대진",
+    "noPairings": "이 라운드의 대진이 없습니다.",
+    "noPlayers": "아직 등록된 선수가 없습니다.",
+    "bye": "부전승",
+    "print": "인쇄",
+    "exportCsv": "CSV로 내보내기",
+    "beforeTournament": "대회 전"
+  },
+  "players": {
+    "title": "선수",
+    "history": "대회 기록",
+    "noHistory": "아직 대회가 없습니다.",
+    "searchName": "이름으로 검색…",
+    "ratingHistory": "레이팅 변동",
+    "noRatingHistory": "아직 레이팅 변동이 없습니다."
+  },
+  "playerRegister": {
+    "title": "선수로 등록",
+    "submit": "등록",
+    "success": "등록되었습니다! 선수 프로필이 생성되었습니다.",
+    "hint": "선수 프로필을 만드세요. 비밀번호는 필요 없습니다 — 주최자가 대회에 추가합니다."
+  },
+  "login": {
+    "title": "로그인",
+    "username": "사용자 이름",
+    "password": "비밀번호",
+    "signIn": "로그인",
+    "signingIn": "로그인 중…"
+  },
+  "dashboard": {
+    "title": "내 대회",
+    "create": "대회 만들기",
+    "empty": "아직 대회가 없습니다 — 아래에서 만드세요.",
+    "createBtn": "만들기",
+    "deleteConfirm": "\"{name}\" 대회를 완전히 삭제할까요?"
+  },
+  "admin": {
+    "settings": "설정",
+    "participants": "참가자",
+    "resultsEntry": "결과 입력",
+    "changeRatings": "레이팅 변경",
+    "addPlayer": "선수 추가",
+    "selectPlayer": "선수를 선택하세요…",
+    "add": "추가",
+    "allRegistered": "모든 선수가 이미 등록되어 있습니다.",
+    "generateRound": "다음 라운드 생성",
+    "roundComplete": "{n}라운드 완료 — 다음 라운드 준비됨.",
+    "roundPending": "{n}라운드의 {count}경기에 결과가 필요합니다.",
+    "noRounds": "아직 라운드가 없습니다 — 1라운드를 생성하세요.",
+    "ratedResults": "레이팅 적용 결과",
+    "nonRatedResults": "레이팅 미적용 (레이팅에 영향 없음)",
+    "backToList": "내 대회",
+    "federationFixed": "연맹 (고정)",
+    "addById": "ID로 선수 추가",
+    "enterId": "선수 ID를 입력하세요…",
+    "find": "찾기",
+    "notFound": "이 ID의 선수가 없습니다.",
+    "confirmAdd": "대회에 추가",
+    "playerFound": "선수를 찾았습니다",
+    "editPairings": "대진 편집",
+    "savePairings": "대진 저장",
+    "deleteRound": "라운드 삭제",
+    "deleteRoundConfirm": "{n}라운드를 완전히 삭제할까요? 결과가 되돌려집니다.",
+    "pairingsSaved": "대진이 저장되었습니다.",
+    "roundDeleted": "라운드가 삭제되었습니다.",
+    "syncRanks": "시작 번호 동기화"
+  },
+  "changeRatings": {
+    "title": "레이팅 변경",
+    "subtitle": "{type} 레이팅에 Elo 변동을 적용합니다. 한 번만 가능합니다.",
+    "oldRating": "이전",
+    "delta": "변동",
+    "newRating": "이후",
+    "applyBtn": "레이팅 변동 적용",
+    "applied": "레이팅이 적용되었습니다.",
+    "nonRated": "이 대회는 레이팅 미적용입니다 — 레이팅 변동 없음.",
+    "confirm": "이 레이팅 변동을 영구적으로 적용할까요?"
+  },
+  "gender": {
+    "all": "전체",
+    "male": "남성",
+    "female": "여성"
+  },
+  "adminPanel": {
+    "title": "선수 관리",
+    "searchPlaceholder": "이름, 클럽 또는 ID로 검색…",
+    "addPlayer": "새 선수 추가",
+    "editPlayer": "선수 #{id} 편집",
+    "created": "선수가 생성되었습니다:",
+    "saved": "선수가 저장되었습니다.",
+    "total": "{count}명의 선수",
+    "edit": "편집",
+    "prev": "← 이전",
+    "next": "다음 →",
+    "delete": "삭제",
+    "deleted": "선수가 삭제되었습니다.",
+    "deleteConfirm": "이 선수를 영구적으로 삭제할까요?",
+    "organizers": "주최자",
+    "addOrganizer": "주최자 추가",
+    "organizerCreated": "주최자 계정이 생성되었습니다.",
+    "deletePlayer": "선수 삭제",
+    "aliases": "다른 표기 (키릴/라틴), 쉼표로 구분"
+  },
+  "swiss": {
+    "REMATCH": "{a}와(과) {b}은(는) 이미 대결했습니다",
+    "UNKNOWN_PLAYER": "{id}은(는) 이 대회에 없습니다",
+    "DUPLICATE_PLAYER": "{id}이(가) 둘 이상의 대진에 있습니다",
+    "UNPAIRED_PLAYER": "{id}은(는) 이 라운드에서 대진되지 않았습니다",
+    "MULTIPLE_BYES": "한 라운드에는 부전승이 최대 하나만 있을 수 있습니다",
+    "SCORE_MISMATCH": "{a}와(과) {b}은(는) 서로 다른 점수 그룹입니다 ({pa} 대 {pb}점)",
+    "REPEAT_BYE": "{id}은(는) 이미 부전승을 받았습니다"
+  },
+  "tabs": {
+    "info": "정보",
+    "startingRank": "시작 명단",
+    "pairings": "대진",
+    "standings": "순위",
+    "alphabetical": "가나다순 명단"
+  },
+  "hero": {
+    "activePlayers": "선수",
+    "tournamentsCount": "대회",
+    "ongoing": "진행 중 및 예정",
+    "viewPairings": "대진 보기",
+    "contacts": "연맹 연락처"
+  },
+  "theme": {
+    "light": "밝게",
+    "dark": "어둡게"
+  },
+  "offline": {
+    "title": "오프라인 상태입니다",
+    "hint": "마지막으로 불러온 페이지는 계속 볼 수 있습니다. 최신 결과를 보려면 다시 연결하세요."
+  },
+  "search": {
+    "placeholder": "선수 찾기…",
+    "nowPlaying": "현재 대국 중",
+    "round": "라운드",
+    "board": "보드",
+    "notPlaying": "현재 대국 중이 아님",
+    "noResults": "찾은 선수가 없습니다"
+  },
+  "share": {
+    "share": "공유",
+    "copied": "링크가 복사되었습니다!"
+  }
+}

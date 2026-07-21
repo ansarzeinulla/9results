@@ -10,6 +10,10 @@ const LOCALES = [
   { code: "ru", label: "RU" },
   { code: "en", label: "EN" },
   { code: "kk", label: "KZ" },
+  { code: "es", label: "ES" },
+  { code: "tr", label: "TR" },
+  { code: "ko", label: "KO" },
+  { code: "cs", label: "CS" },
 ];
 
 function ThemeToggle() {

@@ -3,8 +3,23 @@ import { routing } from "./routing";
 import en from "../../messages/en.json";
 import ru from "../../messages/ru.json";
 import kk from "../../messages/kk.json";
+import es from "../../messages/es.json";
+import tr from "../../messages/tr.json";
+import ko from "../../messages/ko.json";
+import cs from "../../messages/cs.json";
 
-const locales: Record<string, Record<string, unknown>> = { en, ru, kk };
+const locales: Record<string, Record<string, unknown>> = {
+  en,
+  ru,
+  kk,
+  es,
+  tr,
+  ko,
+  cs,
+};
+
+/** Every locale except the reference one (en). */
+const translated = Object.keys(locales).filter((l) => l !== "en");
 
 function flatKeys(obj: Record<string, unknown>, prefix = ""): string[] {
   return Object.entries(obj).flatMap(([k, v]) =>
@@ -23,8 +38,10 @@ function flatEntries(obj: Record<string, unknown>, prefix = ""): [string, unknow
 }
 
 describe("i18n completeness", () => {
-  it("routing declares exactly ru, en, kk", () => {
-    expect([...routing.locales].sort()).toEqual(["en", "kk", "ru"]);
+  it("routing declares every language the database is seeded with", () => {
+    expect([...routing.locales].sort()).toEqual(
+      ["en", "ru", "kk", "es", "tr", "ko", "cs"].sort()
+    );
   });
 
   it("the default locale is one of the declared locales", () => {
@@ -37,9 +54,9 @@ describe("i18n completeness", () => {
     }
   });
 
-  it("ru and kk have exactly the same keys as en", () => {
+  it("every locale has exactly the same keys as en", () => {
     const enKeys = flatKeys(en).sort();
-    for (const locale of ["ru", "kk"]) {
+    for (const locale of translated) {
       expect(flatKeys(locales[locale]).sort(), `keys of ${locale}`).toEqual(enKeys);
     }
   });
@@ -70,7 +87,7 @@ describe("i18n completeness", () => {
     const params = (v: unknown) =>
       [...String(v).matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
     const enMap = new Map(flatEntries(en));
-    for (const locale of ["ru", "kk"]) {
+    for (const locale of translated) {
       for (const [key, value] of flatEntries(locales[locale])) {
         expect(params(value), `${locale}:${key} params`).toEqual(
           params(enMap.get(key))

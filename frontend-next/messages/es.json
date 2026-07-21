@@ -1,0 +1,273 @@
+{
+  "app": {
+    "title": "results.togyz",
+    "tagline": "Resultados de torneos de togyzkumalak y clasificación de jugadores"
+  },
+  "nav": {
+    "home": "Inicio",
+    "tournaments": "Torneos",
+    "players": "Jugadores",
+    "registerPlayer": "Registrar jugador",
+    "organizerLogin": "Acceso de organizador",
+    "dashboard": "Panel",
+    "logout": "Cerrar sesión",
+    "adminPanel": "Admin",
+    "login": "Iniciar sesión"
+  },
+  "common": {
+    "search": "Buscar",
+    "loading": "Cargando…",
+    "all": "Todos",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "back": "Atrás",
+    "none": "Ninguno",
+    "yes": "Sí",
+    "no": "No",
+    "apply": "Aplicar",
+    "actions": "Acciones",
+    "publicPage": "Página pública",
+    "optional": "opcional"
+  },
+  "home": {
+    "searchPlaceholder": "Buscar torneos o jugadores…",
+    "tournaments": "Torneos",
+    "players": "Jugadores",
+    "noTournaments": "No se encontraron torneos.",
+    "noPlayers": "No se encontraron jugadores."
+  },
+  "fields": {
+    "name": "Nombre",
+    "federation": "Federación",
+    "city": "Ciudad",
+    "location": "Ubicación",
+    "status": "Estado",
+    "level": "Nivel",
+    "ratingType": "Tipo de rating",
+    "players": "Jugadores",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "middleName": "Segundo nombre",
+    "birthYear": "Año de nacimiento",
+    "club": "Club",
+    "title": "Título",
+    "ratingBlitz": "Rating blitz",
+    "ratingRapid": "Rating rápido",
+    "ratingClassic": "Rating clásico",
+    "createdAt": "Creado",
+    "endedAt": "Finalizado",
+    "rank": "Pos.",
+    "sno": "N.º",
+    "player": "Nombre",
+    "rating": "Rtg",
+    "points": "Pts.",
+    "buchholz": "TB1",
+    "rp": "Rp",
+    "startRating": "Rtg",
+    "projectedRating": "Rtg después",
+    "board": "Mesa",
+    "white": "Blancas",
+    "black": "Negras",
+    "result": "Resultado",
+    "organizer": "Organizador",
+    "tieBreak": "Desempate",
+    "rounds": "Número de rondas",
+    "timeControl": "Control de tiempo",
+    "lastUpdate": "Última actualización",
+    "gender": "Género",
+    "ageCategory": "Edad",
+    "playerId": "ID de jugador",
+    "date": "Fecha"
+  },
+  "view": {
+    "label": "Seleccionar vista",
+    "startingRank": "Lista de salida",
+    "pairings": "Emparejamientos/resultados",
+    "rankingAfter": "Clasificación tras la ronda",
+    "finalRanking": "Tabla de clasificación final"
+  },
+  "status": {
+    "setup": "Próximo",
+    "ongoing": "En vivo",
+    "finished": "Finalizado"
+  },
+  "level": {
+    "International": "Internacional",
+    "National": "Nacional",
+    "Regional": "Regional",
+    "School": "Escolar",
+    "Test": "Prueba"
+  },
+  "ratingType": {
+    "blitz": "Blitz",
+    "rapid": "Rápido",
+    "classic": "Clásico",
+    "non_rated": "Sin rating"
+  },
+  "tournaments": {
+    "title": "Torneos",
+    "filters": "Filtros",
+    "anyFederation": "Cualquier federación",
+    "anyCity": "Cualquier ciudad",
+    "anyStatus": "Cualquier estado",
+    "anyLevel": "Cualquier nivel",
+    "anyRatingType": "Cualquier tipo de rating",
+    "empty": "No hay torneos.",
+    "anyGender": "Cualquier género",
+    "anyAge": "Cualquier edad",
+    "createdFrom": "Creado desde",
+    "createdTo": "Creado hasta",
+    "searchName": "Buscar por nombre…"
+  },
+  "tournamentView": {
+    "standings": "Clasificación",
+    "start": "Inicio",
+    "round": "Ronda {n}",
+    "final": "Final",
+    "pairings": "Emparejamientos de la ronda {n}",
+    "noPairings": "No hay emparejamientos para esta ronda.",
+    "noPlayers": "Aún no hay jugadores inscritos.",
+    "bye": "BYE",
+    "print": "Imprimir",
+    "exportCsv": "Exportar a CSV",
+    "beforeTournament": "Antes del torneo"
+  },
+  "players": {
+    "title": "Jugadores",
+    "history": "Historial de torneos",
+    "noHistory": "Aún no hay torneos.",
+    "searchName": "Buscar por nombre…",
+    "ratingHistory": "Cambios de rating",
+    "noRatingHistory": "Aún no hay cambios de rating."
+  },
+  "playerRegister": {
+    "title": "Registrarse como jugador",
+    "submit": "Registrarse",
+    "success": "¡Registrado! Tu perfil de jugador ha sido creado.",
+    "hint": "Crea un perfil de jugador. No se necesita contraseña — los organizadores te añaden a los torneos."
+  },
+  "login": {
+    "title": "Iniciar sesión",
+    "username": "Usuario",
+    "password": "Contraseña",
+    "signIn": "Iniciar sesión",
+    "signingIn": "Iniciando sesión…"
+  },
+  "dashboard": {
+    "title": "Mis torneos",
+    "create": "Crear torneo",
+    "empty": "Aún no hay torneos — crea uno abajo.",
+    "createBtn": "Crear",
+    "deleteConfirm": "¿Eliminar completamente el torneo \"{name}\"?"
+  },
+  "admin": {
+    "settings": "Ajustes",
+    "participants": "Participantes",
+    "resultsEntry": "Registro de resultados",
+    "changeRatings": "Cambiar ratings",
+    "addPlayer": "Añadir jugador",
+    "selectPlayer": "Selecciona un jugador…",
+    "add": "Añadir",
+    "allRegistered": "Todos los jugadores ya están inscritos.",
+    "generateRound": "Generar siguiente ronda",
+    "roundComplete": "Ronda {n} completa — lista para la siguiente ronda.",
+    "roundPending": "{count} partida(s) de la ronda {n} aún sin resultado.",
+    "noRounds": "Aún no hay rondas — genera la ronda 1.",
+    "ratedResults": "Resultados con rating",
+    "nonRatedResults": "Sin rating (sin efecto en el rating)",
+    "backToList": "Mis torneos",
+    "federationFixed": "Federación (fija)",
+    "addById": "Añadir jugador por ID",
+    "enterId": "Introduce el ID del jugador…",
+    "find": "Buscar",
+    "notFound": "No hay jugador con este ID.",
+    "confirmAdd": "Añadir al torneo",
+    "playerFound": "Jugador encontrado",
+    "editPairings": "Editar emparejamientos",
+    "savePairings": "Guardar emparejamientos",
+    "deleteRound": "Eliminar ronda",
+    "deleteRoundConfirm": "¿Eliminar completamente la ronda {n}? Sus resultados se revertirán.",
+    "pairingsSaved": "Emparejamientos guardados.",
+    "roundDeleted": "Ronda eliminada.",
+    "syncRanks": "Sincronizar números de salida"
+  },
+  "changeRatings": {
+    "title": "Cambiar ratings",
+    "subtitle": "Aplicar cambios Elo para el rating {type}. Solo se puede hacer una vez.",
+    "oldRating": "Antiguo",
+    "delta": "Cambio",
+    "newRating": "Nuevo",
+    "applyBtn": "Aplicar cambios de rating",
+    "applied": "Los ratings se han aplicado.",
+    "nonRated": "Este torneo no puntúa — sin cambios de rating.",
+    "confirm": "¿Aplicar estos cambios de rating de forma permanente?"
+  },
+  "gender": {
+    "all": "Todos",
+    "male": "Masculino",
+    "female": "Femenino"
+  },
+  "adminPanel": {
+    "title": "Administración de jugadores",
+    "searchPlaceholder": "Buscar por nombre, club o ID…",
+    "addPlayer": "Añadir nuevo jugador",
+    "editPlayer": "Editar jugador n.º {id}",
+    "created": "Jugador creado:",
+    "saved": "Jugador guardado.",
+    "total": "{count} jugadores",
+    "edit": "Editar",
+    "prev": "← Anterior",
+    "next": "Siguiente →",
+    "delete": "Eliminar",
+    "deleted": "Jugador eliminado.",
+    "deleteConfirm": "¿Eliminar este jugador de forma permanente?",
+    "organizers": "Organizadores",
+    "addOrganizer": "Añadir organizador",
+    "organizerCreated": "Cuenta de organizador creada.",
+    "deletePlayer": "Eliminar jugador",
+    "aliases": "Otras grafías (cirílico/latino), separadas por comas"
+  },
+  "swiss": {
+    "REMATCH": "{a} y {b} ya han jugado entre sí",
+    "UNKNOWN_PLAYER": "{id} no está en este torneo",
+    "DUPLICATE_PLAYER": "{id} aparece en más de una pareja",
+    "UNPAIRED_PLAYER": "{id} no está emparejado en esta ronda",
+    "MULTIPLE_BYES": "Una ronda puede tener como máximo un bye",
+    "SCORE_MISMATCH": "{a} y {b} están en grupos de puntuación distintos ({pa} vs {pb} puntos)",
+    "REPEAT_BYE": "{id} ya tuvo un bye"
+  },
+  "tabs": {
+    "info": "Info",
+    "startingRank": "Lista de salida",
+    "pairings": "Emparejamientos",
+    "standings": "Clasificación",
+    "alphabetical": "Lista alfabética"
+  },
+  "hero": {
+    "activePlayers": "Jugadores",
+    "tournamentsCount": "Torneos",
+    "ongoing": "En curso y próximos",
+    "viewPairings": "Ver emparejamientos",
+    "contacts": "Contactos de la federación"
+  },
+  "theme": {
+    "light": "Claro",
+    "dark": "Oscuro"
+  },
+  "offline": {
+    "title": "Estás sin conexión",
+    "hint": "Las últimas páginas cargadas siguen disponibles. Reconéctate para ver resultados actualizados."
+  },
+  "search": {
+    "placeholder": "Encontrar un jugador…",
+    "nowPlaying": "Jugando ahora",
+    "round": "Ronda",
+    "board": "Mesa",
+    "notPlaying": "No está jugando ahora",
+    "noResults": "No se encontró a nadie"
+  },
+  "share": {
+    "share": "Compartir",
+    "copied": "¡Enlace copiado!"
+  }
+}

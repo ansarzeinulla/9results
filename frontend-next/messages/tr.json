@@ -1,0 +1,273 @@
+{
+  "app": {
+    "title": "results.togyz",
+    "tagline": "Togyzkumalak turnuva sonuçları ve oyuncu reytingleri"
+  },
+  "nav": {
+    "home": "Ana sayfa",
+    "tournaments": "Turnuvalar",
+    "players": "Oyuncular",
+    "registerPlayer": "Oyuncu kaydı",
+    "organizerLogin": "Organizatör girişi",
+    "dashboard": "Panel",
+    "logout": "Çıkış yap",
+    "adminPanel": "Yönetim",
+    "login": "Giriş yap"
+  },
+  "common": {
+    "search": "Ara",
+    "loading": "Yükleniyor…",
+    "all": "Tümü",
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "back": "Geri",
+    "none": "Yok",
+    "yes": "Evet",
+    "no": "Hayır",
+    "apply": "Uygula",
+    "actions": "İşlemler",
+    "publicPage": "Herkese açık sayfa",
+    "optional": "isteğe bağlı"
+  },
+  "home": {
+    "searchPlaceholder": "Turnuva veya oyuncu ara…",
+    "tournaments": "Turnuvalar",
+    "players": "Oyuncular",
+    "noTournaments": "Turnuva bulunamadı.",
+    "noPlayers": "Oyuncu bulunamadı."
+  },
+  "fields": {
+    "name": "Ad",
+    "federation": "Federasyon",
+    "city": "Şehir",
+    "location": "Konum",
+    "status": "Durum",
+    "level": "Seviye",
+    "ratingType": "Reyting türü",
+    "players": "Oyuncular",
+    "firstName": "Ad",
+    "lastName": "Soyad",
+    "middleName": "İkinci ad",
+    "birthYear": "Doğum yılı",
+    "club": "Kulüp",
+    "title": "Unvan",
+    "ratingBlitz": "Blitz reytingi",
+    "ratingRapid": "Hızlı reyting",
+    "ratingClassic": "Klasik reyting",
+    "createdAt": "Oluşturuldu",
+    "endedAt": "Bitti",
+    "rank": "Sıra",
+    "sno": "SNo",
+    "player": "Ad",
+    "rating": "Rtg",
+    "points": "Puan",
+    "buchholz": "TB1",
+    "rp": "Rp",
+    "startRating": "Rtg",
+    "projectedRating": "Sonraki Rtg",
+    "board": "Masa",
+    "white": "Beyaz",
+    "black": "Siyah",
+    "result": "Sonuç",
+    "organizer": "Organizatör",
+    "tieBreak": "Averaj",
+    "rounds": "Tur sayısı",
+    "timeControl": "Süre kontrolü",
+    "lastUpdate": "Son güncelleme",
+    "gender": "Cinsiyet",
+    "ageCategory": "Yaş",
+    "playerId": "Oyuncu kimliği",
+    "date": "Tarih"
+  },
+  "view": {
+    "label": "Görünüm seç",
+    "startingRank": "Başlangıç sıra listesi",
+    "pairings": "Eşleşmeler/sonuçlar",
+    "rankingAfter": "Tur sonrası sıralama",
+    "finalRanking": "Nihai sıralama tablosu"
+  },
+  "status": {
+    "setup": "Yaklaşan",
+    "ongoing": "Canlı",
+    "finished": "Bitti"
+  },
+  "level": {
+    "International": "Uluslararası",
+    "National": "Ulusal",
+    "Regional": "Bölgesel",
+    "School": "Okul",
+    "Test": "Test"
+  },
+  "ratingType": {
+    "blitz": "Blitz",
+    "rapid": "Hızlı",
+    "classic": "Klasik",
+    "non_rated": "Reytingsiz"
+  },
+  "tournaments": {
+    "title": "Turnuvalar",
+    "filters": "Filtreler",
+    "anyFederation": "Tüm federasyonlar",
+    "anyCity": "Tüm şehirler",
+    "anyStatus": "Tüm durumlar",
+    "anyLevel": "Tüm seviyeler",
+    "anyRatingType": "Tüm reyting türleri",
+    "empty": "Turnuva yok.",
+    "anyGender": "Tüm cinsiyetler",
+    "anyAge": "Tüm yaşlar",
+    "createdFrom": "Oluşturma başlangıcı",
+    "createdTo": "Oluşturma bitişi",
+    "searchName": "Ada göre ara…"
+  },
+  "tournamentView": {
+    "standings": "Sıralama",
+    "start": "Başlangıç",
+    "round": "{n}. tur",
+    "final": "Final",
+    "pairings": "{n}. tur eşleşmeleri",
+    "noPairings": "Bu tur için eşleşme yok.",
+    "noPlayers": "Henüz kayıtlı oyuncu yok.",
+    "bye": "BYE",
+    "print": "Yazdır",
+    "exportCsv": "CSV olarak dışa aktar",
+    "beforeTournament": "Turnuva öncesi"
+  },
+  "players": {
+    "title": "Oyuncular",
+    "history": "Turnuva geçmişi",
+    "noHistory": "Henüz turnuva yok.",
+    "searchName": "Ada göre ara…",
+    "ratingHistory": "Reyting değişiklikleri",
+    "noRatingHistory": "Henüz reyting değişikliği yok."
+  },
+  "playerRegister": {
+    "title": "Oyuncu olarak kaydol",
+    "submit": "Kaydol",
+    "success": "Kaydolundu! Oyuncu profiliniz oluşturuldu.",
+    "hint": "Bir oyuncu profili oluşturun. Şifre gerekmez — organizatörler sizi turnuvalara ekler."
+  },
+  "login": {
+    "title": "Giriş yap",
+    "username": "Kullanıcı adı",
+    "password": "Şifre",
+    "signIn": "Giriş yap",
+    "signingIn": "Giriş yapılıyor…"
+  },
+  "dashboard": {
+    "title": "Turnuvalarım",
+    "create": "Turnuva oluştur",
+    "empty": "Henüz turnuva yok — aşağıdan bir tane oluşturun.",
+    "createBtn": "Oluştur",
+    "deleteConfirm": "\"{name}\" turnuvası tamamen silinsin mi?"
+  },
+  "admin": {
+    "settings": "Ayarlar",
+    "participants": "Katılımcılar",
+    "resultsEntry": "Sonuç girişi",
+    "changeRatings": "Reytingleri değiştir",
+    "addPlayer": "Oyuncu ekle",
+    "selectPlayer": "Bir oyuncu seçin…",
+    "add": "Ekle",
+    "allRegistered": "Tüm oyuncular zaten kayıtlı.",
+    "generateRound": "Sonraki turu oluştur",
+    "roundComplete": "{n}. tur tamamlandı — sonraki tura hazır.",
+    "roundPending": "{n}. turdaki {count} maçın sonucu hâlâ eksik.",
+    "noRounds": "Henüz tur yok — 1. turu oluşturun.",
+    "ratedResults": "Reytingli sonuçlar",
+    "nonRatedResults": "Reytingsiz (reytinge etkisi yok)",
+    "backToList": "Turnuvalarım",
+    "federationFixed": "Federasyon (sabit)",
+    "addById": "Kimliğe göre oyuncu ekle",
+    "enterId": "Oyuncu kimliğini girin…",
+    "find": "Bul",
+    "notFound": "Bu kimliğe sahip oyuncu yok.",
+    "confirmAdd": "Turnuvaya ekle",
+    "playerFound": "Oyuncu bulundu",
+    "editPairings": "Eşleşmeleri düzenle",
+    "savePairings": "Eşleşmeleri kaydet",
+    "deleteRound": "Turu sil",
+    "deleteRoundConfirm": "{n}. tur tamamen silinsin mi? Sonuçları geri alınacak.",
+    "pairingsSaved": "Eşleşmeler kaydedildi.",
+    "roundDeleted": "Tur silindi.",
+    "syncRanks": "Başlangıç numaralarını eşitle"
+  },
+  "changeRatings": {
+    "title": "Reytingleri değiştir",
+    "subtitle": "{type} reytingi için Elo değişikliklerini uygula. Bu yalnızca bir kez yapılabilir.",
+    "oldRating": "Eski",
+    "delta": "Değişim",
+    "newRating": "Yeni",
+    "applyBtn": "Reyting değişikliklerini uygula",
+    "applied": "Reytingler uygulandı.",
+    "nonRated": "Bu turnuva reytingsiz — reyting değişikliği yok.",
+    "confirm": "Bu reyting değişiklikleri kalıcı olarak uygulansın mı?"
+  },
+  "gender": {
+    "all": "Tümü",
+    "male": "Erkek",
+    "female": "Kadın"
+  },
+  "adminPanel": {
+    "title": "Oyuncu yönetimi",
+    "searchPlaceholder": "Ad, kulüp veya kimliğe göre ara…",
+    "addPlayer": "Yeni oyuncu ekle",
+    "editPlayer": "#{id} numaralı oyuncuyu düzenle",
+    "created": "Oyuncu oluşturuldu:",
+    "saved": "Oyuncu kaydedildi.",
+    "total": "{count} oyuncu",
+    "edit": "Düzenle",
+    "prev": "← Önceki",
+    "next": "Sonraki →",
+    "delete": "Sil",
+    "deleted": "Oyuncu silindi.",
+    "deleteConfirm": "Bu oyuncu kalıcı olarak silinsin mi?",
+    "organizers": "Organizatörler",
+    "addOrganizer": "Organizatör ekle",
+    "organizerCreated": "Organizatör hesabı oluşturuldu.",
+    "deletePlayer": "Oyuncuyu sil",
+    "aliases": "Diğer yazımlar (Kiril/Latin), virgülle ayrılmış"
+  },
+  "swiss": {
+    "REMATCH": "{a} ve {b} birbirleriyle zaten oynadı",
+    "UNKNOWN_PLAYER": "{id} bu turnuvada değil",
+    "DUPLICATE_PLAYER": "{id} birden fazla eşleşmede görünüyor",
+    "UNPAIRED_PLAYER": "{id} bu turda eşleşmemiş",
+    "MULTIPLE_BYES": "Bir turda en fazla bir bye olabilir",
+    "SCORE_MISMATCH": "{a} ve {b} farklı puan gruplarında ({pa} - {pb} puan)",
+    "REPEAT_BYE": "{id} zaten bir bye aldı"
+  },
+  "tabs": {
+    "info": "Bilgi",
+    "startingRank": "Başlangıç listesi",
+    "pairings": "Eşleşmeler",
+    "standings": "Sıralama",
+    "alphabetical": "Alfabetik liste"
+  },
+  "hero": {
+    "activePlayers": "Oyuncular",
+    "tournamentsCount": "Turnuvalar",
+    "ongoing": "Devam eden ve yaklaşan",
+    "viewPairings": "Eşleşmeleri gör",
+    "contacts": "Federasyon iletişim bilgileri"
+  },
+  "theme": {
+    "light": "Açık",
+    "dark": "Koyu"
+  },
+  "offline": {
+    "title": "Çevrimdışısınız",
+    "hint": "Son yüklenen sayfalar hâlâ kullanılabilir. Güncel sonuçlar için yeniden bağlanın."
+  },
+  "search": {
+    "placeholder": "Oyuncu bul…",
+    "nowPlaying": "Şu anda oynuyor",
+    "round": "Tur",
+    "board": "Masa",
+    "notPlaying": "Şu anda oynamıyor",
+    "noResults": "Kimse bulunamadı"
+  },
+  "share": {
+    "share": "Paylaş",
+    "copied": "Bağlantı kopyalandı!"
+  }
+}
