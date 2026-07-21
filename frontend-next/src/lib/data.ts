@@ -32,6 +32,51 @@ async function locationNameIndex(locationIds: (string | null)[]) {
   return indexTranslations(unwrap(res) ?? []);
 }
 
+async function levelNameIndex(levelIds: (string | null)[]) {
+  const ids = [...new Set(levelIds.filter((x): x is string => !!x))];
+  if (ids.length === 0) return indexTranslations([]);
+  const res = await supabase()
+    .from("level_translations")
+    .select("level_id, lang_code, name")
+    .in("level_id", ids);
+  const mapped = (unwrap(res) ?? []).map((r) => ({
+    location_id: r.level_id,
+    lang_code: r.lang_code,
+    name: r.name,
+  }));
+  return indexTranslations(mapped);
+}
+
+async function ratingTypeNameIndex(ratingTypeIds: (string | null)[]) {
+  const ids = [...new Set(ratingTypeIds.filter((x): x is string => !!x))];
+  if (ids.length === 0) return indexTranslations([]);
+  const res = await supabase()
+    .from("rating_translations")
+    .select("rating_type_id, lang_code, name")
+    .in("rating_type_id", ids);
+  const mapped = (unwrap(res) ?? []).map((r) => ({
+    location_id: r.rating_type_id,
+    lang_code: r.lang_code,
+    name: r.name,
+  }));
+  return indexTranslations(mapped);
+}
+
+async function tournamentTypeNameIndex(typeIds: (string | null)[]) {
+  const ids = [...new Set(typeIds.filter((x): x is string => !!x))];
+  if (ids.length === 0) return indexTranslations([]);
+  const res = await supabase()
+    .from("type_translations")
+    .select("tournament_type_id, lang_code, name")
+    .in("tournament_type_id", ids);
+  const mapped = (unwrap(res) ?? []).map((r) => ({
+    location_id: r.tournament_type_id,
+    lang_code: r.lang_code,
+    name: r.name,
+  }));
+  return indexTranslations(mapped);
+}
+
 const useSupabase = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 let pool: Pool | null = null;
@@ -82,8 +127,11 @@ export interface TournamentRow {
   rounds: number | null;
   status: string;
   level_id: string | null;
+  level_name?: string | null;
   rating_type_id: string | null;
+  rating_type_name?: string | null;
   tournament_type_id: string | null;
+  tournament_type_name?: string | null;
   time_control: string | null;
   last_updated: string | null;
 }
@@ -133,6 +181,7 @@ export interface TournamentFilters {
 export async function listTournaments(locale: string, f: TournamentFilters = {}) {
   const pageSize = f.pageSize ?? 20;
   const offset = ((f.page ?? 1) - 1) * pageSize;
+  const lang = dbLang(locale);
   if (useSupabase) {
     let q = supabase()
       .from("tournaments")
@@ -149,15 +198,23 @@ export async function listTournaments(locale: string, f: TournamentFilters = {})
     if (f.dateTo) q = q.lte("start_date", f.dateTo);
     const res = await q;
     const data = unwrap(res) ?? [];
-    const index = await locationNameIndex(data.map((t) => t.location_id));
+    const [locIdx, levIdx, ratIdx, typIdx] = await Promise.all([
+      locationNameIndex(data.map((t) => t.location_id)),
+      levelNameIndex(data.map((t) => t.level_id)),
+      ratingTypeNameIndex(data.map((t) => t.rating_type_id)),
+      tournamentTypeNameIndex(data.map((t) => t.tournament_type_id)),
+    ]);
     const rows = data.map((t) => ({
       ...t,
-      location_name: localizedName(index, t.location_id, dbLang(locale)),
+      location_name: localizedName(locIdx, t.location_id, lang),
+      level_name: localizedName(levIdx, t.level_id, lang),
+      rating_type_name: localizedName(ratIdx, t.rating_type_id, lang),
+      tournament_type_name: localizedName(typIdx, t.tournament_type_id, lang),
     }));
     return { rows: rows as unknown as TournamentRow[], total: res.count ?? 0 };
   }
   const conds: string[] = ["t.status <> 'DRAFT'"];
-  const params: unknown[] = [dbLang(locale)];
+  const params: unknown[] = [lang];
   const add = (cond: string, val: unknown) => {
     params.push(val);
     conds.push(cond.replace("?", `$${params.length}`));
@@ -171,10 +228,19 @@ export async function listTournaments(locale: string, f: TournamentFilters = {})
   if (f.dateTo) add("t.start_date <= ?", f.dateTo);
   params.push(pageSize, offset);
   const rows = await sql<TournamentRow & { total: string }>(
-    `SELECT t.*, lt.name AS location_name, COUNT(*) OVER() AS total
+    `SELECT t.*, lt.name AS location_name, COUNT(*) OVER() AS total,
+            levt.name AS level_name,
+            rt.name AS rating_type_name,
+            typt.name AS tournament_type_name
      FROM tournaments t
      LEFT JOIN location_translations lt
        ON lt.location_id = t.location_id AND lt.lang_code = $1
+     LEFT JOIN level_translations levt
+       ON levt.level_id = t.level_id AND levt.lang_code = $1
+     LEFT JOIN rating_translations rt
+       ON rt.rating_type_id = t.rating_type_id AND rt.lang_code = $1
+     LEFT JOIN type_translations typt
+       ON typt.tournament_type_id = t.tournament_type_id AND typt.lang_code = $1
      WHERE ${conds.join(" AND ")}
      ORDER BY t.start_date DESC
      LIMIT $${params.length - 1} OFFSET $${params.length}`,
@@ -189,6 +255,7 @@ async function loadTournamentBySlug(locale: string, rawSlug: string) {
   // without a slug is addressed by its numeric id.
   const slug = decodeURIComponent(rawSlug);
   const asId = /^\d+$/.test(slug) ? Number(slug) : null;
+  const lang = dbLang(locale);
 
   if (useSupabase) {
     let data = unwrap(
@@ -200,20 +267,37 @@ async function loadTournamentBySlug(locale: string, rawSlug: string) {
       );
     }
     if (!data) return null;
-    const index = await locationNameIndex([data.location_id]);
+    const [locIdx, levIdx, ratIdx, typIdx] = await Promise.all([
+      locationNameIndex([data.location_id]),
+      levelNameIndex([data.level_id]),
+      ratingTypeNameIndex([data.rating_type_id]),
+      tournamentTypeNameIndex([data.tournament_type_id]),
+    ]);
     return {
       ...data,
-      location_name: localizedName(index, data.location_id, dbLang(locale)),
+      location_name: localizedName(locIdx, data.location_id, lang),
+      level_name: localizedName(levIdx, data.level_id, lang),
+      rating_type_name: localizedName(ratIdx, data.rating_type_id, lang),
+      tournament_type_name: localizedName(typIdx, data.tournament_type_id, lang),
     } as TournamentRow;
   }
   const rows = await sql<TournamentRow>(
-    `SELECT t.*, lt.name AS location_name
+    `SELECT t.*, lt.name AS location_name,
+            levt.name AS level_name,
+            rt.name AS rating_type_name,
+            typt.name AS tournament_type_name
      FROM tournaments t
      LEFT JOIN location_translations lt
        ON lt.location_id = t.location_id AND lt.lang_code = $1
+     LEFT JOIN level_translations levt
+       ON levt.level_id = t.level_id AND levt.lang_code = $1
+     LEFT JOIN rating_translations rt
+       ON rt.rating_type_id = t.rating_type_id AND rt.lang_code = $1
+     LEFT JOIN type_translations typt
+       ON typt.tournament_type_id = t.tournament_type_id AND typt.lang_code = $1
      WHERE t.slug = $2 OR ($3::int IS NOT NULL AND t.id = $3::int)
      LIMIT 1`,
-    [dbLang(locale), slug, asId]
+    [lang, slug, asId]
   );
   return rows[0] ?? null;
 }
@@ -566,39 +650,86 @@ export async function omniSearch(q: string, limit = 8) {
 }
 
 export async function getTournamentById(locale: string, id: number) {
+  const lang = dbLang(locale);
   if (useSupabase) {
     const { data } = await supabase()
       .from("tournaments")
       .select("*")
       .eq("id", id)
       .maybeSingle();
-    return (data as TournamentRow) ?? null;
+    if (!data) return null;
+    const [locIdx, levIdx, ratIdx, typIdx] = await Promise.all([
+      locationNameIndex([data.location_id]),
+      levelNameIndex([data.level_id]),
+      ratingTypeNameIndex([data.rating_type_id]),
+      tournamentTypeNameIndex([data.tournament_type_id]),
+    ]);
+    return {
+      ...data,
+      location_name: localizedName(locIdx, data.location_id, lang),
+      level_name: localizedName(levIdx, data.level_id, lang),
+      rating_type_name: localizedName(ratIdx, data.rating_type_id, lang),
+      tournament_type_name: localizedName(typIdx, data.tournament_type_id, lang),
+    } as TournamentRow;
   }
   const rows = await sql<TournamentRow>(
-    `SELECT t.*, lt.name AS location_name
+    `SELECT t.*, lt.name AS location_name,
+            levt.name AS level_name,
+            rt.name AS rating_type_name,
+            typt.name AS tournament_type_name
      FROM tournaments t
      LEFT JOIN location_translations lt
        ON lt.location_id = t.location_id AND lt.lang_code = $1
+     LEFT JOIN level_translations levt
+       ON levt.level_id = t.level_id AND levt.lang_code = $1
+     LEFT JOIN rating_translations rt
+       ON rt.rating_type_id = t.rating_type_id AND rt.lang_code = $1
+     LEFT JOIN type_translations typt
+       ON typt.tournament_type_id = t.tournament_type_id AND typt.lang_code = $1
      WHERE t.id = $2`,
-    [dbLang(locale), id]
+    [lang, id]
   );
   return rows[0] ?? null;
 }
 
 export async function listAllTournaments(locale: string) {
+  const lang = dbLang(locale);
   if (useSupabase) {
     const { data } = await supabase()
       .from("tournaments")
       .select("*")
       .order("start_date", { ascending: false });
-    return (data ?? []) as TournamentRow[];
+    const list = (data ?? []) as TournamentRow[];
+    const [locIdx, levIdx, ratIdx, typIdx] = await Promise.all([
+      locationNameIndex(list.map((t) => t.location_id)),
+      levelNameIndex(list.map((t) => t.level_id)),
+      ratingTypeNameIndex(list.map((t) => t.rating_type_id)),
+      tournamentTypeNameIndex(list.map((t) => t.tournament_type_id)),
+    ]);
+    return list.map((t) => ({
+      ...t,
+      location_name: localizedName(locIdx, t.location_id, lang),
+      level_name: localizedName(levIdx, t.level_id, lang),
+      rating_type_name: localizedName(ratIdx, t.rating_type_id, lang),
+      tournament_type_name: localizedName(typIdx, t.tournament_type_id, lang),
+    })) as TournamentRow[];
   }
   return sql<TournamentRow>(
-    `SELECT t.*, lt.name AS location_name FROM tournaments t
+    `SELECT t.*, lt.name AS location_name,
+            levt.name AS level_name,
+            rt.name AS rating_type_name,
+            typt.name AS tournament_type_name
+     FROM tournaments t
      LEFT JOIN location_translations lt
        ON lt.location_id = t.location_id AND lt.lang_code = $1
+     LEFT JOIN level_translations levt
+       ON levt.level_id = t.level_id AND levt.lang_code = $1
+     LEFT JOIN rating_translations rt
+       ON rt.rating_type_id = t.rating_type_id AND rt.lang_code = $1
+     LEFT JOIN type_translations typt
+       ON typt.tournament_type_id = t.tournament_type_id AND typt.lang_code = $1
      ORDER BY t.start_date DESC`,
-    [dbLang(locale)]
+    [lang]
   );
 }
 

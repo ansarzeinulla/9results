@@ -35,7 +35,7 @@ export default async function TournamentLayout({
           <span>📍 {tournament.location_name ?? tournament.location_id}</span>
           <span>📅 {tournament.start_date} — {tournament.end_date}</span>
           {tournament.time_control && <span>⏱ {tournament.time_control}</span>}
-          <span>♟ {tournament.tournament_type_id}</span>
+          <span>♟ {tournament.tournament_type_name ?? tournament.tournament_type_id}</span>
         </div>
       </div>
       <TabNav slug={slug} />
