@@ -18,15 +18,35 @@ const LOCALES = [
 
 function ThemeToggle() {
   const [dark, setDark] = useState(false);
+
   useEffect(() => {
-    setDark(document.documentElement.classList.contains("dark"));
+    // Initial check
+    const isDark = document.documentElement.classList.contains("dark");
+    setDark(isDark);
+
+    // Listen for system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => {
+      if (!localStorage.theme) {
+        setDark(e.matches);
+        document.documentElement.classList.toggle("dark", e.matches);
+      }
+    };
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
+
   const toggle = () => {
     const next = !dark;
     setDark(next);
     document.documentElement.classList.toggle("dark", next);
-    localStorage.theme = next ? "dark" : "light";
+    try {
+      localStorage.theme = next ? "dark" : "light";
+    } catch (e) {
+      // ignore
+    }
   };
+
   return (
     <button
       onClick={toggle}
@@ -67,7 +87,7 @@ export default function Header() {
     <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/90 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/90">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-4">
         <Link href="/" className="shrink-0 text-lg font-bold tracking-tight">
-          9Results
+          9Ecosystem
         </Link>
         <nav className="hidden items-center gap-4 text-sm md:flex">
           <Link href="/tournaments" className="hover:text-emerald-600">
