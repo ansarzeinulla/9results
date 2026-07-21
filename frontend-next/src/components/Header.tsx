@@ -77,16 +77,16 @@ export default function Header() {
             {t("nav.players")}
           </Link>
           <span className="cursor-not-allowed text-neutral-400" title="Soon">
-            Engine
+            {t("nav.engine")}
           </span>
           <span className="cursor-not-allowed text-neutral-400" title="Soon">
-            Arena
+            {t("nav.arena")}
           </span>
           <span className="cursor-not-allowed text-neutral-400" title="Soon">
-            Games
+            {t("nav.games")}
           </span>
           <span className="cursor-not-allowed text-neutral-400" title="Soon">
-            Var
+            {t("nav.var")}
           </span>
         </nav>
         <div className="ml-auto flex items-center gap-2">
