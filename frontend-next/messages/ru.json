@@ -7,6 +7,7 @@
     "home": "Главная",
     "tournaments": "Турниры",
     "players": "Игроки",
+    "games": "Игры",
     "registerPlayer": "Регистрация игрока",
     "organizerLogin": "Вход для организатора",
     "dashboard": "Панель",
@@ -261,7 +262,7 @@
   "search": {
     "placeholder": "Найти игрока…",
     "nowPlaying": "Сейчас играет",
-    "round": "Тур",
+    "round": "Кло",
     "board": "Доска",
     "notPlaying": "Сейчас не играет",
     "noResults": "Никто не найден"

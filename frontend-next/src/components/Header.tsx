@@ -10,10 +10,6 @@ const LOCALES = [
   { code: "ru", label: "RU" },
   { code: "en", label: "EN" },
   { code: "kk", label: "KZ" },
-  { code: "es", label: "ES" },
-  { code: "tr", label: "TR" },
-  { code: "ko", label: "KO" },
-  { code: "cs", label: "CS" },
 ];
 
 function ThemeToggle() {
@@ -77,7 +73,7 @@ export default function Header() {
             {t("nav.players")}
           </Link>
           <span className="cursor-not-allowed text-neutral-400" title="Soon">
-            {t("fields.result")}
+            {t("nav.games")}
           </span>
           <span className="cursor-not-allowed text-neutral-400" title="Soon">
             Live

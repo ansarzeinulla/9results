@@ -11,23 +11,6 @@ INSERT INTO tie_breaks (id) VALUES
     ('MedianBuchholz'),
     ('CumulativeScore'); -- progressive score (sum of scores after each round)
 
-INSERT INTO tie_break_translations (tie_break_id, lang_code, name) VALUES
-    ('BuchholzCut1', 'ENG', 'Buchholz Cut 1'),
-    ('BuchholzCut1', 'RUS', 'Бухгольц без худшего результата'),
-    ('BuchholzCut1', 'KAZ', 'Бухгольц (ең төменгі нәтижесіз)'),
-
-    ('BuchholzCut2', 'ENG', 'Buchholz Cut 2'),
-    ('BuchholzCut2', 'RUS', 'Бухгольц без двух худших результатов'),
-    ('BuchholzCut2', 'KAZ', 'Бухгольц (екі төменгі нәтижесіз)'),
-
-    ('MedianBuchholz', 'ENG', 'Median Buchholz'),
-    ('MedianBuchholz', 'RUS', 'Медианный Бухгольц'),
-    ('MedianBuchholz', 'KAZ', 'Медиандық Бухгольц'),
-
-    ('CumulativeScore', 'ENG', 'Cumulative Score'),
-    ('CumulativeScore', 'RUS', 'Нарастающий итог (Прогресс)'),
-    ('CumulativeScore', 'KAZ', 'Үдемелі қорытынды (Прогресс)');
-
 -- ==========================================
 -- 2. КОМАНДАЛЫҚ ЖӘНЕ ВЕТЕРАН САНАТТАРЫ / Team and veteran categories
 -- ==========================================

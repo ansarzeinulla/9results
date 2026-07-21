@@ -7,6 +7,7 @@
     "home": "홈",
     "tournaments": "대회",
     "players": "선수",
+    "games": "게임",
     "registerPlayer": "선수 등록",
     "organizerLogin": "주최자 로그인",
     "dashboard": "대시보드",
@@ -143,7 +144,7 @@
   "playerRegister": {
     "title": "선수로 등록",
     "submit": "등록",
-    "success": "등록되었습니다! 선수 프로필이 생성되었습니다.",
+    "success": "등록되었습니다! 프로필이 생성되었습니다.",
     "hint": "선수 프로필을 만드세요. 비밀번호는 필요 없습니다 — 주최자가 대회에 추가합니다."
   },
   "login": {

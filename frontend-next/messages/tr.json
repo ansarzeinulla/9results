@@ -7,6 +7,7 @@
     "home": "Ana sayfa",
     "tournaments": "Turnuvalar",
     "players": "Oyuncular",
+    "games": "Oyunlar",
     "registerPlayer": "Oyuncu kaydı",
     "organizerLogin": "Organizatör girişi",
     "dashboard": "Panel",
@@ -256,7 +257,7 @@
   },
   "offline": {
     "title": "Çevrimdışısınız",
-    "hint": "Son yüklenen sayfalar hâlâ kullanılabilir. Güncel sonuçlar için yeniden bağlanın."
+    "hint": "Son yüklenen sayfalar hâlâ kullanılabilir. Yeniden bağlanın."
   },
   "search": {
     "placeholder": "Oyuncu bul…",
