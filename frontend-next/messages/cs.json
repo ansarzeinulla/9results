@@ -7,6 +7,9 @@
     "home": "Domů",
     "tournaments": "Turnaje",
     "players": "Hráči",
+    "arena": "Arena",
+    "engine": "Engine",
+    "var": "VAR",
     "games": "Hry",
     "registerPlayer": "Registrovat hráče",
     "organizerLogin": "Přihlášení pořadatele",
@@ -248,7 +251,7 @@
     "activePlayers": "Hráči",
     "tournamentsCount": "Turnaje",
     "gamesCount": "Hry",
-    "liveCount": "Live",
+    "liveCount": "Přímý přenos",
     "ongoing": "Probíhající a nadcházející",
     "viewPairings": "Zobrazit nasazení",
     "contacts": "Kontakty federace"
