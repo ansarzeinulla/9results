@@ -88,7 +88,15 @@ export interface TournamentRow {
   last_updated: string | null;
 }
 
-const LANG_MAP: Record<string, string> = { ru: "RUS", en: "ENG", kk: "KAZ" };
+const LANG_MAP: Record<string, string> = {
+  ru: "RUS",
+  en: "ENG",
+  kk: "KAZ",
+  es: "SPA",
+  tr: "TUR",
+  ko: "KOR",
+  cs: "CZE",
+};
 export const dbLang = (locale: string) => LANG_MAP[locale] ?? "RUS";
 
 export async function getCounts() {
