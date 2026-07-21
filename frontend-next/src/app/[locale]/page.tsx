@@ -1,8 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { cachedHome } from "@/lib/cached";
-import kaz from "@/data/kaz.json";
-import wdf from "@/data/wdf.json";
 
 export default async function Home({
   params,
@@ -64,19 +62,6 @@ export default async function Home({
             </div>
           )}
         </section>
-
-        <aside className="space-y-4">
-          <h2 className="text-xl font-semibold">{t("hero.contacts")}</h2>
-          {[kaz, wdf].map((f) => (
-            <div
-              key={f.code}
-              className="rounded-xl border border-neutral-200 p-4 text-sm dark:border-neutral-800"
-            >
-              <div className="font-semibold">{f.name}</div>
-              <div className="mt-1 text-neutral-500">{f.code}</div>
-            </div>
-          ))}
-        </aside>
       </div>
     </div>
   );
