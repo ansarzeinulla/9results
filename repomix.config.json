@@ -45,16 +45,13 @@
       "**/assets/**",
       "**/*.svg",
       "**/*.json",
-      "**/*.md",
       "**/.next/**",
-      "**/*.claude",
-      "**/.claude/**",
       "**/backend-py/**",
       "**/docs/**",
       "**/scripts/**",
       "**/*.yml",
       "**/vercel.json",
-      "**/db/**"
+      "**/db/seeds/**"
       ]  },
   "security": {
     "enableSecurityCheck": true

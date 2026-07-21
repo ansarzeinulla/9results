@@ -16,7 +16,9 @@
     "dashboard": "Панель",
     "logout": "Выйти",
     "adminPanel": "Админ",
-    "login": "Войти"
+    "login": "Войти",
+    "organizers": "Организаторы",
+    "arbiters": "Судьи"
   },
   "common": {
     "search": "Поиск",
@@ -81,7 +83,13 @@
     "gender": "Пол",
     "ageCategory": "Возраст",
     "playerId": "ID игрока",
-    "date": "Дата"
+    "date": "Дата",
+    "system": "Система",
+    "arbiter": "Судья",
+    "director": "Директор",
+    "tieBreaks": "Тай-брейки",
+    "participantType": "Категория участников",
+    "type": "Тип"
   },
   "view": {
     "label": "Выбрать вид",
@@ -121,7 +129,12 @@
     "anyAge": "Любой возраст",
     "createdFrom": "Создан с",
     "createdTo": "Создан по",
-    "searchName": "Поиск по названию…"
+    "searchName": "Поиск по названию…",
+    "anyLocation": "Любое место",
+    "anyParticipantType": "Любая категория",
+    "anySystem": "Любая система",
+    "organizerName": "Название организатора",
+    "timeControlFilter": "Контроль времени"
   },
   "tournamentView": {
     "standings": "Турнирная таблица",
@@ -142,7 +155,14 @@
     "noHistory": "Пока нет турниров.",
     "searchName": "Поиск по имени…",
     "ratingHistory": "Изменения рейтинга",
-    "noRatingHistory": "Изменений рейтинга пока нет."
+    "noRatingHistory": "Изменений рейтинга пока нет.",
+    "anyTitle": "Любое звание",
+    "idFilter": "ID",
+    "yobMin": "Год рождения (от)",
+    "yobMax": "Год рождения (до)",
+    "minClassic": "Мин. классический рейтинг",
+    "minRapid": "Мин. рапид рейтинг",
+    "minBlitz": "Мин. блиц рейтинг"
   },
   "playerRegister": {
     "title": "Регистрация игрока",
@@ -275,5 +295,21 @@
   "share": {
     "share": "Поделиться",
     "copied": "Ссылка скопирована!"
+  },
+  "standings": {
+    "afterRound": "Положение после тура {n}",
+    "current": "Текущее положение"
+  },
+  "organizers": {
+    "title": "Организаторы",
+    "empty": "Организаторы не найдены.",
+    "searchName": "Поиск по названию…",
+    "tournamentsOrganized": "Проведённые турниры"
+  },
+  "arbiters": {
+    "title": "Судьи и официальные лица",
+    "empty": "Судьи не найдены.",
+    "searchName": "Поиск по имени…",
+    "tournamentsArbitrated": "Обслуженные турниры"
   }
 }

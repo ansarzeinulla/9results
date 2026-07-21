@@ -10,7 +10,7 @@ export default async function Home({
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations();
-  const { counts, tournaments } = await cachedHome(locale);
+  const { counts } = await cachedHome(locale);
 
   return (
     <div className="space-y-8">
@@ -26,43 +26,22 @@ export default async function Home({
             <div className="text-3xl font-bold">{counts.tournaments}</div>
             <div className="text-sm text-emerald-200">{t("hero.tournamentsCount")}</div>
           </div>
-          <div>
-            <div className="text-3xl font-bold">0</div>
-            <div className="text-sm text-emerald-200">{t("hero.gamesCount")}</div>
-          </div>
-          <div>
-            <div className="text-3xl font-bold">0</div>
-            <div className="text-sm text-emerald-200">{t("hero.liveCount")}</div>
-          </div>
+        </div>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link
+            href="/tournaments"
+            className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-emerald-800 hover:bg-emerald-50"
+          >
+            {t("nav.tournaments")}
+          </Link>
+          <Link
+            href="/players"
+            className="rounded-lg border border-white/60 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10"
+          >
+            {t("nav.players")}
+          </Link>
         </div>
       </section>
-
-      <div className="grid gap-8 lg:grid-cols-[1fr_280px]">
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold">{t("hero.ongoing")}</h2>
-          </div>
-          {tournaments.length === 0 ? (
-            <p className="text-neutral-500">{t("home.noTournaments")}</p>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {tournaments.map((tr) => (
-                <Link
-                  key={tr.id}
-                  href={`/tournaments/${tr.slug ?? tr.id}/pairings`}
-                  className="block rounded-xl border border-neutral-200 p-4 hover:border-emerald-500 dark:border-neutral-800 dark:hover:border-emerald-500 transition-colors"
-                >
-                  <div className="font-semibold">{tr.name}</div>
-                  <div className="mt-1 text-sm text-neutral-500">
-                    {tr.location_name ?? tr.location_id} · {tr.start_date} —{" "}
-                    {tr.end_date}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
     </div>
   );
 }

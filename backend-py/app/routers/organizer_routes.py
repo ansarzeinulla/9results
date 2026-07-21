@@ -8,7 +8,7 @@ from app import db
 from app.auth import require_organizer
 from app.engines.rating import calculate_tournament_ratings
 from app.engines.swiss import PairingError, validate_round_pairings
-from app.engines.swiss_rules import generate_swiss_round, validate_total_rounds
+from app.engines.swiss_rules import generate_swiss_round
 
 router = APIRouter(dependencies=[Depends(require_organizer)])
 
@@ -96,19 +96,31 @@ class TournamentBody(BaseModel):
     tournament_type_id: str
     start_date: str
     end_date: str
-    rounds: int
+    # rounds is no longer declared upfront — the schedule grows as new
+    # pairings are generated. Kept optional for backward compatibility.
+    rounds: int | None = None
     level_id: str | None = None
     participant_type_id: str | None = None
     time_control: str | None = None
     status: str | None = None
+    # Ordered tie-break criteria (TB1..TB4); duplicates are allowed.
+    tie_breaks: list[str] | None = None
+
+
+def _save_tie_breaks(conn, tid: int, tie_breaks: list[str] | None) -> None:
+    if tie_breaks is None:
+        return
+    conn.execute("DELETE FROM tournament_tie_breaks WHERE tournament_id = %s", (tid,))
+    for pos, tb in enumerate(tie_breaks[:10], start=1):
+        conn.execute(
+            """INSERT INTO tournament_tie_breaks (tournament_id, tie_break_id, position)
+               VALUES (%s, %s, %s)""",
+            (tid, tb, pos),
+        )
 
 
 @router.post("/tournaments")
 def create_tournament(body: TournamentBody, user=Depends(require_organizer)):
-    try:
-        validate_total_rounds(body.rounds)
-    except PairingError as e:
-        raise HTTPException(status_code=422, detail=str(e))
     with db.connect() as conn:
         try:
             row = conn.execute(
@@ -127,6 +139,10 @@ def create_tournament(body: TournamentBody, user=Depends(require_organizer)):
             ).fetchone()
         except psycopg.Error as e:
             raise _tournament_write_error(e)
+        try:
+            _save_tie_breaks(conn, row["id"], body.tie_breaks)
+        except psycopg.errors.ForeignKeyViolation:
+            raise HTTPException(status_code=422, detail="Unknown tie-break criterion")
         conn.commit()
     return row
 
@@ -151,10 +167,6 @@ def my_tournaments(user=Depends(require_organizer)):
 
 @router.put("/tournaments/{tid}")
 def update_tournament(tid: int, body: TournamentBody, user=Depends(require_organizer)):
-    try:
-        validate_total_rounds(body.rounds)
-    except PairingError as e:
-        raise HTTPException(status_code=422, detail=str(e))
     with db.connect() as conn:
         _check_owner_tid(conn, tid, user)
         try:
@@ -172,6 +184,10 @@ def update_tournament(tid: int, body: TournamentBody, user=Depends(require_organ
             ).fetchone()
         except psycopg.Error as e:
             raise _tournament_write_error(e)
+        try:
+            _save_tie_breaks(conn, tid, body.tie_breaks)
+        except psycopg.errors.ForeignKeyViolation:
+            raise HTTPException(status_code=422, detail="Unknown tie-break criterion")
         conn.commit()
     if row is None:
         raise HTTPException(status_code=404, detail="Tournament not found")
@@ -322,13 +338,13 @@ def generate_round(tid: int, user=Depends(require_organizer)):
             "SELECT COALESCE(MAX(round_number), 0) AS n FROM rounds WHERE tournament_id=%s",
             (tid,),
         ).fetchone()["n"]
-        total = conn.execute(
-            "SELECT rounds FROM tournaments WHERE id=%s", (tid,)
+        exists = conn.execute(
+            "SELECT 1 FROM tournaments WHERE id=%s", (tid,)
         ).fetchone()
-        if total is None:
+        if exists is None:
             raise HTTPException(status_code=404, detail="Tournament not found")
-        if last >= total["rounds"]:
-            raise HTTPException(status_code=409, detail="All rounds already created")
+        if last >= 50:
+            raise HTTPException(status_code=409, detail="Round limit reached")
         open_round = conn.execute(
             "SELECT 1 FROM rounds WHERE tournament_id=%s AND NOT is_closed", (tid,)
         ).fetchone()

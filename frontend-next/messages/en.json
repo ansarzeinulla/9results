@@ -16,7 +16,9 @@
     "dashboard": "Dashboard",
     "logout": "Log out",
     "adminPanel": "Admin",
-    "login": "Sign in"
+    "login": "Sign in",
+    "organizers": "Organizers",
+    "arbiters": "Arbiters"
   },
   "common": {
     "search": "Search",
@@ -81,7 +83,13 @@
     "gender": "Gender",
     "ageCategory": "Age",
     "playerId": "Player ID",
-    "date": "Date"
+    "date": "Date",
+    "system": "System",
+    "arbiter": "Arbiter",
+    "director": "Director",
+    "tieBreaks": "Tie-breaks",
+    "participantType": "Participant type",
+    "type": "Type"
   },
   "view": {
     "label": "Select view",
@@ -121,7 +129,12 @@
     "anyAge": "Any age",
     "createdFrom": "Created from",
     "createdTo": "Created to",
-    "searchName": "Search by name…"
+    "searchName": "Search by name…",
+    "anyLocation": "Any location",
+    "anyParticipantType": "Any participant type",
+    "anySystem": "Any system",
+    "organizerName": "Organizer name",
+    "timeControlFilter": "Time control"
   },
   "tournamentView": {
     "standings": "Standings",
@@ -142,7 +155,14 @@
     "noHistory": "No tournaments yet.",
     "searchName": "Search by name…",
     "ratingHistory": "Rating changes",
-    "noRatingHistory": "No rating changes yet."
+    "noRatingHistory": "No rating changes yet.",
+    "anyTitle": "Any title",
+    "idFilter": "ID",
+    "yobMin": "Year of birth (min)",
+    "yobMax": "Year of birth (max)",
+    "minClassic": "Min classic rating",
+    "minRapid": "Min rapid rating",
+    "minBlitz": "Min blitz rating"
   },
   "playerRegister": {
     "title": "Register as a Player",
@@ -275,5 +295,21 @@
   "share": {
     "share": "Share",
     "copied": "Link copied!"
+  },
+  "standings": {
+    "afterRound": "Standings after round {n}",
+    "current": "Current standings"
+  },
+  "organizers": {
+    "title": "Organizers",
+    "empty": "No organizers found.",
+    "searchName": "Search by name…",
+    "tournamentsOrganized": "Tournaments organized"
+  },
+  "arbiters": {
+    "title": "Arbiters & Officials",
+    "empty": "No officials found.",
+    "searchName": "Search by name…",
+    "tournamentsArbitrated": "Tournaments officiated"
   }
 }

@@ -16,7 +16,9 @@
     "dashboard": "대시보드",
     "logout": "로그아웃",
     "adminPanel": "관리자",
-    "login": "로그인"
+    "login": "로그인",
+    "organizers": "Organizers",
+    "arbiters": "Arbiters"
   },
   "common": {
     "search": "검색",
@@ -81,7 +83,13 @@
     "gender": "성별",
     "ageCategory": "연령",
     "playerId": "선수 ID",
-    "date": "날짜"
+    "date": "날짜",
+    "system": "System",
+    "arbiter": "Arbiter",
+    "director": "Director",
+    "tieBreaks": "Tie-breaks",
+    "participantType": "Participant type",
+    "type": "Type"
   },
   "view": {
     "label": "보기 선택",
@@ -121,7 +129,12 @@
     "anyAge": "모든 연령",
     "createdFrom": "생성 시작일",
     "createdTo": "생성 종료일",
-    "searchName": "이름으로 검색…"
+    "searchName": "이름으로 검색…",
+    "anyLocation": "Any location",
+    "anyParticipantType": "Any participant type",
+    "anySystem": "Any system",
+    "organizerName": "Organizer name",
+    "timeControlFilter": "Time control"
   },
   "tournamentView": {
     "standings": "순위",
@@ -142,7 +155,14 @@
     "noHistory": "아직 대회가 없습니다.",
     "searchName": "이름으로 검색…",
     "ratingHistory": "레이팅 변동",
-    "noRatingHistory": "아직 레이팅 변동이 없습니다."
+    "noRatingHistory": "아직 레이팅 변동이 없습니다.",
+    "anyTitle": "Any title",
+    "idFilter": "ID",
+    "yobMin": "Year of birth (min)",
+    "yobMax": "Year of birth (max)",
+    "minClassic": "Min classic rating",
+    "minRapid": "Min rapid rating",
+    "minBlitz": "Min blitz rating"
   },
   "playerRegister": {
     "title": "선수로 등록",
@@ -275,5 +295,21 @@
   "share": {
     "share": "공유",
     "copied": "링크가 복사되었습니다!"
+  },
+  "standings": {
+    "afterRound": "Standings after round {n}",
+    "current": "Current standings"
+  },
+  "organizers": {
+    "title": "Organizers",
+    "empty": "No organizers found.",
+    "searchName": "Search by name…",
+    "tournamentsOrganized": "Tournaments organized"
+  },
+  "arbiters": {
+    "title": "Arbiters & Officials",
+    "empty": "No officials found.",
+    "searchName": "Search by name…",
+    "tournamentsArbitrated": "Tournaments officiated"
   }
 }

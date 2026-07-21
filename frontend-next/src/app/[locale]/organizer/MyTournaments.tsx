@@ -31,7 +31,7 @@ export default function MyTournaments() {
     return (
       <div className="animate-pulse space-y-2">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-12 rounded-lg bg-neutral-200 dark:bg-neutral-800" />
+          <div key={i} className="h-12 rounded-lg bg-neutral-200" />
         ))}
       </div>
     );
@@ -39,13 +39,13 @@ export default function MyTournaments() {
     return <p className="text-sm text-neutral-500">{t("dashboard.empty")}</p>;
 
   return (
-    <ul className="divide-y divide-neutral-100 dark:divide-neutral-900">
+    <ul className="divide-y divide-neutral-100">
       {rows.map((tr) => (
         <li key={tr.id} className="flex items-center justify-between py-3">
           <div>
             <Link
               href={`/organizer/tournaments/${tr.id}`}
-              className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+              className="font-medium text-emerald-700 hover:underline"
             >
               {tr.name}
             </Link>

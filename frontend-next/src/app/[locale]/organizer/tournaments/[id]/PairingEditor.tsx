@@ -115,10 +115,10 @@ export default function PairingEditor({
   ));
 
   const cls =
-    "rounded-lg border border-neutral-300 bg-transparent px-2 py-1 text-sm dark:border-neutral-700 dark:bg-neutral-950";
+    "rounded-lg border border-neutral-300 bg-transparent px-2 py-1 text-sm";
 
   return (
-    <div className="space-y-3 rounded-xl border border-amber-300 p-4 dark:border-amber-800">
+    <div className="space-y-3 rounded-xl border border-amber-300 p-4">
       <h3 className="font-semibold">{t("admin.editPairings")}</h3>
 
       {rows.map((row, i) => (
@@ -163,7 +163,7 @@ export default function PairingEditor({
         <button
           disabled={busy}
           onClick={validate}
-          className="rounded-lg border border-neutral-300 px-4 py-2 text-sm disabled:opacity-50 dark:border-neutral-700"
+          className="rounded-lg border border-neutral-300 px-4 py-2 text-sm disabled:opacity-50"
         >
           {t("common.apply")}
         </button>
@@ -176,7 +176,7 @@ export default function PairingEditor({
         </button>
         <button
           onClick={onClose}
-          className="rounded-lg border border-neutral-300 px-4 py-2 text-sm dark:border-neutral-700"
+          className="rounded-lg border border-neutral-300 px-4 py-2 text-sm"
         >
           {t("common.cancel")}
         </button>

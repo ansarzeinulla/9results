@@ -204,14 +204,14 @@ export default function AdminPanel({ federations }: { federations: Lookup[] }) {
   }
 
   const cls =
-    "w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-950";
+    "w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm";
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <h1 className="text-2xl font-bold">{t("adminPanel.title")}</h1>
 
       {/* Find by ID — the primary way in */}
-      <section className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
+      <section className="rounded-xl border border-neutral-200 p-4">
         <h2 className="mb-3 text-lg font-semibold">{t("admin.addById")}</h2>
         <form onSubmit={find} className="flex flex-wrap gap-2">
           <input
@@ -235,7 +235,7 @@ export default function AdminPanel({ federations }: { federations: Lookup[] }) {
               setError(null);
               setNotice(null);
             }}
-            className="rounded-lg border border-neutral-300 px-4 py-2 text-sm dark:border-neutral-700"
+            className="rounded-lg border border-neutral-300 px-4 py-2 text-sm"
           >
             {t("adminPanel.addPlayer")}
           </button>
@@ -244,12 +244,12 @@ export default function AdminPanel({ federations }: { federations: Lookup[] }) {
       </section>
 
       {error && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
         </p>
       )}
       {notice && (
-        <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+        <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
           {notice}
         </p>
       )}
@@ -379,7 +379,7 @@ export default function AdminPanel({ federations }: { federations: Lookup[] }) {
               <button
                 type="button"
                 onClick={reset}
-                className="rounded-lg border border-neutral-300 px-4 py-2 text-sm dark:border-neutral-700"
+                className="rounded-lg border border-neutral-300 px-4 py-2 text-sm"
               >
                 {t("common.cancel")}
               </button>
@@ -388,7 +388,7 @@ export default function AdminPanel({ federations }: { federations: Lookup[] }) {
                   type="button"
                   disabled={busy}
                   onClick={remove}
-                  className="ml-auto rounded-lg border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-950"
+                  className="ml-auto rounded-lg border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
                 >
                   {t("adminPanel.deletePlayer")}
                 </button>

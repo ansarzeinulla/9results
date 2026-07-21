@@ -145,12 +145,12 @@ export default function ControlPanel({
       </div>
 
       {error && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
         </p>
       )}
       {notice && (
-        <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+        <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
           {notice}
         </p>
       )}
@@ -161,7 +161,7 @@ export default function ControlPanel({
 
         <div className="mb-3 space-y-2">
           <textarea
-            className="w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 font-mono text-sm dark:border-neutral-700"
+            className="w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 font-mono text-sm"
             rows={2}
             placeholder="KAZ-001, KAZ-002, KAZ-003…"
             value={bulkIds}
@@ -184,14 +184,14 @@ export default function ControlPanel({
                   })
                 )
               }
-              className="rounded-lg border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700"
+              className="rounded-lg border border-neutral-300 px-3 py-2 text-sm"
               title={t("admin.syncRanks")}
             >
               ⟳
             </button>
           </div>
           {bulkResult && (
-            <div className="rounded-lg border border-neutral-200 p-2 text-sm dark:border-neutral-800">
+            <div className="rounded-lg border border-neutral-200 p-2 text-sm">
               <p className="text-emerald-600">+{bulkResult.added}</p>
               {bulkResult.errors.map((e) => (
                 <p key={e.id} className="text-amber-600">
@@ -202,7 +202,7 @@ export default function ControlPanel({
           )}
         </div>
 
-        <ul className="divide-y divide-neutral-100 text-sm dark:divide-neutral-900">
+        <ul className="divide-y divide-neutral-100 text-sm">
           {participants.map((p) => (
             <li key={p.player_id} className="flex items-center justify-between py-1.5">
               <span>
@@ -292,8 +292,8 @@ export default function ControlPanel({
                 key={m.id}
                 className={`rounded-xl border p-3 text-sm ${
                   unsaved
-                    ? "border-amber-400 dark:border-amber-700"
-                    : "border-neutral-200 dark:border-neutral-800"
+                    ? "border-amber-400"
+                    : "border-neutral-200"
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -313,7 +313,7 @@ export default function ControlPanel({
                         className={`rounded-lg border px-4 py-1.5 font-mono font-semibold ${
                           current === r
                             ? "border-emerald-600 bg-emerald-600 text-white"
-                            : "border-neutral-300 hover:border-emerald-500 dark:border-neutral-700"
+                            : "border-neutral-300 hover:border-emerald-500"
                         }`}
                       >
                         {r === "0.5-0.5" ? "½-½" : r}
@@ -321,7 +321,7 @@ export default function ControlPanel({
                     ))}
                     <button
                       onClick={() => setSpecialFor(specialFor === m.id ? null : m.id)}
-                      className="rounded-lg border border-neutral-300 px-3 py-1.5 dark:border-neutral-700"
+                      className="rounded-lg border border-neutral-300 px-3 py-1.5"
                     >
                       …
                     </button>
@@ -330,7 +330,7 @@ export default function ControlPanel({
                         <button
                           key={r}
                           onClick={() => setLocalResult(m.id, r)}
-                          className="rounded-lg border border-amber-400 px-3 py-1.5 font-mono text-amber-700 dark:text-amber-400"
+                          className="rounded-lg border border-amber-400 px-3 py-1.5 font-mono text-amber-700"
                         >
                           {r}
                         </button>
@@ -370,7 +370,7 @@ export default function ControlPanel({
           {lastRound && !lastRound.is_closed && !finished && (
             <button
               onClick={() => setEditingPairings((v) => !v)}
-              className="rounded-lg border border-amber-400 px-4 py-2 text-sm text-amber-700 dark:text-amber-400"
+              className="rounded-lg border border-amber-400 px-4 py-2 text-sm text-amber-700"
             >
               {t("admin.editPairings")}
             </button>
@@ -388,7 +388,7 @@ export default function ControlPanel({
                     )
                   )
                 }
-                className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-neutral-900"
+                className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50"
               >
                 {t("tournamentView.final")} ✓
               </button>

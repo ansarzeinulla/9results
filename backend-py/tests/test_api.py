@@ -40,15 +40,17 @@ def test_protected_route_requires_token(client):
     assert r.status_code in (401, 403)
 
 
-def test_even_round_tournament_rejected(client, admin_token):
+def test_tournament_created_without_rounds(client, admin_token):
+    # rounds is no longer declared upfront — the schedule grows as new
+    # pairings are generated, so creation without it must succeed.
     r = client.post("/api/tournaments", headers=auth(admin_token), json={
         "name": "Even Cup", "slug": "even-cup", "federation_id": "KAZ",
         "location_id": "Astana", "rating_type_id": "Classic",
         "tournament_type_id": "Swiss", "start_date": "2026-12-01",
-        "end_date": "2026-12-05", "rounds": 6,
+        "end_date": "2026-12-05",
     })
-    assert r.status_code == 422
-    assert "odd" in r.json()["detail"].lower()
+    assert r.status_code == 200
+    assert r.json()["id"] > 0
 
 
 def test_admin_can_create_organizer_and_login(client, admin_token):

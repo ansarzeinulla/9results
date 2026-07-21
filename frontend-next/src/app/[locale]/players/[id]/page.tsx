@@ -19,7 +19,7 @@ export default async function PlayerProfile({
   return (
     <div className="mx-auto max-w-2xl">
       <div className="flex items-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-2xl dark:bg-emerald-900">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-2xl">
           👤
         </div>
         <div>
@@ -47,7 +47,7 @@ export default async function PlayerProfile({
         ).map(([key, val]) => (
           <div
             key={key}
-            className="rounded-xl border border-neutral-200 p-3 dark:border-neutral-800"
+            className="rounded-xl border border-neutral-200 p-3"
           >
             <div className="text-2xl font-bold">{val}</div>
             <div className="text-xs text-neutral-500">{t(`fields.${key}`)}</div>
@@ -59,7 +59,7 @@ export default async function PlayerProfile({
       {tournaments.length === 0 ? (
         <p className="mt-2 text-sm text-neutral-500">{t("players.noHistory")}</p>
       ) : (
-        <ul className="mt-2 divide-y divide-neutral-100 text-sm dark:divide-neutral-900">
+        <ul className="mt-2 divide-y divide-neutral-100 text-sm">
           {tournaments.map((tr) => (
             <li key={String(tr.id)} className="flex justify-between py-2">
               <Link
@@ -84,7 +84,7 @@ export default async function PlayerProfile({
       {history.length === 0 ? (
         <p className="mt-2 text-sm text-neutral-500">{t("players.noRatingHistory")}</p>
       ) : (
-        <ul className="mt-2 divide-y divide-neutral-100 text-sm dark:divide-neutral-900">
+        <ul className="mt-2 divide-y divide-neutral-100 text-sm">
           {history.map((h, i) => (
             <li key={i} className="flex justify-between py-2">
               <span>

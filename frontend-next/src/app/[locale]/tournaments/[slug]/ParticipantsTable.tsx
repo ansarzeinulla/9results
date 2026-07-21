@@ -15,10 +15,10 @@ export default async function ParticipantsTable({
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-sm">
         <thead>
-          <tr className="border-b border-neutral-300 text-left text-neutral-500 dark:border-neutral-700">
-            <th className="py-2 pr-3">{showStandings ? t("rank") : t("sno")}</th>
-            <th className="py-2 pr-3">{t("title")}</th>
-            <th className="py-2 pr-3">{t("player")}</th>
+          <tr className="border-b border-neutral-300 text-left text-neutral-500">
+            <th className="w-10 py-2 pr-3">{showStandings ? t("rank") : t("sno")}</th>
+            <th className="w-12 py-2 pr-3">{t("title")}</th>
+            <th className="w-full py-2 pr-3">{t("player")}</th>
             <th className="hidden py-2 pr-3 sm:table-cell">{t("playerId")}</th>
             <th className="hidden py-2 pr-3 sm:table-cell">{t("club")}</th>
             <th className="py-2 pr-3">{t("rating")}</th>
@@ -36,7 +36,7 @@ export default async function ParticipantsTable({
           {rows.map((p, i) => (
             <tr
               key={p.player_id}
-              className="border-b border-neutral-100 dark:border-neutral-900"
+              className="border-b border-neutral-100"
             >
               <td className="py-2 pr-3">
                 {showStandings ? (p.final_rank ?? i + 1) : (p.starting_rank ?? i + 1)}
@@ -50,8 +50,13 @@ export default async function ParticipantsTable({
                   <span className="ml-2 text-xs text-red-500">{p.status}</span>
                 )}
               </td>
-              <td className="hidden py-2 pr-3 text-neutral-500 sm:table-cell">
-                {p.player_id}
+              <td className="hidden py-2 pr-3 sm:table-cell">
+                <Link
+                  href={`/players/${p.player_id}`}
+                  className="text-emerald-700 hover:underline"
+                >
+                  {p.player_id}
+                </Link>
               </td>
               <td className="hidden py-2 pr-3 sm:table-cell">{p.club ?? ""}</td>
               <td className="py-2 pr-3">{p.rating_at_tournament ?? 0}</td>

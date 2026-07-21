@@ -12,7 +12,7 @@ export default function BottomNav() {
     { href: "/login", icon: "⚙️", label: t("login") },
   ];
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950 md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white md:hidden">
       <div className="grid grid-cols-3">
         {items.map((it) => (
           <Link

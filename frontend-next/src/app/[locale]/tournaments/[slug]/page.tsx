@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { cachedTournament } from "@/lib/cached";
+import { cachedTournamentInfo } from "@/lib/cached";
 
 export default async function InfoTab({
   params,
@@ -10,7 +10,7 @@ export default async function InfoTab({
   const { locale, slug } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("fields");
-  const tr = await cachedTournament(locale, slug);
+  const { tournament: tr, tieBreaks } = await cachedTournamentInfo(locale, slug);
   if (!tr) notFound();
 
   const rows: [string, string | number | null][] = [
@@ -18,9 +18,18 @@ export default async function InfoTab({
     [t("location"), tr.location_name ?? tr.location_id],
     [t("date"), `${tr.start_date} — ${tr.end_date}`],
     [t("level"), tr.level_name ?? tr.level_id],
+    [t("system"), tr.tournament_type_name ?? tr.tournament_type_id],
     [t("ratingType"), tr.rating_type_name ?? tr.rating_type_id],
-    [t("rounds"), tr.rounds],
     [t("timeControl"), tr.time_control],
+    [t("organizer"), tr.organizer_name ?? null],
+    [t("arbiter"), tr.arbiter_name ?? null],
+    [t("director"), tr.director_name ?? null],
+    [
+      t("tieBreaks"),
+      tieBreaks.length
+        ? tieBreaks.map((tb) => `TB${tb.position}: ${tb.tie_break_id}`).join(", ")
+        : null,
+    ],
     [t("status"), tr.status],
     [
       t("lastUpdate"),
@@ -33,7 +42,7 @@ export default async function InfoTab({
       {rows
         .filter(([, v]) => v != null && v !== "")
         .map(([k, v]) => (
-          <div key={k} className="flex justify-between border-b border-neutral-100 pb-2 dark:border-neutral-900">
+          <div key={k} className="flex justify-between border-b border-neutral-100 pb-2">
             <dt className="text-neutral-500">{k}</dt>
             <dd className="font-medium">{v}</dd>
           </div>

@@ -13,13 +13,21 @@ import { lifeForStatus } from "./cache-rules";
 import {
   getCounts,
   getLookups,
+  getOfficial,
+  getOfficialTournaments,
+  getOrganization,
+  getOrganizationTournaments,
   getPairings,
   getParticipants,
   getPlayer,
   getPlayerTournaments,
   getRatingHistory,
   getRounds,
+  getStandingsAfterRound,
   getTournamentBySlug,
+  getTournamentTieBreaks,
+  listOfficials,
+  listOrganizations,
   listPlayers,
   listTournaments,
   type PlayerFilters,
@@ -78,6 +86,64 @@ export async function cachedPairings(locale: string, slug: string, n: number) {
   return { tournament, rounds, current, pairings };
 }
 
+export async function cachedTournamentInfo(locale: string, slug: string) {
+  "use cache";
+  const tournament = await getTournamentBySlug(locale, slug);
+  markTournament(tournament);
+  const tieBreaks = tournament ? await getTournamentTieBreaks(tournament.id) : [];
+  return { tournament, tieBreaks };
+}
+
+/** Standings snapshot after a chosen round (falls back to live standings). */
+export async function cachedStandings(locale: string, slug: string, roundN?: number) {
+  "use cache";
+  const tournament = await getTournamentBySlug(locale, slug);
+  markTournament(tournament);
+  const rounds = tournament ? await getRounds(tournament.id) : [];
+  const closed = rounds.filter((r) => r.is_closed);
+  const target =
+    roundN != null ? closed.find((r) => r.round_number === roundN) ?? null : null;
+  const history =
+    tournament && target
+      ? await getStandingsAfterRound(tournament.id, target.id)
+      : [];
+  const live =
+    tournament && !target ? await getParticipants(tournament.id, "standings") : [];
+  return { tournament, rounds: closed, target, history, live };
+}
+
+export async function cachedOrganizers(q?: string) {
+  "use cache";
+  cacheTag("tournaments");
+  cacheLife("hours");
+  return listOrganizations(q);
+}
+
+export async function cachedOrganizerProfile(id: number) {
+  "use cache";
+  cacheTag("tournaments");
+  cacheLife({ stale: 60, revalidate: 300, expire: 3600 });
+  const organization = await getOrganization(id);
+  const tournaments = organization ? await getOrganizationTournaments(id) : [];
+  return { organization, tournaments };
+}
+
+export async function cachedArbiters(q?: string) {
+  "use cache";
+  cacheTag("tournaments");
+  cacheLife("hours");
+  return listOfficials(q);
+}
+
+export async function cachedArbiterProfile(id: number) {
+  "use cache";
+  cacheTag("tournaments");
+  cacheLife({ stale: 60, revalidate: 300, expire: 3600 });
+  const official = await getOfficial(id);
+  const tournaments = official ? await getOfficialTournaments(id) : [];
+  return { official, tournaments };
+}
+
 export async function cachedHome(locale: string) {
   "use cache";
   cacheTag("tournaments");
@@ -113,7 +179,7 @@ export async function cachedPlayerProfile(id: string) {
   const player = await getPlayer(id);
   if (!player) return { player: null, tournaments: [], history: [] };
   const [tournaments, history] = await Promise.all([
-    getPlayerTournaments(player.id, 10),
+    getPlayerTournaments(player.id),
     getRatingHistory(player.id),
   ]);
   return { player, tournaments, history };

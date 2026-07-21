@@ -10,6 +10,8 @@ interface Lookup {
   name: string;
 }
 
+const today = () => new Date().toISOString().slice(0, 10);
+
 export default function FiltersPanel({
   lookups,
 }: {
@@ -18,38 +20,51 @@ export default function FiltersPanel({
     levels: Lookup[];
     ratingTypes: Lookup[];
     federations: Lookup[];
+    participantTypes: Lookup[];
+    tournamentTypes: Lookup[];
   };
 }) {
   const t = useTranslations();
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [form, setForm] = useState({
     q: sp.get("q") ?? "",
     federation: sp.get("federation") ?? "",
     location: sp.get("location") ?? "",
     level: sp.get("level") ?? "",
     ratingType: sp.get("ratingType") ?? "",
-    dateFrom: sp.get("dateFrom") ?? "",
+    // the start-date filter defaults to today so the list opens on
+    // current and upcoming events
+    dateFrom: sp.get("dateFrom") ?? (sp.size === 0 ? today() : ""),
     dateTo: sp.get("dateTo") ?? "",
+    organizer: sp.get("organizer") ?? "",
+    timeControl: sp.get("timeControl") ?? "",
+    participantType: sp.get("participantType") ?? "",
+    system: sp.get("system") ?? "",
   });
 
   const apply = () => {
     const qp = new URLSearchParams();
     Object.entries(form).forEach(([k, v]) => v && qp.set(k, v));
+    if (!form.dateFrom) qp.set("dateFrom", "");
     router.push(`${pathname}?${qp}`);
-    setOpen(false);
   };
   const reset = () => {
-    setForm({ q: "", federation: "", location: "", level: "", ratingType: "", dateFrom: "", dateTo: "" });
-    router.push(pathname);
-    setOpen(false);
+    setForm({
+      q: "", federation: "", location: "", level: "", ratingType: "",
+      dateFrom: "", dateTo: "", organizer: "", timeControl: "",
+      participantType: "", system: "",
+    });
+    router.push(`${pathname}?dateFrom=`);
   };
 
+  const inputCls =
+    "w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm";
   const sel = (key: keyof typeof form, label: string, opts: Lookup[]) => (
     <select
-      className="w-full rounded-lg border border-neutral-300 bg-transparent px-2 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-950"
+      className={inputCls}
       value={form[key]}
       onChange={(e) => setForm({ ...form, [key]: e.target.value })}
     >
@@ -61,77 +76,64 @@ export default function FiltersPanel({
       ))}
     </select>
   );
-
-  const body = (
-    <div className="space-y-3">
-      <input
-        className="w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-700"
-        placeholder={t("tournaments.searchName")}
-        value={form.q}
-        onChange={(e) => setForm({ ...form, q: e.target.value })}
-      />
-      {sel("federation", t("tournaments.anyFederation"), lookups.federations)}
-      {sel("location", t("tournaments.anyCity"), lookups.locations)}
-      {sel("level", t("tournaments.anyLevel"), lookups.levels)}
-      {sel("ratingType", t("tournaments.anyRatingType"), lookups.ratingTypes)}
-      <div className="grid grid-cols-2 gap-2">
-        <input
-          type="date"
-          className="rounded-lg border border-neutral-300 bg-transparent px-2 py-2 text-sm dark:border-neutral-700"
-          value={form.dateFrom}
-          onChange={(e) => setForm({ ...form, dateFrom: e.target.value })}
-        />
-        <input
-          type="date"
-          className="rounded-lg border border-neutral-300 bg-transparent px-2 py-2 text-sm dark:border-neutral-700"
-          value={form.dateTo}
-          onChange={(e) => setForm({ ...form, dateTo: e.target.value })}
-        />
-      </div>
-      <div className="flex gap-2">
-        <button
-          onClick={apply}
-          className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700"
-        >
-          {t("common.apply")}
-        </button>
-        <button
-          onClick={reset}
-          className="rounded-lg border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700"
-        >
-          {t("common.cancel")}
-        </button>
-      </div>
-    </div>
+  const txt = (key: keyof typeof form, placeholder: string) => (
+    <input
+      className={inputCls}
+      placeholder={placeholder}
+      value={form[key]}
+      onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+      onKeyDown={(e) => e.key === "Enter" && apply()}
+    />
   );
 
   return (
-    <>
-      {/* mobile trigger + bottom sheet */}
-      <div className="md:hidden">
-        <button
-          onClick={() => setOpen(true)}
-          className="w-full rounded-lg border border-neutral-300 py-2 text-sm dark:border-neutral-700"
-        >
-          {t("tournaments.filters")}
-        </button>
-        {open && (
-          <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={() => setOpen(false)}>
-            <div
-              className="w-full rounded-t-2xl bg-white p-4 pb-8 dark:bg-neutral-900"
-              onClick={(e) => e.stopPropagation()}
+    <section className="mb-6 rounded-xl border border-neutral-200 p-4">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between text-left font-semibold"
+      >
+        <span>{t("tournaments.filters")}</span>
+        <span className="text-sm text-neutral-500">{open ? "−" : "+"}</span>
+      </button>
+      {open && (
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {txt("q", t("tournaments.searchName"))}
+          {txt("organizer", t("tournaments.organizerName"))}
+          {txt("timeControl", t("tournaments.timeControlFilter"))}
+          {sel("federation", t("tournaments.anyFederation"), lookups.federations)}
+          {sel("location", t("tournaments.anyLocation"), lookups.locations)}
+          {sel("level", t("tournaments.anyLevel"), lookups.levels)}
+          {sel("ratingType", t("tournaments.anyRatingType"), lookups.ratingTypes)}
+          {sel("participantType", t("tournaments.anyParticipantType"), lookups.participantTypes)}
+          {sel("system", t("tournaments.anySystem"), lookups.tournamentTypes)}
+          <input
+            type="date"
+            className={inputCls}
+            value={form.dateFrom}
+            onChange={(e) => setForm({ ...form, dateFrom: e.target.value })}
+          />
+          <input
+            type="date"
+            className={inputCls}
+            value={form.dateTo}
+            onChange={(e) => setForm({ ...form, dateTo: e.target.value })}
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={apply}
+              className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700"
             >
-              <div className="mx-auto mb-3 h-1 w-10 rounded bg-neutral-300 dark:bg-neutral-700" />
-              {body}
-            </div>
+              {t("common.apply")}
+            </button>
+            <button
+              onClick={reset}
+              className="rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+            >
+              {t("common.cancel")}
+            </button>
           </div>
-        )}
-      </div>
-      {/* desktop sidebar */}
-      <aside className="hidden md:block">
-        <h2 className="mb-3 font-semibold">{t("tournaments.filters")}</h2>
-        {body}
-      </aside>
-    </>
+        </div>
+      )}
+    </section>
   );
 }

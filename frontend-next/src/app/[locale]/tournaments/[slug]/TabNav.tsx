@@ -15,7 +15,7 @@ export default function TabNav({ slug }: { slug: string }) {
     { href: `${base}/alphabetical`, label: t("alphabetical") },
   ];
   return (
-    <nav className="scrollbar-none -mx-4 flex gap-1 overflow-x-auto border-b border-neutral-200 px-4 dark:border-neutral-800">
+    <nav className="scrollbar-none -mx-4 flex gap-1 overflow-x-auto border-b border-neutral-200 px-4">
       {tabs.map((tab) => {
         const active = tab.exact
           ? pathname === tab.href
@@ -27,7 +27,7 @@ export default function TabNav({ slug }: { slug: string }) {
             className={`whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium ${
               active
                 ? "border-emerald-600 text-emerald-600"
-                : "border-transparent text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
+                : "border-transparent text-neutral-500 hover:text-neutral-900"
             }`}
           >
             {tab.label}

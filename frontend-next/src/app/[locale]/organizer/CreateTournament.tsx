@@ -24,6 +24,8 @@ export default function CreateTournament({
     levels: Lookup[];
     ratingTypes: Lookup[];
     federations: Lookup[];
+    tournamentTypes: Lookup[];
+    tieBreaks: Lookup[];
   };
 }) {
   const t = useTranslations();
@@ -36,8 +38,10 @@ export default function CreateTournament({
     rating_type_id: "Classic",
     start_date: "",
     end_date: "",
-    rounds: 7,
+    tournament_type_id: "Swiss",
   });
+  // Ordered tie-break criteria; the same criterion may be picked twice.
+  const [tieBreaks, setTieBreaks] = useState(["", "", "", ""]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -53,8 +57,8 @@ export default function CreateTournament({
         body: JSON.stringify({
           ...form,
           slug: `${slugify(form.name)}-${Date.now() % 10000}`,
-          tournament_type_id: "Swiss",
           level_id: form.level_id || null,
+          tie_breaks: tieBreaks.filter(Boolean),
         }),
       });
       // straight to the control panel of the new tournament — also avoids a
@@ -68,7 +72,7 @@ export default function CreateTournament({
   };
 
   const cls =
-    "w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-950";
+    "w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm";
 
   return (
     <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2">
@@ -139,15 +143,43 @@ export default function CreateTournament({
         onChange={(e) => set("end_date", e.target.value)}
         required
       />
-      <input
-        type="number"
-        min={1}
-        max={50}
+      <select
         className={cls}
-        value={form.rounds}
-        onChange={(e) => set("rounds", Number(e.target.value))}
-        title={t("fields.rounds")}
-      />
+        value={form.tournament_type_id}
+        onChange={(e) => set("tournament_type_id", e.target.value)}
+        title={t("fields.system")}
+      >
+        {lookups.tournamentTypes.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name}
+          </option>
+        ))}
+      </select>
+      <div className="sm:col-span-2">
+        <div className="mb-1 text-sm font-medium">{t("fields.tieBreaks")}</div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {tieBreaks.map((tb, i) => (
+            <select
+              key={i}
+              className={cls}
+              value={tb}
+              title={`TB${i + 1}`}
+              onChange={(e) => {
+                const next = [...tieBreaks];
+                next[i] = e.target.value;
+                setTieBreaks(next);
+              }}
+            >
+              <option value="">{`TB${i + 1}`}</option>
+              {lookups.tieBreaks.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.name}
+                </option>
+              ))}
+            </select>
+          ))}
+        </div>
+      </div>
       {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
       <button
         disabled={busy}

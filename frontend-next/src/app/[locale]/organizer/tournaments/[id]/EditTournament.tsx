@@ -40,7 +40,6 @@ export default function EditTournament({
     level_id: tournament.level_id ?? "",
     start_date: String(tournament.start_date ?? "").slice(0, 10),
     end_date: String(tournament.end_date ?? "").slice(0, 10),
-    rounds: tournament.rounds ?? 7,
     time_control: tournament.time_control ?? "",
     status: tournament.status,
   });
@@ -58,7 +57,6 @@ export default function EditTournament({
           ...form,
           level_id: form.level_id || null,
           time_control: form.time_control || null,
-          rounds: Number(form.rounds),
         }),
       });
       setOpen(false);
@@ -71,13 +69,13 @@ export default function EditTournament({
   };
 
   const cls =
-    "w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-950";
+    "w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm";
 
   if (!open) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm dark:border-neutral-700"
+        className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
       >
         {t("admin.settings")}
       </button>
@@ -85,7 +83,7 @@ export default function EditTournament({
   }
 
   return (
-    <form onSubmit={save} className="grid gap-3 rounded-xl border border-neutral-200 p-4 sm:grid-cols-2 dark:border-neutral-800">
+    <form onSubmit={save} className="grid gap-3 rounded-xl border border-neutral-200 p-4 sm:grid-cols-2">
       <input
         className={`${cls} sm:col-span-2`}
         value={form.name}
@@ -146,15 +144,6 @@ export default function EditTournament({
         required
       />
       <input
-        type="number"
-        min={1}
-        max={50}
-        className={cls}
-        value={form.rounds}
-        onChange={(e) => set("rounds", Number(e.target.value))}
-        title={t("fields.rounds")}
-      />
-      <input
         className={cls}
         value={form.time_control}
         onChange={(e) => set("time_control", e.target.value)}
@@ -180,7 +169,7 @@ export default function EditTournament({
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="rounded-lg border border-neutral-300 px-4 py-2 text-sm dark:border-neutral-700"
+          className="rounded-lg border border-neutral-300 px-4 py-2 text-sm"
         >
           {t("common.cancel")}
         </button>

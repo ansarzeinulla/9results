@@ -32,7 +32,7 @@ export default function ShareButton({ title }: { title: string }) {
         type="button"
         onClick={share}
         aria-label={t("share")}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-600 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-600 hover:bg-neutral-100"
       >
         <svg
           aria-hidden
@@ -52,7 +52,7 @@ export default function ShareButton({ title }: { title: string }) {
         {t("share")}
       </button>
       {copied && (
-        <span className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-neutral-900 px-2 py-1 text-xs text-white dark:bg-white dark:text-neutral-900">
+        <span className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-neutral-900 px-2 py-1 text-xs text-white">
           {t("copied")}
         </span>
       )}

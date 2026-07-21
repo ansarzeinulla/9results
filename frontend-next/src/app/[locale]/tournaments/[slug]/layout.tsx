@@ -31,12 +31,6 @@ export default async function TournamentLayout({
           <h1 className="text-2xl font-bold md:text-3xl">{tournament.name}</h1>
           <ShareButton title={tournament.name} />
         </div>
-        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-neutral-500">
-          <span>📍 {tournament.location_name ?? tournament.location_id}</span>
-          <span>📅 {tournament.start_date} — {tournament.end_date}</span>
-          {tournament.time_control && <span>⏱ {tournament.time_control}</span>}
-          <span>♟ {tournament.tournament_type_name ?? tournament.tournament_type_id}</span>
-        </div>
       </div>
       <TabNav slug={slug} />
       <SwipeNavigator slug={slug}>

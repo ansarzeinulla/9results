@@ -30,7 +30,7 @@ export default async function RoundPairings({
             className={`rounded-lg border px-4 py-1.5 text-sm font-medium ${
               r.round_number === Number(n)
                 ? "border-emerald-600 bg-emerald-600 text-white"
-                : "border-neutral-300 dark:border-neutral-700"
+                : "border-neutral-300"
             }`}
           >
             {t("tournamentView.round", { n: r.round_number })}

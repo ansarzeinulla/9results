@@ -133,6 +133,13 @@ export interface TournamentRow {
   tournament_type_id: string | null;
   tournament_type_name?: string | null;
   time_control: string | null;
+  participant_type_id?: string | null;
+  organizer_id?: number | null;
+  arbiter_id?: number | null;
+  director_id?: number | null;
+  organizer_name?: string | null;
+  arbiter_name?: string | null;
+  director_name?: string | null;
   last_updated: string | null;
 }
 
@@ -174,18 +181,27 @@ export interface TournamentFilters {
   ratingType?: string;
   dateFrom?: string;
   dateTo?: string;
+  organizer?: string;
+  timeControl?: string;
+  participantType?: string;
+  system?: string; // tournament_type_id: Swiss, Round-robin, …
   page?: number;
   pageSize?: number;
 }
 
 export async function listTournaments(locale: string, f: TournamentFilters = {}) {
-  const pageSize = f.pageSize ?? 20;
+  const pageSize = f.pageSize ?? 100;
   const offset = ((f.page ?? 1) - 1) * pageSize;
   const lang = dbLang(locale);
   if (useSupabase) {
     let q = supabase()
       .from("tournaments")
-      .select("*", { count: "exact" })
+      .select(
+        f.organizer
+          ? "*, organizations!inner(name)"
+          : "*, organizations(name)",
+        { count: "exact" }
+      )
       .neq("status", "DRAFT")
       .order("start_date", { ascending: false })
       .range(offset, offset + pageSize - 1);
@@ -196,6 +212,10 @@ export async function listTournaments(locale: string, f: TournamentFilters = {})
     if (f.ratingType) q = q.eq("rating_type_id", f.ratingType);
     if (f.dateFrom) q = q.gte("start_date", f.dateFrom);
     if (f.dateTo) q = q.lte("start_date", f.dateTo);
+    if (f.organizer) q = q.ilike("organizations.name", `%${f.organizer}%`);
+    if (f.timeControl) q = q.ilike("time_control", `%${f.timeControl}%`);
+    if (f.participantType) q = q.eq("participant_type_id", f.participantType);
+    if (f.system) q = q.eq("tournament_type_id", f.system);
     const res = await q;
     const data = unwrap(res) ?? [];
     const [locIdx, levIdx, ratIdx, typIdx] = await Promise.all([
@@ -206,6 +226,8 @@ export async function listTournaments(locale: string, f: TournamentFilters = {})
     ]);
     const rows = data.map((t) => ({
       ...t,
+      organizer_name:
+        (t.organizations as unknown as { name: string } | null)?.name ?? null,
       location_name: localizedName(locIdx, t.location_id, lang),
       level_name: localizedName(levIdx, t.level_id, lang),
       rating_type_name: localizedName(ratIdx, t.rating_type_id, lang),
@@ -226,9 +248,14 @@ export async function listTournaments(locale: string, f: TournamentFilters = {})
   if (f.ratingType) add("t.rating_type_id = ?", f.ratingType);
   if (f.dateFrom) add("t.start_date >= ?", f.dateFrom);
   if (f.dateTo) add("t.start_date <= ?", f.dateTo);
+  if (f.organizer) add("org.name ILIKE ?", `%${f.organizer}%`);
+  if (f.timeControl) add("t.time_control ILIKE ?", `%${f.timeControl}%`);
+  if (f.participantType) add("t.participant_type_id = ?", f.participantType);
+  if (f.system) add("t.tournament_type_id = ?", f.system);
   params.push(pageSize, offset);
   const rows = await sql<TournamentRow & { total: string }>(
     `SELECT t.*, lt.name AS location_name, COUNT(*) OVER() AS total,
+            org.name AS organizer_name,
             levt.name AS level_name,
             rt.name AS rating_type_name,
             typt.name AS tournament_type_name
@@ -241,6 +268,7 @@ export async function listTournaments(locale: string, f: TournamentFilters = {})
        ON rt.rating_type_id = t.rating_type_id AND rt.lang_code = $1
      LEFT JOIN type_translations typt
        ON typt.tournament_type_id = t.tournament_type_id AND typt.lang_code = $1
+     LEFT JOIN organizations org ON org.id = t.organizer_id
      WHERE ${conds.join(" AND ")}
      ORDER BY t.start_date DESC
      LIMIT $${params.length - 1} OFFSET $${params.length}`,
@@ -267,14 +295,16 @@ async function loadTournamentBySlug(locale: string, rawSlug: string) {
       );
     }
     if (!data) return null;
-    const [locIdx, levIdx, ratIdx, typIdx] = await Promise.all([
+    const [locIdx, levIdx, ratIdx, typIdx, people] = await Promise.all([
       locationNameIndex([data.location_id]),
       levelNameIndex([data.level_id]),
       ratingTypeNameIndex([data.rating_type_id]),
       tournamentTypeNameIndex([data.tournament_type_id]),
+      tournamentPeople(data),
     ]);
     return {
       ...data,
+      ...people,
       location_name: localizedName(locIdx, data.location_id, lang),
       level_name: localizedName(levIdx, data.level_id, lang),
       rating_type_name: localizedName(ratIdx, data.rating_type_id, lang),
@@ -285,7 +315,10 @@ async function loadTournamentBySlug(locale: string, rawSlug: string) {
     `SELECT t.*, lt.name AS location_name,
             levt.name AS level_name,
             rt.name AS rating_type_name,
-            typt.name AS tournament_type_name
+            typt.name AS tournament_type_name,
+            org.name AS organizer_name,
+            (arb.last_name || ' ' || arb.first_name) AS arbiter_name,
+            (dir.last_name || ' ' || dir.first_name) AS director_name
      FROM tournaments t
      LEFT JOIN location_translations lt
        ON lt.location_id = t.location_id AND lt.lang_code = $1
@@ -295,11 +328,63 @@ async function loadTournamentBySlug(locale: string, rawSlug: string) {
        ON rt.rating_type_id = t.rating_type_id AND rt.lang_code = $1
      LEFT JOIN type_translations typt
        ON typt.tournament_type_id = t.tournament_type_id AND typt.lang_code = $1
+     LEFT JOIN organizations org ON org.id = t.organizer_id
+     LEFT JOIN officials arb ON arb.id = t.arbiter_id
+     LEFT JOIN officials dir ON dir.id = t.director_id
      WHERE t.slug = $2 OR ($3::int IS NOT NULL AND t.id = $3::int)
      LIMIT 1`,
     [lang, slug, asId]
   );
   return rows[0] ?? null;
+}
+
+/** Organizer / arbiter / director display names for one tournament (Supabase). */
+async function tournamentPeople(t: {
+  organizer_id?: number | null;
+  arbiter_id?: number | null;
+  director_id?: number | null;
+}) {
+  const sb = supabase();
+  const officialIds = [t.arbiter_id, t.director_id].filter(
+    (x): x is number => x != null
+  );
+  const [orgRes, offRes] = await Promise.all([
+    t.organizer_id != null
+      ? sb.from("organizations").select("id, name").eq("id", t.organizer_id).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    officialIds.length
+      ? sb.from("officials").select("id, first_name, last_name").in("id", officialIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  const offs = (offRes.data ?? []) as { id: number; first_name: string; last_name: string }[];
+  const nameOf = (id: number | null | undefined) => {
+    const o = offs.find((x) => x.id === id);
+    return o ? `${o.last_name} ${o.first_name}` : null;
+  };
+  return {
+    organizer_name: (orgRes.data as { name: string } | null)?.name ?? null,
+    arbiter_name: nameOf(t.arbiter_id),
+    director_name: nameOf(t.director_id),
+  };
+}
+
+/** Ordered tie-break criteria (TB1..TBn) selected for a tournament. */
+export async function getTournamentTieBreaks(
+  tournamentId: number
+): Promise<{ position: number; tie_break_id: string }[]> {
+  if (useSupabase) {
+    const { data } = await supabase()
+      .from("tournament_tie_breaks")
+      .select("position, tie_break_id")
+      .eq("tournament_id", tournamentId)
+      .order("position");
+    return (data ?? []) as { position: number; tie_break_id: string }[];
+  }
+  return sql(
+    `SELECT position, tie_break_id FROM tournament_tie_breaks
+     WHERE tournament_id = $1 ORDER BY position`,
+    [tournamentId]
+  );
 }
 
 /**
@@ -398,8 +483,11 @@ export interface PairingRow {
   result_id: string | null;
   white_name?: string;
   black_name?: string | null;
+  white_title?: string | null;
+  black_title?: string | null;
   white_rating?: number | null;
   black_rating?: number | null;
+  /** Points BEFORE this round was played (standings after the previous round). */
   white_points?: string;
   black_points?: string | null;
 }
@@ -424,8 +512,35 @@ export async function getPairings(roundId: number): Promise<PairingRow[]> {
     if (pairings.length === 0) return [];
 
     const round = unwrap(
-      await sb.from("rounds").select("tournament_id").eq("id", roundId).maybeSingle()
-    ) as { tournament_id: number } | null;
+      await sb
+        .from("rounds")
+        .select("tournament_id, round_number")
+        .eq("id", roundId)
+        .maybeSingle()
+    ) as { tournament_id: number; round_number: number } | null;
+
+    // Points as they stood when the round was paired = the standings snapshot
+    // written when the previous round closed (round 1 starts at 0).
+    let prevPoints = new Map<string, string>();
+    if (round && round.round_number > 1) {
+      const prev = unwrap(
+        await sb
+          .from("rounds")
+          .select("id")
+          .eq("tournament_id", round.tournament_id)
+          .eq("round_number", round.round_number - 1)
+          .maybeSingle()
+      ) as { id: number } | null;
+      if (prev) {
+        const hist = unwrap(
+          await sb
+            .from("standings_history")
+            .select("player_id, points")
+            .eq("round_id", prev.id)
+        ) as { player_id: string; points: string }[];
+        prevPoints = new Map(hist.map((h) => [h.player_id, h.points]));
+      }
+    }
 
     const ids = [
       ...new Set(
@@ -435,11 +550,12 @@ export async function getPairings(roundId: number): Promise<PairingRow[]> {
       ),
     ];
     const players = unwrap(
-      await sb.from("players").select("id, first_name, last_name").in("id", ids)
-    ) as { id: string; first_name: string; last_name: string }[];
+      await sb.from("players").select("id, first_name, last_name, title_id").in("id", ids)
+    ) as { id: string; first_name: string; last_name: string; title_id: string | null }[];
     const nameById = new Map(
       players.map((p) => [p.id, `${p.last_name} ${p.first_name}`])
     );
+    const titleById = new Map(players.map((p) => [p.id, p.title_id]));
 
     const tps = round
       ? ((unwrap(
@@ -466,13 +582,17 @@ export async function getPairings(roundId: number): Promise<PairingRow[]> {
       black_name: p.black_player_id
         ? (nameById.get(p.black_player_id) ?? p.black_player_id)
         : null,
+      white_title: titleById.get(p.white_player_id) ?? null,
+      black_title: p.black_player_id
+        ? (titleById.get(p.black_player_id) ?? null)
+        : null,
       white_rating: tpById.get(p.white_player_id)?.rating_at_tournament ?? null,
       black_rating: p.black_player_id
         ? (tpById.get(p.black_player_id)?.rating_at_tournament ?? null)
         : null,
-      white_points: tpById.get(p.white_player_id)?.points,
+      white_points: prevPoints.get(p.white_player_id) ?? "0",
       black_points: p.black_player_id
-        ? tpById.get(p.black_player_id)?.points
+        ? (prevPoints.get(p.black_player_id) ?? "0")
         : null,
     }));
   }
@@ -481,9 +601,12 @@ export async function getPairings(roundId: number): Promise<PairingRow[]> {
             pr.result_id,
             (w.last_name || ' ' || w.first_name) AS white_name,
             (b.last_name || ' ' || b.first_name) AS black_name,
+            w.title_id AS white_title, b.title_id AS black_title,
             wtp.rating_at_tournament AS white_rating,
             btp.rating_at_tournament AS black_rating,
-            wtp.points AS white_points, btp.points AS black_points
+            COALESCE(wsh.points, 0) AS white_points,
+            CASE WHEN pr.black_player_id IS NULL THEN NULL
+                 ELSE COALESCE(bsh.points, 0) END AS black_points
      FROM pairings pr
      JOIN rounds r ON r.id = pr.round_id
      JOIN players w ON w.id = pr.white_player_id
@@ -492,6 +615,13 @@ export async function getPairings(roundId: number): Promise<PairingRow[]> {
        ON wtp.tournament_id = r.tournament_id AND wtp.player_id = pr.white_player_id
      LEFT JOIN tournament_participants btp
        ON btp.tournament_id = r.tournament_id AND btp.player_id = pr.black_player_id
+     LEFT JOIN rounds prev
+       ON prev.tournament_id = r.tournament_id
+      AND prev.round_number = r.round_number - 1
+     LEFT JOIN standings_history wsh
+       ON wsh.round_id = prev.id AND wsh.player_id = pr.white_player_id
+     LEFT JOIN standings_history bsh
+       ON bsh.round_id = prev.id AND bsh.player_id = pr.black_player_id
      WHERE pr.round_id = $1
      ORDER BY pr.board_number`,
     [roundId]
@@ -500,8 +630,19 @@ export async function getPairings(roundId: number): Promise<PairingRow[]> {
 
 export interface PlayerFilters {
   q?: string;
+  id?: string;
+  firstName?: string;
+  lastName?: string;
+  middleName?: string;
+  title?: string;
+  club?: string;
   federation?: string;
   birthYear?: string;
+  yobMin?: string;
+  yobMax?: string;
+  minClassic?: string;
+  minRapid?: string;
+  minBlitz?: string;
   page?: number;
   pageSize?: number;
 }
@@ -522,7 +663,7 @@ export interface PlayerRow {
 }
 
 export async function listPlayers(f: PlayerFilters = {}) {
-  const pageSize = f.pageSize ?? 25;
+  const pageSize = f.pageSize ?? 100;
   const offset = ((f.page ?? 1) - 1) * pageSize;
   // A name query goes through the transliteration-aware fuzzy search, so
   // "Nurlanova" finds «Нұрланова» and vice versa (typos included).
@@ -547,21 +688,41 @@ export async function listPlayers(f: PlayerFilters = {}) {
       .select("*", { count: "exact" })
       .order("rating_classic", { ascending: false })
       .range(offset, offset + pageSize - 1);
+    if (f.id) q = q.ilike("id", `%${f.id}%`);
+    if (f.firstName) q = q.ilike("first_name", `%${f.firstName}%`);
+    if (f.lastName) q = q.ilike("last_name", `%${f.lastName}%`);
+    if (f.middleName) q = q.ilike("middle_name", `%${f.middleName}%`);
+    if (f.title) q = q.eq("title_id", f.title);
+    if (f.club) q = q.ilike("club", `%${f.club}%`);
     if (f.federation) q = q.eq("federation_id", f.federation);
     if (f.birthYear) q = q.eq("year_of_birth", Number(f.birthYear));
+    if (f.yobMin) q = q.gte("year_of_birth", Number(f.yobMin));
+    if (f.yobMax) q = q.lte("year_of_birth", Number(f.yobMax));
+    if (f.minClassic) q = q.gte("rating_classic", Number(f.minClassic));
+    if (f.minRapid) q = q.gte("rating_rapid", Number(f.minRapid));
+    if (f.minBlitz) q = q.gte("rating_blitz", Number(f.minBlitz));
     const { data, count } = await q;
     return { rows: (data ?? []) as PlayerRow[], total: count ?? 0 };
   }
   const conds: string[] = ["TRUE"];
   const params: unknown[] = [];
-  if (f.federation) {
-    params.push(f.federation);
-    conds.push(`p.federation_id = $${params.length}`);
-  }
-  if (f.birthYear) {
-    params.push(Number(f.birthYear));
-    conds.push(`p.year_of_birth = $${params.length}`);
-  }
+  const add = (cond: string, val: unknown) => {
+    params.push(val);
+    conds.push(cond.replace("?", `$${params.length}`));
+  };
+  if (f.id) add("p.id ILIKE ?", `%${f.id}%`);
+  if (f.firstName) add("p.first_name ILIKE ?", `%${f.firstName}%`);
+  if (f.lastName) add("p.last_name ILIKE ?", `%${f.lastName}%`);
+  if (f.middleName) add("p.middle_name ILIKE ?", `%${f.middleName}%`);
+  if (f.title) add("p.title_id = ?", f.title);
+  if (f.club) add("p.club ILIKE ?", `%${f.club}%`);
+  if (f.federation) add("p.federation_id = ?", f.federation);
+  if (f.birthYear) add("p.year_of_birth = ?", Number(f.birthYear));
+  if (f.yobMin) add("p.year_of_birth >= ?", Number(f.yobMin));
+  if (f.yobMax) add("p.year_of_birth <= ?", Number(f.yobMax));
+  if (f.minClassic) add("p.rating_classic >= ?", Number(f.minClassic));
+  if (f.minRapid) add("p.rating_rapid >= ?", Number(f.minRapid));
+  if (f.minBlitz) add("p.rating_blitz >= ?", Number(f.minBlitz));
   params.push(pageSize, offset);
   const rows = await sql<PlayerRow & { total: string }>(
     `SELECT p.*, COUNT(*) OVER() AS total FROM players p
@@ -586,7 +747,7 @@ export async function getPlayer(id: string) {
   return rows[0] ?? null;
 }
 
-export async function getPlayerTournaments(id: string, limit = 10) {
+export async function getPlayerTournaments(id: string, limit = 200) {
   if (useSupabase) {
     const { data } = await supabase()
       .from("tournament_participants")
@@ -638,6 +799,203 @@ export async function getRatingHistory(id: string, limit = 20) {
      ORDER BY rh.created_at DESC
      LIMIT $2`,
     [id, limit]
+  );
+}
+
+export interface StandingRow {
+  player_id: string;
+  points: string;
+  tie_break_1: string;
+  tie_break_2: string;
+  tie_break_3: string;
+  rank_after_round: number | null;
+  first_name: string;
+  last_name: string;
+  title_id: string | null;
+  club: string | null;
+  rating_at_tournament: number | null;
+  status: string;
+}
+
+/** "Standings after round N" — the snapshot written when the round closed. */
+export async function getStandingsAfterRound(
+  tournamentId: number,
+  roundId: number
+): Promise<StandingRow[]> {
+  if (useSupabase) {
+    const { data } = await supabase()
+      .from("standings_history")
+      .select(
+        "player_id, points, tie_break_1, tie_break_2, tie_break_3, rank_after_round, players(first_name, last_name, title_id)"
+      )
+      .eq("tournament_id", tournamentId)
+      .eq("round_id", roundId)
+      .order("rank_after_round");
+    const tps = ((
+      await supabase()
+        .from("tournament_participants")
+        .select("player_id, club, rating_at_tournament, status")
+        .eq("tournament_id", tournamentId)
+    ).data ?? []) as {
+      player_id: string;
+      club: string | null;
+      rating_at_tournament: number | null;
+      status: string;
+    }[];
+    const tpById = new Map(tps.map((t) => [t.player_id, t]));
+    return (data ?? []).map((r) => {
+      const pl = r.players as unknown as {
+        first_name: string;
+        last_name: string;
+        title_id: string | null;
+      };
+      const tp = tpById.get(r.player_id);
+      return {
+        ...r,
+        ...pl,
+        club: tp?.club ?? null,
+        rating_at_tournament: tp?.rating_at_tournament ?? null,
+        status: tp?.status ?? "ACTIVE",
+      } as unknown as StandingRow;
+    });
+  }
+  return sql<StandingRow>(
+    `SELECT sh.player_id, sh.points, sh.tie_break_1, sh.tie_break_2,
+            sh.tie_break_3, sh.rank_after_round,
+            p.first_name, p.last_name, p.title_id,
+            tp.club, tp.rating_at_tournament, tp.status
+     FROM standings_history sh
+     JOIN players p ON p.id = sh.player_id
+     LEFT JOIN tournament_participants tp
+       ON tp.tournament_id = sh.tournament_id AND tp.player_id = sh.player_id
+     WHERE sh.tournament_id = $1 AND sh.round_id = $2
+     ORDER BY sh.rank_after_round NULLS LAST`,
+    [tournamentId, roundId]
+  );
+}
+
+export interface OrganizationRow {
+  id: number;
+  name: string;
+  federation_id: string | null;
+  tournaments_count?: number;
+}
+
+export async function listOrganizations(q?: string): Promise<OrganizationRow[]> {
+  if (useSupabase) {
+    let query = supabase().from("organizations").select("*").order("name").limit(100);
+    if (q) query = query.ilike("name", `%${q}%`);
+    const { data } = await query;
+    return (data ?? []) as OrganizationRow[];
+  }
+  const params: unknown[] = [];
+  let where = "TRUE";
+  if (q) {
+    params.push(`%${q}%`);
+    where = `o.name ILIKE $1`;
+  }
+  return sql<OrganizationRow>(
+    `SELECT o.*, (SELECT COUNT(*) FROM tournaments t WHERE t.organizer_id = o.id)::int
+            AS tournaments_count
+     FROM organizations o WHERE ${where} ORDER BY o.name LIMIT 100`,
+    params
+  );
+}
+
+export async function getOrganization(id: number): Promise<OrganizationRow | null> {
+  if (useSupabase) {
+    const { data } = await supabase()
+      .from("organizations")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    return (data as OrganizationRow) ?? null;
+  }
+  const rows = await sql<OrganizationRow>(
+    "SELECT * FROM organizations WHERE id = $1",
+    [id]
+  );
+  return rows[0] ?? null;
+}
+
+export async function getOrganizationTournaments(id: number) {
+  if (useSupabase) {
+    const { data } = await supabase()
+      .from("tournaments")
+      .select("id, name, slug, start_date, end_date, status, time_control, tournament_type_id, rating_type_id")
+      .eq("organizer_id", id)
+      .order("start_date", { ascending: false });
+    return (data ?? []) as TournamentRow[];
+  }
+  return sql<TournamentRow>(
+    `SELECT id, name, slug, start_date, end_date, status, time_control,
+            tournament_type_id, rating_type_id
+     FROM tournaments WHERE organizer_id = $1 ORDER BY start_date DESC`,
+    [id]
+  );
+}
+
+export interface OfficialRow {
+  id: number;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
+  title: string | null;
+  tournaments_count?: number;
+}
+
+/** Arbiters/officials directory: everyone in the officials table. */
+export async function listOfficials(q?: string): Promise<OfficialRow[]> {
+  if (useSupabase) {
+    let query = supabase().from("officials").select("*").order("last_name").limit(100);
+    if (q) query = query.or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%`);
+    const { data } = await query;
+    return (data ?? []) as OfficialRow[];
+  }
+  const params: unknown[] = [];
+  let where = "TRUE";
+  if (q) {
+    params.push(`%${q}%`);
+    where = `(o.first_name ILIKE $1 OR o.last_name ILIKE $1)`;
+  }
+  return sql<OfficialRow>(
+    `SELECT o.*, (SELECT COUNT(*) FROM tournaments t
+                  WHERE t.arbiter_id = o.id OR t.director_id = o.id)::int
+            AS tournaments_count
+     FROM officials o WHERE ${where} ORDER BY o.last_name, o.first_name LIMIT 100`,
+    params
+  );
+}
+
+export async function getOfficial(id: number): Promise<OfficialRow | null> {
+  if (useSupabase) {
+    const { data } = await supabase()
+      .from("officials")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    return (data as OfficialRow) ?? null;
+  }
+  const rows = await sql<OfficialRow>("SELECT * FROM officials WHERE id = $1", [id]);
+  return rows[0] ?? null;
+}
+
+/** Tournaments where the official served as arbiter or director. */
+export async function getOfficialTournaments(id: number) {
+  if (useSupabase) {
+    const { data } = await supabase()
+      .from("tournaments")
+      .select("id, name, slug, start_date, end_date, status, time_control, tournament_type_id, rating_type_id, arbiter_id, director_id")
+      .or(`arbiter_id.eq.${id},director_id.eq.${id}`)
+      .order("start_date", { ascending: false });
+    return (data ?? []) as TournamentRow[];
+  }
+  return sql<TournamentRow>(
+    `SELECT id, name, slug, start_date, end_date, status, time_control,
+            tournament_type_id, rating_type_id, arbiter_id, director_id
+     FROM tournaments WHERE arbiter_id = $1 OR director_id = $1
+     ORDER BY start_date DESC`,
+    [id]
   );
 }
 
@@ -737,20 +1095,38 @@ export async function getLookups(locale: string) {
   const lang = dbLang(locale);
   if (useSupabase) {
     const sb = supabase();
-    const [locs, levels, ratings, feds] = await Promise.all([
-      sb.from("location_translations").select("location_id, name").eq("lang_code", lang),
-      sb.from("level_translations").select("level_id, name").eq("lang_code", lang),
-      sb.from("rating_translations").select("rating_type_id, name").eq("lang_code", lang),
-      sb.from("federations").select("id"),
-    ]);
+    const [locs, levels, ratings, feds, titles, ptypes, ttypes, tbreaks] =
+      await Promise.all([
+        sb.from("location_translations").select("location_id, name").eq("lang_code", lang),
+        sb.from("level_translations").select("level_id, name").eq("lang_code", lang),
+        sb.from("rating_translations").select("rating_type_id, name").eq("lang_code", lang),
+        sb.from("federations").select("id"),
+        sb.from("titles").select("id"),
+        sb.from("participant_types").select("id"),
+        sb.from("tournament_types").select("id"),
+        sb.from("tie_breaks").select("id"),
+      ]);
     return {
       locations: (locs.data ?? []).map((r) => ({ id: r.location_id, name: r.name })),
       levels: (levels.data ?? []).map((r) => ({ id: r.level_id, name: r.name })),
       ratingTypes: (ratings.data ?? []).map((r) => ({ id: r.rating_type_id, name: r.name })),
       federations: (feds.data ?? []).map((r) => ({ id: r.id, name: r.id })),
+      titles: (titles.data ?? []).map((r) => ({ id: r.id, name: r.id })),
+      participantTypes: (ptypes.data ?? []).map((r) => ({ id: r.id, name: r.id })),
+      tournamentTypes: (ttypes.data ?? []).map((r) => ({ id: r.id, name: r.id })),
+      tieBreaks: (tbreaks.data ?? []).map((r) => ({ id: r.id, name: r.id })),
     };
   }
-  const [locations, levels, ratingTypes, federations] = await Promise.all([
+  const [
+    locations,
+    levels,
+    ratingTypes,
+    federations,
+    titles,
+    participantTypes,
+    tournamentTypes,
+    tieBreaks,
+  ] = await Promise.all([
     sql<{ id: string; name: string }>(
       "SELECT location_id AS id, name FROM location_translations WHERE lang_code = $1 ORDER BY name",
       [lang]
@@ -764,6 +1140,23 @@ export async function getLookups(locale: string) {
       [lang]
     ),
     sql<{ id: string; name: string }>("SELECT id, id AS name FROM federations", []),
+    sql<{ id: string; name: string }>("SELECT id, id AS name FROM titles ORDER BY id", []),
+    sql<{ id: string; name: string }>(
+      "SELECT id, id AS name FROM participant_types ORDER BY id", []
+    ),
+    sql<{ id: string; name: string }>(
+      "SELECT id, id AS name FROM tournament_types ORDER BY id", []
+    ),
+    sql<{ id: string; name: string }>("SELECT id, id AS name FROM tie_breaks ORDER BY id", []),
   ]);
-  return { locations, levels, ratingTypes, federations };
+  return {
+    locations,
+    levels,
+    ratingTypes,
+    federations,
+    titles,
+    participantTypes,
+    tournamentTypes,
+    tieBreaks,
+  };
 }

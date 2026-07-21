@@ -32,7 +32,7 @@ export default function LoginPage() {
     <form onSubmit={submit} className="mx-auto mt-12 max-w-sm space-y-4">
       <h1 className="text-2xl font-bold">{t("title")}</h1>
       <input
-        className="w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700"
+        className="w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2"
         placeholder={t("username")}
         value={username}
         onChange={(e) => setUsername(e.target.value)}
@@ -40,7 +40,7 @@ export default function LoginPage() {
       />
       <input
         type="password"
-        className="w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700"
+        className="w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2"
         placeholder={t("password")}
         value={password}
         onChange={(e) => setPassword(e.target.value)}

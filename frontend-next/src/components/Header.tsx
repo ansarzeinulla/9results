@@ -16,48 +16,6 @@ const LOCALES = [
   { code: "cs", label: "🇨🇿 Čeština" },
 ];
 
-function ThemeToggle() {
-  const [dark, setDark] = useState(false);
-
-  useEffect(() => {
-    // Initial check
-    const isDark = document.documentElement.classList.contains("dark");
-    setDark(isDark);
-
-    // Listen for system theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      if (!localStorage.theme) {
-        setDark(e.matches);
-        document.documentElement.classList.toggle("dark", e.matches);
-      }
-    };
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
-
-  const toggle = () => {
-    const next = !dark;
-    setDark(next);
-    document.documentElement.classList.toggle("dark", next);
-    try {
-      localStorage.theme = next ? "dark" : "light";
-    } catch (e) {
-      // ignore
-    }
-  };
-
-  return (
-    <button
-      onClick={toggle}
-      aria-label="Toggle theme"
-      className="rounded-lg border border-neutral-300 px-2 py-1 text-sm dark:border-neutral-700"
-    >
-      {dark ? "☀️" : "🌙"}
-    </button>
-  );
-}
-
 function LangSwitcher() {
   const locale = useLocale();
   const pathname = usePathname();
@@ -65,7 +23,7 @@ function LangSwitcher() {
   return (
     <select
       aria-label="Language"
-      className="rounded-lg border border-neutral-300 bg-transparent px-1 py-1 text-sm dark:border-neutral-700 dark:bg-neutral-950"
+      className="h-9 rounded-lg border border-neutral-300 bg-transparent px-3 py-1.5 text-sm"
       value={locale}
       onChange={(e) => router.replace(pathname, { locale: e.target.value })}
     >
@@ -84,7 +42,7 @@ export default function Header() {
   useEffect(() => setUser(getUser()), []);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/90 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/90">
+    <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/90 backdrop-blur">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-4">
         <Link href="/" className="shrink-0 text-lg font-bold tracking-tight">
           9Ecosystem
@@ -95,6 +53,12 @@ export default function Header() {
           </Link>
           <Link href="/players" className="hover:text-emerald-600">
             {t("nav.players")}
+          </Link>
+          <Link href="/organizers" className="hover:text-emerald-600">
+            {t("nav.organizers")}
+          </Link>
+          <Link href="/arbiters" className="hover:text-emerald-600">
+            {t("nav.arbiters")}
           </Link>
           <span className="cursor-not-allowed text-neutral-400" title="Soon">
             {t("nav.engine")}
@@ -111,20 +75,19 @@ export default function Header() {
         </nav>
         <div className="ml-auto flex items-center gap-2">
           <LangSwitcher />
-          <ThemeToggle />
           {user ? (
             <div className="flex items-center gap-2 text-sm">
               {user.role === "ADMIN" && (
                 <Link
                   href="/admin"
-                  className="rounded-lg border border-emerald-600 px-3 py-1.5 font-medium text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950"
+                  className="h-9 rounded-lg border border-emerald-600 px-3 py-1.5 font-medium text-emerald-700 hover:bg-emerald-50"
                 >
                   {t("nav.adminPanel")}
                 </Link>
               )}
               <Link
                 href="/organizer"
-                className="rounded-lg bg-emerald-600 px-3 py-1.5 font-medium text-white hover:bg-emerald-700"
+                className="h-9 rounded-lg bg-emerald-600 px-3 py-1.5 font-medium text-white hover:bg-emerald-700"
               >
                 {t("nav.dashboard")}
               </Link>
@@ -133,7 +96,7 @@ export default function Header() {
                   logout();
                   setUser(null);
                 }}
-                className="hidden text-neutral-500 hover:text-neutral-900 md:block dark:hover:text-white"
+                className="hidden text-neutral-500 hover:text-neutral-900 md:block"
               >
                 {t("nav.logout")}
               </button>
@@ -141,7 +104,7 @@ export default function Header() {
           ) : (
             <Link
               href="/login"
-              className="hidden rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 md:block"
+              className="hidden h-9 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 md:block"
             >
               {t("nav.organizerLogin")}
             </Link>

@@ -16,7 +16,9 @@
     "dashboard": "Panel",
     "logout": "Çıkış yap",
     "adminPanel": "Yönetim",
-    "login": "Giriş yap"
+    "login": "Giriş yap",
+    "organizers": "Organizers",
+    "arbiters": "Arbiters"
   },
   "common": {
     "search": "Ara",
@@ -81,7 +83,13 @@
     "gender": "Cinsiyet",
     "ageCategory": "Yaş",
     "playerId": "Oyuncu kimliği",
-    "date": "Tarih"
+    "date": "Tarih",
+    "system": "System",
+    "arbiter": "Arbiter",
+    "director": "Director",
+    "tieBreaks": "Tie-breaks",
+    "participantType": "Participant type",
+    "type": "Type"
   },
   "view": {
     "label": "Görünüm seç",
@@ -121,7 +129,12 @@
     "anyAge": "Tüm yaşlar",
     "createdFrom": "Oluşturma başlangıcı",
     "createdTo": "Oluşturma bitişi",
-    "searchName": "Ada göre ara…"
+    "searchName": "Ada göre ara…",
+    "anyLocation": "Any location",
+    "anyParticipantType": "Any participant type",
+    "anySystem": "Any system",
+    "organizerName": "Organizer name",
+    "timeControlFilter": "Time control"
   },
   "tournamentView": {
     "standings": "Sıralama",
@@ -142,7 +155,14 @@
     "noHistory": "Henüz turnuva yok.",
     "searchName": "Ada göre ara…",
     "ratingHistory": "Reyting değişiklikleri",
-    "noRatingHistory": "Henüz reyting değişikliği yok."
+    "noRatingHistory": "Henüz reyting değişikliği yok.",
+    "anyTitle": "Any title",
+    "idFilter": "ID",
+    "yobMin": "Year of birth (min)",
+    "yobMax": "Year of birth (max)",
+    "minClassic": "Min classic rating",
+    "minRapid": "Min rapid rating",
+    "minBlitz": "Min blitz rating"
   },
   "playerRegister": {
     "title": "Oyuncu olarak kaydol",
@@ -275,5 +295,21 @@
   "share": {
     "share": "Paylaş",
     "copied": "Bağlantı kopyalandı!"
+  },
+  "standings": {
+    "afterRound": "Standings after round {n}",
+    "current": "Current standings"
+  },
+  "organizers": {
+    "title": "Organizers",
+    "empty": "No organizers found.",
+    "searchName": "Search by name…",
+    "tournamentsOrganized": "Tournaments organized"
+  },
+  "arbiters": {
+    "title": "Arbiters & Officials",
+    "empty": "No officials found.",
+    "searchName": "Search by name…",
+    "tournamentsArbitrated": "Tournaments officiated"
   }
 }

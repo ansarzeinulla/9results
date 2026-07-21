@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { SideDisc } from "./PairingCard";
 
 export interface OmniHit {
   id: string;
@@ -48,6 +47,23 @@ async function search(q: string): Promise<OmniHit[]> {
  * are playing right now — the tournament, round, board and side. Debounced
  * 300ms with a 2-character minimum, so it cannot spam the database.
  */
+function SideDisc({ side }: { side: 1 | 2 }) {
+  return (
+    <svg viewBox="0 0 20 20" className="inline h-4 w-4 shrink-0 align-middle">
+      <circle
+        cx="10"
+        cy="10"
+        r="8"
+        className={
+          side === 1
+            ? "fill-emerald-600"
+            : "fill-none stroke-emerald-600 [stroke-width:2.5]"
+        }
+      />
+    </svg>
+  );
+}
+
 export default function OmniSearch() {
   const t = useTranslations("search");
   const [open, setOpen] = useState(false);
@@ -94,28 +110,28 @@ export default function OmniSearch() {
       <button
         aria-label={t("placeholder")}
         onClick={() => setOpen((v) => !v)}
-        className="rounded-lg border border-neutral-300 px-2 py-1 text-sm dark:border-neutral-700"
+        className="rounded-lg border border-neutral-300 px-2 py-1 text-sm"
       >
         🔍
       </button>
 
       {open && (
-        <div className="absolute right-0 top-10 z-50 w-[min(90vw,380px)] rounded-xl border border-neutral-200 bg-white p-3 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
+        <div className="absolute right-0 top-10 z-50 w-[min(90vw,380px)] rounded-xl border border-neutral-200 bg-white p-3 shadow-lg">
           <input
             autoFocus
-            className="w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-700"
+            className="w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm"
             placeholder={t("placeholder")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
           {busy && (
-            <div className="mt-2 h-8 animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" />
+            <div className="mt-2 h-8 animate-pulse rounded bg-neutral-200" />
           )}
           {hits && hits.length === 0 && !busy && (
             <p className="mt-2 text-sm text-neutral-500">{t("noResults")}</p>
           )}
           {hits && hits.length > 0 && (
-            <ul className="mt-2 max-h-80 divide-y divide-neutral-100 overflow-y-auto dark:divide-neutral-800">
+            <ul className="mt-2 max-h-80 divide-y divide-neutral-100 overflow-y-auto">
               {hits.map((h) => (
                 <li key={h.id} className="py-2 text-sm">
                   <Link
@@ -145,7 +161,7 @@ export default function OmniSearch() {
                         <span>
                           {t("round")} {h.round_number}
                         </span>
-                        <span className="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-sm font-bold dark:bg-neutral-800">
+                        <span className="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-sm font-bold">
                           {t("board")} {h.board_number}
                         </span>
                         {h.side && <SideDisc side={h.side} />}

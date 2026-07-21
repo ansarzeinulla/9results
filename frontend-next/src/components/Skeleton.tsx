@@ -4,7 +4,7 @@ export function SkeletonRows({ rows = 8 }: { rows?: number }) {
       {Array.from({ length: rows }).map((_, i) => (
         <div
           key={i}
-          className="h-10 rounded-lg bg-neutral-200 dark:bg-neutral-800"
+          className="h-10 rounded-lg bg-neutral-200"
         />
       ))}
     </div>
@@ -17,7 +17,7 @@ export function SkeletonCards({ cards = 3 }: { cards?: number }) {
       {Array.from({ length: cards }).map((_, i) => (
         <div
           key={i}
-          className="h-32 rounded-xl bg-neutral-200 dark:bg-neutral-800"
+          className="h-32 rounded-xl bg-neutral-200"
         />
       ))}
     </div>
