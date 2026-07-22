@@ -8,6 +8,8 @@ export interface PairingCardData {
   black_title?: string | null;
   white_rating?: number | null;
   black_rating?: number | null;
+  white_team?: string | null;
+  black_team?: string | null;
   /** Points before the round started (standings after the previous round). */
   white_points?: string | number | null;
   black_points?: string | number | null;
@@ -34,6 +36,9 @@ export default function PairingCard({
           </span>
         )}
         <span className="font-medium">{m.white_name}</span>
+        {m.white_team && (
+          <span className="ml-1 text-xs text-neutral-500">({m.white_team})</span>
+        )}
         <div className="text-xs text-neutral-500">
           {m.white_rating ?? 0}
           {m.white_points != null ? ` · ${Number(m.white_points)}` : ""}
@@ -49,6 +54,9 @@ export default function PairingCard({
               </span>
             )}
             <span className="font-medium">{m.black_name}</span>
+            {m.black_team && (
+              <span className="ml-1 text-xs text-neutral-500">({m.black_team})</span>
+            )}
             <div className="text-xs text-neutral-500">
               {m.black_rating ?? 0}
               {m.black_points != null ? ` · ${Number(m.black_points)}` : ""}
