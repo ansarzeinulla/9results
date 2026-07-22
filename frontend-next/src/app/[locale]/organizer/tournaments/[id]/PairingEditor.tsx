@@ -48,7 +48,7 @@ export default function PairingEditor({
 
   const name = (id: string | null) => {
     if (!id) return t("tournamentView.bye");
-    const p = participants.find((x) => x.player_id === id);
+    const p = participants.find((x) => x.player_id === id) as any;
     return p ? `${p.last_name} ${p.first_name} ${p.team_id ? `(${p.team_id})` : ""}` : id;
   };
 
@@ -110,7 +110,7 @@ export default function PairingEditor({
 
   const options = participants.map((p) => (
     <option key={p.player_id} value={p.player_id}>
-      {p.last_name} {p.first_name} {p.team_id ? `(${p.team_id})` : ""}
+      {(p as any).last_name} {(p as any).first_name} {(p as any).team_id ? `(${(p as any).team_id})` : ""}
     </option>
   ));
 
