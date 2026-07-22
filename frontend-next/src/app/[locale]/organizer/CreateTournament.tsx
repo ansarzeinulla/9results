@@ -26,6 +26,7 @@ export default function CreateTournament({
     federations: Lookup[];
     tournamentTypes: Lookup[];
     tieBreaks: Lookup[];
+    participantTypes: Lookup[];
   };
 }) {
   const t = useTranslations();
@@ -39,6 +40,8 @@ export default function CreateTournament({
     start_date: "",
     end_date: "",
     tournament_type_id: "Swiss",
+    participant_type_id: "",
+    time_control: "",
   });
   // Ordered tie-break criteria; the same criterion may be picked twice.
   const [tieBreaks, setTieBreaks] = useState(["", "", "", ""]);
@@ -58,6 +61,8 @@ export default function CreateTournament({
           ...form,
           slug: `${slugify(form.name)}-${Date.now() % 10000}`,
           level_id: form.level_id || null,
+          participant_type_id: form.participant_type_id || null,
+          time_control: form.time_control || null,
           tie_breaks: tieBreaks.filter(Boolean),
         }),
       });
@@ -65,7 +70,7 @@ export default function CreateTournament({
       // stale dashboard list (its client-side fetch runs on mount only)
       router.push(`/organizer/tournaments/${created.id}`);
     } catch (err) {
-      setError((err as Error).message);
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
     }
@@ -155,6 +160,24 @@ export default function CreateTournament({
           </option>
         ))}
       </select>
+      <select
+        className={cls}
+        value={form.participant_type_id}
+        onChange={(e) => set("participant_type_id", e.target.value)}
+      >
+        <option value="">{t("tournaments.anyParticipantType")}</option>
+        {lookups.participantTypes.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name}
+          </option>
+        ))}
+      </select>
+      <input
+        className={`${cls} sm:col-span-2`}
+        placeholder={t("fields.timeControl")}
+        value={form.time_control}
+        onChange={(e) => set("time_control", e.target.value)}
+      />
       <div className="sm:col-span-2">
         <div className="mb-1 text-sm font-medium">{t("fields.tieBreaks")}</div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
