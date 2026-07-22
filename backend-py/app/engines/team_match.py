@@ -4,7 +4,7 @@ Pairs teams against each other, then pairs players within those teams.
 """
 
 def generate_team_match_round(raw_players, previous_matches, round_number):
-    # Group players by team
+    # Group players by team_id
     teams = {}
     for p in raw_players:
         team_id = p.get("team_id")
