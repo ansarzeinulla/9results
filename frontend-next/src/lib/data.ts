@@ -897,23 +897,28 @@ export interface OrganizationRow {
   tournaments_count?: number;
 }
 
-export async function listOrganizations(q?: string): Promise<OrganizationRow[]> {
+export async function listOrganizations(q?: string, federation?: string): Promise<OrganizationRow[]> {
   if (useSupabase) {
     let query = supabase().from("organizations").select("*").order("name").limit(100);
     if (q) query = query.ilike("name", `%${q}%`);
+    if (federation) query = query.eq("federation_id", federation);
     const { data } = await query;
     return (data ?? []) as OrganizationRow[];
   }
   const params: unknown[] = [];
-  let where = "TRUE";
+  const conds: string[] = ["TRUE"];
   if (q) {
     params.push(`%${q}%`);
-    where = `o.name ILIKE $1`;
+    conds.push(`o.name ILIKE $${params.length}`);
+  }
+  if (federation) {
+    params.push(federation);
+    conds.push(`o.federation_id = $${params.length}`);
   }
   return sql<OrganizationRow>(
     `SELECT o.*, (SELECT COUNT(*) FROM tournaments t WHERE t.organizer_id = o.id)::int
             AS tournaments_count
-     FROM organizations o WHERE ${where} ORDER BY o.name LIMIT 100`,
+     FROM organizations o WHERE ${conds.join(" AND ")} ORDER BY o.name LIMIT 100`,
     params
   );
 }
@@ -961,24 +966,29 @@ export interface OfficialRow {
 }
 
 /** Arbiters/officials directory: everyone in the officials table. */
-export async function listOfficials(q?: string): Promise<OfficialRow[]> {
+export async function listOfficials(q?: string, title?: string): Promise<OfficialRow[]> {
   if (useSupabase) {
     let query = supabase().from("officials").select("*").order("last_name").limit(100);
     if (q) query = query.or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%`);
+    if (title) query = query.eq("title", title);
     const { data } = await query;
     return (data ?? []) as OfficialRow[];
   }
   const params: unknown[] = [];
-  let where = "TRUE";
+  const conds: string[] = ["TRUE"];
   if (q) {
     params.push(`%${q}%`);
-    where = `(o.first_name ILIKE $1 OR o.last_name ILIKE $1)`;
+    conds.push(`(o.first_name ILIKE $${params.length} OR o.last_name ILIKE $${params.length})`);
+  }
+  if (title) {
+    params.push(title);
+    conds.push(`o.title = $${params.length}`);
   }
   return sql<OfficialRow>(
     `SELECT o.*, (SELECT COUNT(*) FROM tournaments t
                   WHERE t.arbiter_id = o.id OR t.director_id = o.id)::int
             AS tournaments_count
-     FROM officials o WHERE ${where} ORDER BY o.last_name, o.first_name LIMIT 100`,
+     FROM officials o WHERE ${conds.join(" AND ")} ORDER BY o.last_name, o.first_name LIMIT 100`,
     params
   );
 }

@@ -112,11 +112,11 @@ export async function cachedStandings(locale: string, slug: string, roundN?: num
   return { tournament, rounds: closed, target, history, live };
 }
 
-export async function cachedOrganizers(q?: string) {
+export async function cachedOrganizers(q?: string, federation?: string) {
   "use cache";
   cacheTag("tournaments");
   cacheLife("hours");
-  return listOrganizations(q);
+  return listOrganizations(q, federation);
 }
 
 export async function cachedOrganizerProfile(id: number) {
@@ -128,11 +128,11 @@ export async function cachedOrganizerProfile(id: number) {
   return { organization, tournaments };
 }
 
-export async function cachedArbiters(q?: string) {
+export async function cachedArbiters(q?: string, title?: string) {
   "use cache";
   cacheTag("tournaments");
   cacheLife("hours");
-  return listOfficials(q);
+  return listOfficials(q, title);
 }
 
 export async function cachedArbiterProfile(id: number) {

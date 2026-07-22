@@ -1,25 +1,26 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { cachedOrganizers } from "@/lib/cached";
-import SearchBox from "./SearchBox";
+import { cachedLookups, cachedOrganizers } from "@/lib/cached";
+import FiltersPanel from "./FiltersPanel";
 
 export default async function OrganizersPage({
   params,
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; federation?: string }>;
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const { q } = await searchParams;
+  const sp = await searchParams;
   const t = await getTranslations();
-  const rows = await cachedOrganizers(q);
+  const lookups = await cachedLookups(locale);
+  const rows = await cachedOrganizers(sp.q, sp.federation);
 
   return (
     <div>
       <h1 className="mb-4 text-2xl font-bold">{t("organizers.title")}</h1>
-      <SearchBox placeholder={t("organizers.searchName")} />
+      <FiltersPanel federations={lookups.federations} />
       {rows.length === 0 ? (
         <p className="mt-4 text-neutral-500">{t("organizers.empty")}</p>
       ) : (
