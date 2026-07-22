@@ -51,7 +51,7 @@
       "**/scripts/**",
       "**/*.yml",
       "**/vercel.json",
-      "**/db/seeds/**"
+      "**/db/**"
       ]  },
   "security": {
     "enableSecurityCheck": true
