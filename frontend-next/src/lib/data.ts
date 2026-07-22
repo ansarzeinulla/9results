@@ -157,19 +157,35 @@ export const dbLang = (locale: string) => LANG_MAP[locale] ?? "RUS";
 export async function getCounts() {
   if (useSupabase) {
     const sb = supabase();
-    const [p, t] = await Promise.all([
+    const [p, t, o, a] = await Promise.all([
       sb.from("players").select("id", { count: "exact", head: true }),
       sb.from("tournaments").select("id", { count: "exact", head: true }),
+      sb.from("organizations").select("id", { count: "exact", head: true }),
+      sb.from("officials").select("id", { count: "exact", head: true }),
     ]);
-    return { players: p.count ?? 0, tournaments: t.count ?? 0 };
+    return {
+      players: p.count ?? 0,
+      tournaments: t.count ?? 0,
+      organizations: o.count ?? 0,
+      arbiters: a.count ?? 0,
+    };
   }
-  const rows = await sql<{ players: string; tournaments: string }>(
+  const rows = await sql<{
+    players: string;
+    tournaments: string;
+    organizations: string;
+    arbiters: string;
+  }>(
     `SELECT (SELECT COUNT(*) FROM players) AS players,
-            (SELECT COUNT(*) FROM tournaments) AS tournaments`
+            (SELECT COUNT(*) FROM tournaments) AS tournaments,
+            (SELECT COUNT(*) FROM organizations) AS organizations,
+            (SELECT COUNT(*) FROM officials) AS arbiters`
   );
   return {
     players: Number(rows[0].players),
     tournaments: Number(rows[0].tournaments),
+    organizations: Number(rows[0].organizations),
+    arbiters: Number(rows[0].arbiters),
   };
 }
 

@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "results.togyz",
-    short_name: "togyz",
+    name: "results.9ecosystem",
+    short_name: "9ecosystem",
     description: "Togyzkumalak tournament results and player ratings",
     start_url: "/",
     display: "standalone",

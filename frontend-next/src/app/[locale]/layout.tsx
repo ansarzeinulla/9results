@@ -5,7 +5,6 @@ import { setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import Header from "@/components/Header";
-import BottomNav from "@/components/BottomNav";
 import HtmlLang from "@/components/HtmlLang";
 import { SkeletonRows } from "@/components/Skeleton";
 
@@ -41,10 +40,9 @@ export default async function LocaleLayout({
       <NextIntlClientProvider>
         <HtmlLang locale={locale} />
         <Header />
-        <main className="mx-auto w-full max-w-6xl px-4 pb-24 pt-4 md:pb-8">
+        <main className="mx-auto w-full max-w-6xl px-4 pb-8 pt-4">
           {children}
         </main>
-        <BottomNav />
       </NextIntlClientProvider>
     </Suspense>
   );

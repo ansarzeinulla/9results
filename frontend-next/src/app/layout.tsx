@@ -4,7 +4,7 @@ import PwaRegister from "@/components/PwaRegister";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "results.togyz",
+  title: "results.9ecosystem",
   description: "Togyzkumalak tournament results and player ratings",
 };
 

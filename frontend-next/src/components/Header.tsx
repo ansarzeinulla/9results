@@ -45,35 +45,10 @@ export default function Header() {
     <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/90 backdrop-blur">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-4">
         <Link href="/" className="shrink-0 text-lg font-bold tracking-tight">
-          9Ecosystem
+          9ecosystem
         </Link>
-        <nav className="hidden items-center gap-4 text-sm md:flex">
-          <Link href="/tournaments" className="hover:text-emerald-600">
-            {t("nav.tournaments")}
-          </Link>
-          <Link href="/players" className="hover:text-emerald-600">
-            {t("nav.players")}
-          </Link>
-          <Link href="/organizers" className="hover:text-emerald-600">
-            {t("nav.organizers")}
-          </Link>
-          <Link href="/arbiters" className="hover:text-emerald-600">
-            {t("nav.arbiters")}
-          </Link>
-          <span className="cursor-not-allowed text-neutral-400" title="Soon">
-            {t("nav.engine")}
-          </span>
-          <span className="cursor-not-allowed text-neutral-400" title="Soon">
-            {t("nav.arena")}
-          </span>
-          <span className="cursor-not-allowed text-neutral-400" title="Soon">
-            {t("nav.games")}
-          </span>
-          <span className="cursor-not-allowed text-neutral-400" title="Soon">
-            {t("nav.var")}
-          </span>
-        </nav>
         <div className="ml-auto flex items-center gap-2">
+          <OmniSearch />
           <LangSwitcher />
           {user ? (
             <div className="flex items-center gap-2 text-sm">
