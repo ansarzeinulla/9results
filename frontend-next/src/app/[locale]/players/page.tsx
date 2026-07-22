@@ -51,8 +51,8 @@ export default async function PlayersPage({
               <th className="w-12 py-2 pr-3">{t("fields.title")}</th>
               <th className="w-full py-2 pr-3">{t("fields.player")}</th>
               <th className="py-2 pr-3">{t("fields.ratingClassic")}</th>
-              <th className="py-2 pr-3">{t("fields.ratingRapid")}</th>
-              <th className="py-2 pr-3">{t("fields.ratingBlitz")}</th>
+              <th className="hidden py-2 pr-3 sm:table-cell">{t("fields.ratingRapid")}</th>
+              <th className="hidden py-2 pr-3 sm:table-cell">{t("fields.ratingBlitz")}</th>
               <th className="hidden py-2 pr-3 sm:table-cell">{t("fields.federation")}</th>
               <th className="hidden py-2 sm:table-cell">{t("fields.club")}</th>
             </tr>
@@ -73,8 +73,8 @@ export default async function PlayersPage({
                   </Link>
                 </td>
                 <td className="py-2 pr-3 tabular-nums">{p.rating_classic}</td>
-                <td className="py-2 pr-3 tabular-nums">{p.rating_rapid}</td>
-                <td className="py-2 pr-3 tabular-nums">{p.rating_blitz}</td>
+                <td className="hidden py-2 pr-3 tabular-nums sm:table-cell">{p.rating_rapid}</td>
+                <td className="hidden py-2 pr-3 tabular-nums sm:table-cell">{p.rating_blitz}</td>
                 <td className="hidden py-2 pr-3 sm:table-cell">{p.federation_id}</td>
                 <td className="hidden py-2 sm:table-cell">{p.club ?? ""}</td>
               </tr>

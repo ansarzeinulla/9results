@@ -25,9 +25,9 @@ export default async function ParticipantsTable({
             {showStandings && (
               <>
                 <th className="py-2 pr-3 font-bold">{t("points")}</th>
-                <th className="py-2 pr-3">TB1</th>
-                <th className="py-2 pr-3">TB2</th>
-                <th className="py-2">TB3</th>
+                <th className="hidden py-2 pr-3 sm:table-cell">TB1</th>
+                <th className="hidden py-2 pr-3 sm:table-cell">TB2</th>
+                <th className="hidden py-2 sm:table-cell">TB3</th>
               </>
             )}
           </tr>
@@ -63,9 +63,9 @@ export default async function ParticipantsTable({
               {showStandings && (
                 <>
                   <td className="py-2 pr-3 font-bold">{Number(p.points)}</td>
-                  <td className="py-2 pr-3">{Number(p.tie_break_1)}</td>
-                  <td className="py-2 pr-3">{Number(p.tie_break_2)}</td>
-                  <td className="py-2">{Number(p.tie_break_3)}</td>
+                  <td className="hidden py-2 pr-3 sm:table-cell">{Number(p.tie_break_1)}</td>
+                  <td className="hidden py-2 pr-3 sm:table-cell">{Number(p.tie_break_2)}</td>
+                  <td className="hidden py-2 sm:table-cell">{Number(p.tie_break_3)}</td>
                 </>
               )}
             </tr>
