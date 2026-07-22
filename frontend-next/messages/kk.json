@@ -311,5 +311,14 @@
     "empty": "No officials found.",
     "searchName": "Search by name…",
     "tournamentsArbitrated": "Tournaments officiated"
+  },
+  "teams": {
+    "title": "Командалар",
+    "newTeam": "Команда атауы…",
+    "create": "Команда құру",
+    "none": "— командасыз —",
+    "board": "Тақта",
+    "deleteTeam": "Команданы жою",
+    "hint": "Бір команданың ойыншылары бір-бірімен ойнамайды."
   }
 }

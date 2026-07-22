@@ -311,5 +311,14 @@
     "empty": "No officials found.",
     "searchName": "Search by name…",
     "tournamentsArbitrated": "Tournaments officiated"
+  },
+  "teams": {
+    "title": "Takımlar",
+    "newTeam": "Takım adı…",
+    "create": "Takım oluştur",
+    "none": "— takımsız —",
+    "board": "Masa",
+    "deleteTeam": "Takımı sil",
+    "hint": "Aynı takımdaki oyuncular birbiriyle eşleştirilmez."
   }
 }

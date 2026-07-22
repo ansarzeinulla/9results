@@ -311,5 +311,14 @@
     "empty": "No officials found.",
     "searchName": "Search by name…",
     "tournamentsArbitrated": "Tournaments officiated"
+  },
+  "teams": {
+    "title": "Týmy",
+    "newTeam": "Název týmu…",
+    "create": "Vytvořit tým",
+    "none": "— bez týmu —",
+    "board": "Šachovnice",
+    "deleteTeam": "Smazat tým",
+    "hint": "Hráči stejného týmu se nikdy nesetkají."
   }
 }

@@ -1,5 +1,6 @@
 /** Client-side calls to the FastAPI backend (organizer/admin actions). */
 import { tagsForMutation } from "./cache-rules";
+import { formatApiError } from "./api-error";
 
 export const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -59,9 +60,9 @@ export async function api<T = unknown>(
     },
   });
   if (!res.ok) {
-    let detail = res.statusText;
+    let detail: string = res.statusText;
     try {
-      detail = (await res.json()).detail ?? detail;
+      detail = formatApiError((await res.json()).detail, res.statusText);
     } catch {}
     throw new Error(detail);
   }

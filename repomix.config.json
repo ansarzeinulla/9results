@@ -46,12 +46,12 @@
       "**/*.svg",
       "**/*.json",
       "**/.next/**",
-      "**/backend-py/**",
       "**/docs/**",
       "**/scripts/**",
       "**/*.yml",
       "**/vercel.json",
-      "**/db/**"
+      "**frontend-next/frontend-next/**",
+      "**/db/seeds/**"
       ]  },
   "security": {
     "enableSecurityCheck": true

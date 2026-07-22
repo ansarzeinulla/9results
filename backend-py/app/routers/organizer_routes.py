@@ -9,6 +9,7 @@ from app.auth import require_organizer
 from app.engines.rating import calculate_tournament_ratings
 from app.engines.swiss import PairingError, validate_round_pairings
 from app.engines.swiss_rules import generate_swiss_round
+from app.engines.team_match import generate_team_match_round
 
 router = APIRouter(dependencies=[Depends(require_organizer)])
 
@@ -291,6 +292,119 @@ def remove_player(tid: int, player_id: str, user=Depends(require_organizer)):
     return {"ok": True}
 
 
+# --- teams --------------------------------------------------------------
+# Teams belong to one tournament. A participant carries both a team_id and a
+# board_order: the seat they occupy in that team's fixed lineup.
+
+
+class TeamBody(BaseModel):
+    name: str
+
+
+class AssignTeamBody(BaseModel):
+    # Both null clears the assignment, which is how a player leaves a team.
+    team_id: int | None = None
+    board_order: int | None = None
+
+
+@router.get("/tournaments/{tid}/teams")
+def list_teams(tid: int, user=Depends(require_organizer)):
+    """Teams with their rosters, in board order — what the organizer edits and
+    what the pairing engine consumes."""
+    with db.connect() as conn:
+        _check_owner_tid(conn, tid, user)
+        return conn.execute(
+            """SELECT t.id, t.name,
+                      COALESCE(json_agg(
+                          json_build_object(
+                              'player_id', tp.player_id,
+                              'board_order', tp.board_order,
+                              'name', p.last_name || ' ' || p.first_name
+                          ) ORDER BY tp.board_order
+                      ) FILTER (WHERE tp.player_id IS NOT NULL), '[]') AS roster
+               FROM teams t
+               LEFT JOIN tournament_participants tp
+                      ON tp.team_id = t.id AND tp.tournament_id = t.tournament_id
+               LEFT JOIN players p ON p.id = tp.player_id
+               WHERE t.tournament_id = %s
+               GROUP BY t.id, t.name
+               ORDER BY t.name""",
+            (tid,),
+        ).fetchall()
+
+
+@router.post("/tournaments/{tid}/teams")
+def create_team(tid: int, body: TeamBody, user=Depends(require_organizer)):
+    name = body.name.strip()
+    if not name:
+        raise HTTPException(status_code=422, detail="Team name cannot be empty")
+    with db.connect() as conn:
+        _check_owner_tid(conn, tid, user)
+        row = conn.execute(
+            "INSERT INTO teams (tournament_id, name) VALUES (%s, %s) RETURNING id, name",
+            (tid, name),
+        ).fetchone()
+        conn.commit()
+    return row
+
+
+@router.delete("/tournaments/{tid}/teams/{team_id}")
+def delete_team(tid: int, team_id: int, user=Depends(require_organizer)):
+    """Members are released rather than removed from the tournament — the FK is
+    ON DELETE SET NULL, so their board_order is cleared alongside it."""
+    with db.connect() as conn:
+        _check_owner_tid(conn, tid, user)
+        conn.execute(
+            """UPDATE tournament_participants SET board_order = NULL
+               WHERE tournament_id = %s AND team_id = %s""",
+            (tid, team_id),
+        )
+        conn.execute(
+            "DELETE FROM teams WHERE id = %s AND tournament_id = %s", (team_id, tid)
+        )
+        conn.commit()
+    return {"ok": True}
+
+
+@router.put("/tournaments/{tid}/players/{player_id}/team")
+def assign_team(tid: int, player_id: str, body: AssignTeamBody,
+                user=Depends(require_organizer)):
+    with db.connect() as conn:
+        _check_owner_tid(conn, tid, user)
+        if body.team_id is not None:
+            owns = conn.execute(
+                "SELECT 1 FROM teams WHERE id = %s AND tournament_id = %s",
+                (body.team_id, tid),
+            ).fetchone()
+            if owns is None:
+                raise HTTPException(
+                    status_code=404, detail="Team not found in this tournament"
+                )
+        try:
+            row = conn.execute(
+                """UPDATE tournament_participants
+                   SET team_id = %s, board_order = %s
+                   WHERE tournament_id = %s AND player_id = %s
+                   RETURNING player_id, team_id, board_order""",
+                (body.team_id, body.board_order, tid, player_id),
+            ).fetchone()
+        except psycopg.errors.UniqueViolation:
+            raise HTTPException(
+                status_code=409,
+                detail="Another player already occupies that board for this team",
+            )
+        except psycopg.errors.CheckViolation:
+            raise HTTPException(
+                status_code=422, detail="Board order must be a positive number"
+            )
+        if row is None:
+            raise HTTPException(
+                status_code=404, detail="Player is not registered in this tournament"
+            )
+        conn.commit()
+    return row
+
+
 @router.post("/tournaments/{tid}/players/sync-ranks")
 def sync_ranks(tid: int, user=Depends(require_organizer)):
     with db.connect() as conn:
@@ -310,10 +424,12 @@ def withdraw_player(tid: int, player_id: str, user=Depends(require_organizer)):
 
 
 def _tournament_state(conn, tid):
+    # team_id is selected because swiss_rules refuses to pair two players from
+    # the same team; without it that rule silently never fires.
     players = conn.execute(
         """SELECT tp.player_id, tp.points AS current_points,
                   tp.rating_at_tournament AS current_rating,
-                  tp.starting_rank AS seed_number,
+                  tp.starting_rank AS seed_number, tp.team_id,
                   (p.last_name || ' ' || p.first_name) AS name
            FROM tournament_participants tp
            JOIN players p ON p.id = tp.player_id
@@ -328,6 +444,76 @@ def _tournament_state(conn, tid):
         (tid,),
     ).fetchall()
     return players, matches
+
+
+def _team_state(conn, tid):
+    """Teams with rosters and their accumulated game points, plus the team-level
+    match history. Separate from _tournament_state so the individual path keeps
+    exactly the shape it has today."""
+    teams = conn.execute(
+        """SELECT t.id AS team_id,
+                  COALESCE(SUM(tp.points), 0) AS game_points,
+                  COALESCE(AVG(tp.rating_at_tournament), 0) AS mean_rating,
+                  COALESCE(json_agg(
+                      json_build_object(
+                          'player_id', tp.player_id,
+                          'board_order', tp.board_order
+                      ) ORDER BY tp.board_order
+                  ) FILTER (WHERE tp.player_id IS NOT NULL), '[]') AS roster
+           FROM teams t
+           LEFT JOIN tournament_participants tp
+                  ON tp.team_id = t.id
+                 AND tp.tournament_id = t.tournament_id
+                 AND tp.status = 'ACTIVE'
+           WHERE t.tournament_id = %s
+           GROUP BY t.id
+           ORDER BY t.id""",
+        (tid,),
+    ).fetchall()
+    history = conn.execute(
+        """SELECT r.round_number, tm.team1_id, tm.team2_id
+           FROM team_matches tm JOIN rounds r ON tm.round_id = r.id
+           WHERE r.tournament_id = %s""",
+        (tid,),
+    ).fetchall()
+    return teams, history
+
+
+def _store_team_round(conn, rid, team_matches):
+    """Write the two-level result: a team_matches row per matchup, with its
+    boards hanging off it. A bye team plays nobody, so every one of its boards
+    is booked as a full-point bye to keep game-point totals comparable."""
+    for m in team_matches:
+        tm_id = conn.execute(
+            """INSERT INTO team_matches (round_id, match_number, team1_id, team2_id)
+               VALUES (%s, %s, %s, %s) RETURNING id""",
+            (rid, m["match_number"], m["team1_id"], m["team2_id"]),
+        ).fetchone()["id"]
+
+        if m["team2_id"] is None:
+            roster = conn.execute(
+                """SELECT player_id FROM tournament_participants
+                   WHERE team_id = %s AND status = 'ACTIVE'
+                   ORDER BY board_order""",
+                (m["team1_id"],),
+            ).fetchall()
+            for board, p in enumerate(roster, start=1):
+                pid = conn.execute(
+                    """INSERT INTO pairings (round_id, board_number,
+                           white_player_id, black_player_id, team_match_id)
+                       VALUES (%s, %s, %s, NULL, %s) RETURNING id""",
+                    (rid, board, p["player_id"], tm_id),
+                ).fetchone()["id"]
+                conn.execute("CALL org_set_result(%s, '1BYE')", (pid,))
+            continue
+
+        for p in m["pairings"]:
+            conn.execute(
+                """INSERT INTO pairings (round_id, board_number,
+                       white_player_id, black_player_id, team_match_id)
+                   VALUES (%s, %s, %s, %s, %s)""",
+                (rid, p["board_number"], p["player1_id"], p["player2_id"], tm_id),
+            )
 
 
 @router.post("/tournaments/{tid}/generate-round")
@@ -351,8 +537,34 @@ def generate_round(tid: int, user=Depends(require_organizer)):
         if open_round:
             raise HTTPException(status_code=409, detail="Previous round is not closed")
 
-        players, matches = _tournament_state(conn, tid)
         round_number = last + 1
+        is_team_event = conn.execute(
+            "SELECT tournament_type_id AS t FROM tournaments WHERE id=%s", (tid,)
+        ).fetchone()["t"] == "Match"
+
+        if is_team_event:
+            teams, team_history = _team_state(conn, tid)
+            try:
+                result = generate_team_match_round(
+                    teams, team_history, round_number
+                )
+            except PairingError as e:
+                raise HTTPException(status_code=422, detail=str(e))
+
+            conn.execute("CALL org_add_round(%s, %s)", (tid, round_number))
+            rid = conn.execute(
+                "SELECT id FROM rounds WHERE tournament_id=%s AND round_number=%s",
+                (tid, round_number),
+            ).fetchone()["id"]
+            _store_team_round(conn, rid, result["team_matches"])
+            conn.commit()
+            return {
+                "round_id": rid,
+                "round_number": round_number,
+                "team_matches": result["team_matches"],
+            }
+
+        players, matches = _tournament_state(conn, tid)
         try:
             result = generate_swiss_round(players, matches, round_number)
         except PairingError as e:

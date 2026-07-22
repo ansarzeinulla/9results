@@ -137,6 +137,28 @@ def _colors(p1, p2):
     return (p1, p2) if p1_white else (p2, p1)
 
 
+def _separate_team_mates(g1, g2):
+    """Folding the halves together can seat two players of the same team across
+    the board from each other. The same-team rule holds in round 1 too, so swap
+    partners within the bottom half until no pair is a team-mate pair."""
+    for i in range(len(g1)):
+        if g1[i].team_id is None or g1[i].team_id != g2[i].team_id:
+            continue
+        for j in range(len(g2)):
+            # Both the pair being fixed and the pair being borrowed from must
+            # come out clean, otherwise the swap just moves the clash.
+            if j == i:
+                continue
+            if g1[i].team_id != g2[j].team_id and g1[j].team_id != g2[i].team_id:
+                g2[i], g2[j] = g2[j], g2[i]
+                break
+        else:
+            raise PairingError(
+                "No valid pairing exists — team-mates cannot be kept apart"
+            )
+    return g2
+
+
 def _first_round(players):
     ordered = sorted(players, key=lambda p: p.seed_number)
     bye = None
@@ -145,6 +167,7 @@ def _first_round(players):
         ordered = [p for p in ordered if p is not bye]
     half = len(ordered) // 2
     g1, g2 = ordered[:half], ordered[half:]
+    g2 = _separate_team_mates(g1, g2)
     pairs = []
     for i in range(half):
         p1, p2 = g1[i], g2[i]

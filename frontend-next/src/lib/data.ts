@@ -420,6 +420,8 @@ export interface ParticipantRow {
   final_rank: number | null;
   status: string;
   club: string | null;
+  team_id: number | null;
+  board_order: number | null;
   first_name: string;
   last_name: string;
   title_id: string | null;
@@ -433,7 +435,7 @@ export async function getParticipants(
     const { data } = await supabase()
       .from("tournament_participants")
       .select(
-        "player_id, starting_rank, rating_at_tournament, points, tie_break_1, tie_break_2, tie_break_3, final_rank, status, club, players(first_name, last_name, title_id)"
+        "player_id, starting_rank, rating_at_tournament, points, tie_break_1, tie_break_2, tie_break_3, final_rank, status, club, team_id, board_order, players(first_name, last_name, title_id)"
       )
       .eq("tournament_id", tournamentId);
     const rows = (data ?? []).map((r) => {
@@ -460,7 +462,8 @@ export async function getParticipants(
   return sql<ParticipantRow>(
     `SELECT tp.player_id, tp.starting_rank, tp.rating_at_tournament, tp.points,
             tp.tie_break_1, tp.tie_break_2, tp.tie_break_3, tp.final_rank,
-            tp.status, tp.club, p.first_name, p.last_name, p.title_id
+            tp.status, tp.club, tp.team_id, tp.board_order,
+            p.first_name, p.last_name, p.title_id
      FROM tournament_participants tp
      JOIN players p ON p.id = tp.player_id
      WHERE tp.tournament_id = $1
@@ -506,6 +509,9 @@ export interface PairingRow {
   /** Points BEFORE this round was played (standings after the previous round). */
   white_points?: string;
   black_points?: string | null;
+  /** Team names, null in an individual tournament with no teams entered. */
+  white_team?: string | null;
+  black_team?: string | null;
 }
 
 export async function getPairings(roundId: number): Promise<PairingRow[]> {
@@ -577,16 +583,21 @@ export async function getPairings(roundId: number): Promise<PairingRow[]> {
       ? ((unwrap(
           await sb
             .from("tournament_participants")
-            .select("player_id, rating_at_tournament, points")
+            .select("player_id, rating_at_tournament, points, teams(name)")
             .eq("tournament_id", round.tournament_id)
             .in("player_id", ids)
         ) ?? []) as {
           player_id: string;
           rating_at_tournament: number | null;
           points: string;
+          // PostgREST returns an embedded relation as an array even when the
+          // foreign key makes it at most one row.
+          teams: { name: string }[] | null;
         }[])
       : [];
     const tpById = new Map(tps.map((t) => [t.player_id, t]));
+    const teamOf = (playerId: string | null) =>
+      playerId ? (tpById.get(playerId)?.teams?.[0]?.name ?? null) : null;
 
     return pairings.map((p) => ({
       id: p.id,
@@ -610,6 +621,8 @@ export async function getPairings(roundId: number): Promise<PairingRow[]> {
       black_points: p.black_player_id
         ? (prevPoints.get(p.black_player_id) ?? "0")
         : null,
+      white_team: teamOf(p.white_player_id),
+      black_team: teamOf(p.black_player_id),
     }));
   }
   return sql<PairingRow>(
@@ -620,6 +633,7 @@ export async function getPairings(roundId: number): Promise<PairingRow[]> {
             w.title_id AS white_title, b.title_id AS black_title,
             wtp.rating_at_tournament AS white_rating,
             btp.rating_at_tournament AS black_rating,
+            wteam.name AS white_team, bteam.name AS black_team,
             COALESCE(wsh.points, 0) AS white_points,
             CASE WHEN pr.black_player_id IS NULL THEN NULL
                  ELSE COALESCE(bsh.points, 0) END AS black_points
@@ -631,6 +645,8 @@ export async function getPairings(roundId: number): Promise<PairingRow[]> {
        ON wtp.tournament_id = r.tournament_id AND wtp.player_id = pr.white_player_id
      LEFT JOIN tournament_participants btp
        ON btp.tournament_id = r.tournament_id AND btp.player_id = pr.black_player_id
+     LEFT JOIN teams wteam ON wteam.id = wtp.team_id
+     LEFT JOIN teams bteam ON bteam.id = btp.team_id
      LEFT JOIN rounds prev
        ON prev.tournament_id = r.tournament_id
       AND prev.round_number = r.round_number - 1

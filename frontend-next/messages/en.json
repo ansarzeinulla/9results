@@ -311,5 +311,14 @@
     "empty": "No officials found.",
     "searchName": "Search by name…",
     "tournamentsArbitrated": "Tournaments officiated"
+  },
+  "teams": {
+    "title": "Teams",
+    "newTeam": "New team name…",
+    "create": "Create team",
+    "none": "— no team —",
+    "board": "Board",
+    "deleteTeam": "Delete team",
+    "hint": "Players on the same team are never paired against each other."
   }
 }

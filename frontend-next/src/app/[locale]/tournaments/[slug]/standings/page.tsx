@@ -36,6 +36,10 @@ export default async function StandingsTab({
         final_rank: h.rank_after_round,
         status: h.status,
         club: h.club,
+        // A historical snapshot predates the team tables and carries no roster
+        // information; standings never render it.
+        team_id: null,
+        board_order: null,
         first_name: h.first_name,
         last_name: h.last_name,
         title_id: h.title_id,

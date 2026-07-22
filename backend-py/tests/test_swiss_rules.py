@@ -155,6 +155,30 @@ def test_later_round_same_team_never_paired():
             assert teams == {"a", "b"} or len(teams) == 2
 
 
+def test_round1_same_team_never_paired():
+    """The fold puts seed 1 against seed 3 and seed 2 against seed 4, so
+    team-mates seeded a half apart would meet unless the fold is adjusted."""
+    players = [
+        P("a1", 0, 2000, seed=1, team="A"),
+        P("b1", 0, 1900, seed=2, team="B"),
+        P("a2", 0, 1800, seed=3, team="A"),
+        P("b2", 0, 1700, seed=4, team="B"),
+    ]
+    pairings = generate_swiss_round(players, [], 1)["pairings"]
+    # a2 takes white on board 2 because round 1 alternates colours down the
+    # boards; what matters here is that no pair shares a team.
+    assert pair_set(pairings) == {"a1:b2", "a2:b1"}
+
+
+def test_round1_reports_when_team_mates_cannot_be_separated():
+    players = [
+        P("a1", 0, 2000, seed=1, team="A"),
+        P("a2", 0, 1900, seed=2, team="A"),
+    ]
+    with pytest.raises(PairingError, match="team-mates"):
+        generate_swiss_round(players, [], 1)
+
+
 def test_later_round_bye_prefers_lowest_score_then_lowest_rating():
     players = [
         P("p1", 2, 2000), P("p2", 1, 1900), P("p3", 1, 1800),

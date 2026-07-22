@@ -311,5 +311,14 @@
     "empty": "No officials found.",
     "searchName": "Search by name…",
     "tournamentsArbitrated": "Tournaments officiated"
+  },
+  "teams": {
+    "title": "팀",
+    "newTeam": "팀 이름…",
+    "create": "팀 만들기",
+    "none": "— 팀 없음 —",
+    "board": "보드",
+    "deleteTeam": "팀 삭제",
+    "hint": "같은 팀 선수끼리는 대진하지 않습니다."
   }
 }

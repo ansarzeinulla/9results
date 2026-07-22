@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import ResultChip from "@/components/ResultChip";
 import EditTournament from "./EditTournament";
 import PairingEditor from "./PairingEditor";
+import { TeamManager, TeamSeat, type Team } from "./Teams";
 import type {
   PairingRow,
   ParticipantRow,
@@ -54,6 +55,21 @@ export default function ControlPanel({
   const [bulkResult, setBulkResult] = useState<BulkOutcome | null>(null);
   const [editingPairings, setEditingPairings] = useState(false);
   const [specialFor, setSpecialFor] = useState<number | null>(null);
+
+  // Teams are fetched with the organizer's token, so they cannot come from the
+  // server component alongside the participants.
+  const [teams, setTeams] = useState<Team[]>([]);
+  const loadTeams = useCallback(() => {
+    api<Team[]>(`/tournaments/${tournament.id}/teams`)
+      .then(setTeams)
+      .catch(() => setTeams([]));
+  }, [tournament.id]);
+  useEffect(loadTeams, [loadTeams]);
+
+  const refreshTeams = useCallback(() => {
+    loadTeams();
+    router.refresh();
+  }, [loadTeams, router]);
 
   // Results are edited locally and written in one request, so a judge can
   // click through a whole round without a network call per board.
@@ -155,6 +171,13 @@ export default function ControlPanel({
         </p>
       )}
 
+      <TeamManager
+        tournamentId={tournament.id}
+        teams={teams}
+        onChange={refreshTeams}
+        disabled={busy || finished}
+      />
+
       {/* Participants */}
       <section>
         <h2 className="mb-2 text-lg font-semibold">{t("admin.participants")}</h2>
@@ -217,6 +240,19 @@ export default function ControlPanel({
                   <span className="ml-2 text-xs text-red-500">{p.status}</span>
                 )}
               </span>
+              <span className="flex items-center gap-2">
+                {teams.length > 0 && (
+                  <TeamSeat
+                    tournamentId={tournament.id}
+                    playerId={p.player_id}
+                    teams={teams}
+                    teamId={p.team_id}
+                    boardOrder={p.board_order}
+                    onChange={refreshTeams}
+                    onError={setError}
+                    disabled={busy || finished}
+                  />
+                )}
               {rounds.length === 0 ? (
                 <button
                   disabled={busy}
@@ -250,6 +286,7 @@ export default function ControlPanel({
                   </button>
                 )
               )}
+              </span>
             </li>
           ))}
         </ul>
