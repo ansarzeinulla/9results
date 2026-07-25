@@ -1,15 +1,24 @@
 import re
 
 import psycopg
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from app import db
 from app.auth import require_organizer
+from app.errors import AppError, db_error, db_guard
+from app.engines.olympic import generate_olympic_round
 from app.engines.rating import calculate_tournament_ratings
+from app.engines.round_robin import generate_round_robin_round
 from app.engines.swiss import PairingError, validate_round_pairings
 from app.engines.swiss_rules import generate_swiss_round
 from app.engines.team_match import generate_team_match_round
+
+
+def _pairing_error(e: PairingError) -> AppError:
+    """A pairing-engine failure, translatable on the frontend via its code."""
+    return AppError(422, getattr(e, "code", None) or "PAIRING_FAILED",
+                    str(e), getattr(e, "params", None))
 
 router = APIRouter(dependencies=[Depends(require_organizer)])
 
@@ -29,11 +38,11 @@ def _check_owner_tid(conn, tid: int, user: dict) -> None:
         "SELECT owner_user_id FROM tournaments WHERE id = %s", (tid,)
     ).fetchone()
     if row is None:
-        raise HTTPException(status_code=404, detail="Tournament not found")
+        raise AppError(404, "TOURNAMENT_NOT_FOUND", "Tournament not found")
     if row["owner_user_id"] != _user_id(user):
-        raise HTTPException(
-            status_code=403,
-            detail="Only the organizer who created this tournament can modify it",
+        raise AppError(
+            403, "NOT_OWNER",
+            "Only the organizer who created this tournament can modify it",
         )
 
 
@@ -43,7 +52,7 @@ def _check_owner_rid(conn, rid: int, user: dict) -> int:
         "SELECT tournament_id FROM rounds WHERE id = %s", (rid,)
     ).fetchone()
     if row is None:
-        raise HTTPException(status_code=404, detail="Round not found")
+        raise AppError(404, "ROUND_NOT_FOUND", "Round not found")
     _check_owner_tid(conn, row["tournament_id"], user)
     return row["tournament_id"]
 
@@ -55,36 +64,44 @@ def _check_owner_pairing(conn, pairing_id: int, user: dict) -> None:
         (pairing_id,),
     ).fetchone()
     if row is None:
-        raise HTTPException(status_code=404, detail="Pairing not found")
+        raise AppError(404, "PAIRING_NOT_FOUND", "Pairing not found")
     _check_owner_tid(conn, row["tournament_id"], user)
 
-# Postgres constraint names mapped to messages an organizer can act on.
-_CONSTRAINT_MESSAGES = {
-    "chk_tourn_dates": "The end date must not be earlier than the start date",
-    "chk_tourn_rounds": "The number of rounds must be between 1 and 50",
-    "chk_tourn_status": "Unknown tournament status",
+# Postgres CHECK constraints mapped to actionable, translatable error codes.
+_CONSTRAINT_CODES = {
+    "chk_tourn_dates": ("INVALID_DATES",
+                        "The end date must not be earlier than the start date"),
+    "chk_tourn_rounds": ("INVALID_ROUNDS",
+                         "The number of rounds must be between 1 and 50"),
+    "chk_tourn_status": ("UNKNOWN_STATUS", "Unknown tournament status"),
 }
 
 
-def _tournament_write_error(e: Exception) -> HTTPException:
-    """Turn a constraint violation into an actionable 4xx."""
+def _tournament_write_error(e: Exception) -> AppError:
+    """Turn a constraint violation into an actionable, translatable 4xx.
+
+    Recognized business violations become stable codes the frontend can
+    translate; anything unrecognized falls through to the full English database
+    diagnostic so nothing is ever hidden behind a bare 500.
+    """
     if isinstance(e, psycopg.errors.UniqueViolation):
-        return HTTPException(
-            status_code=409, detail="A tournament with this slug already exists"
-        )
+        return AppError(409, "SLUG_EXISTS",
+                        "A tournament with this slug already exists")
     if isinstance(e, psycopg.errors.CheckViolation):
         name = getattr(e.diag, "constraint_name", None) or ""
-        return HTTPException(
-            status_code=422,
-            detail=_CONSTRAINT_MESSAGES.get(name, f"Invalid value ({name or e})"),
-        )
+        if name in _CONSTRAINT_CODES:
+            code, msg = _CONSTRAINT_CODES[name]
+            return AppError(422, code, msg)
+        return AppError(422, "INVALID_VALUE",
+                        f"Invalid value (constraint {name})" if name
+                        else "Invalid value", {"name": name})
     if isinstance(e, psycopg.errors.ForeignKeyViolation):
-        return HTTPException(
-            status_code=422,
-            detail="Unknown federation, location, level, rating type or status",
+        return AppError(
+            422, "UNKNOWN_REFERENCE",
+            "Unknown federation, location, level, rating type or status",
         )
-    if isinstance(e, psycopg.errors.DataError):
-        return HTTPException(status_code=422, detail=str(e))
+    if isinstance(e, psycopg.Error):
+        return db_error(e, operation="tournament write")
     raise e
 
 
@@ -143,7 +160,8 @@ def create_tournament(body: TournamentBody, user=Depends(require_organizer)):
         try:
             _save_tie_breaks(conn, row["id"], body.tie_breaks)
         except psycopg.errors.ForeignKeyViolation:
-            raise HTTPException(status_code=422, detail="Unknown tie-break criterion")
+            conn.rollback()
+            raise AppError(422, "UNKNOWN_TIE_BREAK", "Unknown tie-break criterion")
         conn.commit()
     return row
 
@@ -188,10 +206,11 @@ def update_tournament(tid: int, body: TournamentBody, user=Depends(require_organ
         try:
             _save_tie_breaks(conn, tid, body.tie_breaks)
         except psycopg.errors.ForeignKeyViolation:
-            raise HTTPException(status_code=422, detail="Unknown tie-break criterion")
+            conn.rollback()
+            raise AppError(422, "UNKNOWN_TIE_BREAK", "Unknown tie-break criterion")
         conn.commit()
     if row is None:
-        raise HTTPException(status_code=404, detail="Tournament not found")
+        raise AppError(404, "TOURNAMENT_NOT_FOUND", "Tournament not found")
     return row
 
 
@@ -211,11 +230,15 @@ def add_player(tid: int, body: AddPlayerBody, user=Depends(require_organizer)):
             "SELECT 1 FROM players WHERE id = %s", (body.player_id,)
         ).fetchone()
         if exists is None:
-            raise HTTPException(status_code=404, detail="Player not found")
+            raise AppError(404, "PLAYER_NOT_FOUND", "Player not found")
         try:
             conn.execute("CALL admin_add_to_tournament(%s, %s)", (tid, body.player_id))
         except psycopg.errors.UniqueViolation:
-            raise HTTPException(status_code=409, detail="Already registered")
+            raise AppError(409, "ALREADY_REGISTERED", "Already registered")
+        except psycopg.Error as e:
+            conn.rollback()
+            raise db_error(e, operation="CALL admin_add_to_tournament",
+                           params=(tid, body.player_id))
         conn.commit()
     return {"ok": True}
 
@@ -273,10 +296,19 @@ def add_players_bulk(tid: int, body: BulkAddBody, user=Depends(require_organizer
                 already.add(pid)
             except psycopg.Error as e:
                 conn.rollback()
-                errors.append({"id": pid, "reason": str(e).strip()})
+                # The full English database diagnostic for this one player, so a
+                # bad row explains itself instead of failing the whole batch.
+                errors.append({
+                    "id": pid,
+                    "reason": db_error(
+                        e, operation="CALL admin_add_to_tournament_nosync",
+                        params=(tid, pid),
+                    ).detail["message"],
+                })
 
         if added:
-            conn.execute("CALL sync_starting_ranks(%s)", (tid,))
+            with db_guard("CALL sync_starting_ranks", conn=conn, params=(tid,)):
+                conn.execute("CALL sync_starting_ranks(%s)", (tid,))
         conn.commit()
 
     return {"added": len(added), "failed": len(errors),
@@ -287,7 +319,10 @@ def add_players_bulk(tid: int, body: BulkAddBody, user=Depends(require_organizer
 def remove_player(tid: int, player_id: str, user=Depends(require_organizer)):
     with db.connect() as conn:
         _check_owner_tid(conn, tid, user)
-        conn.execute("CALL admin_remove_from_tournament(%s, %s)", (tid, player_id))
+        with db_guard("CALL admin_remove_from_tournament", conn=conn,
+                      params=(tid, player_id)):
+            conn.execute("CALL admin_remove_from_tournament(%s, %s)",
+                         (tid, player_id))
         conn.commit()
     return {"ok": True}
 
@@ -337,13 +372,15 @@ def list_teams(tid: int, user=Depends(require_organizer)):
 def create_team(tid: int, body: TeamBody, user=Depends(require_organizer)):
     name = body.name.strip()
     if not name:
-        raise HTTPException(status_code=422, detail="Team name cannot be empty")
+        raise AppError(422, "TEAM_NAME_EMPTY", "Team name cannot be empty")
     with db.connect() as conn:
         _check_owner_tid(conn, tid, user)
-        row = conn.execute(
-            "INSERT INTO teams (tournament_id, name) VALUES (%s, %s) RETURNING id, name",
-            (tid, name),
-        ).fetchone()
+        with db_guard("INSERT INTO teams", conn=conn, params=(tid, name)):
+            row = conn.execute(
+                "INSERT INTO teams (tournament_id, name) VALUES (%s, %s) "
+                "RETURNING id, name",
+                (tid, name),
+            ).fetchone()
         conn.commit()
     return row
 
@@ -354,14 +391,16 @@ def delete_team(tid: int, team_id: int, user=Depends(require_organizer)):
     ON DELETE SET NULL, so their board_order is cleared alongside it."""
     with db.connect() as conn:
         _check_owner_tid(conn, tid, user)
-        conn.execute(
-            """UPDATE tournament_participants SET board_order = NULL
-               WHERE tournament_id = %s AND team_id = %s""",
-            (tid, team_id),
-        )
-        conn.execute(
-            "DELETE FROM teams WHERE id = %s AND tournament_id = %s", (team_id, tid)
-        )
+        with db_guard("delete team", conn=conn, params=(tid, team_id)):
+            conn.execute(
+                """UPDATE tournament_participants SET board_order = NULL
+                   WHERE tournament_id = %s AND team_id = %s""",
+                (tid, team_id),
+            )
+            conn.execute(
+                "DELETE FROM teams WHERE id = %s AND tournament_id = %s",
+                (team_id, tid),
+            )
         conn.commit()
     return {"ok": True}
 
@@ -377,9 +416,8 @@ def assign_team(tid: int, player_id: str, body: AssignTeamBody,
                 (body.team_id, tid),
             ).fetchone()
             if owns is None:
-                raise HTTPException(
-                    status_code=404, detail="Team not found in this tournament"
-                )
+                raise AppError(404, "TEAM_NOT_FOUND",
+                               "Team not found in this tournament")
         try:
             row = conn.execute(
                 """UPDATE tournament_participants
@@ -389,18 +427,22 @@ def assign_team(tid: int, player_id: str, body: AssignTeamBody,
                 (body.team_id, body.board_order, tid, player_id),
             ).fetchone()
         except psycopg.errors.UniqueViolation:
-            raise HTTPException(
-                status_code=409,
-                detail="Another player already occupies that board for this team",
+            conn.rollback()
+            raise AppError(
+                409, "BOARD_TAKEN",
+                "Another player already occupies that board for this team",
             )
         except psycopg.errors.CheckViolation:
-            raise HTTPException(
-                status_code=422, detail="Board order must be a positive number"
-            )
+            conn.rollback()
+            raise AppError(422, "INVALID_BOARD_ORDER",
+                           "Board order must be a positive number")
+        except psycopg.Error as e:
+            conn.rollback()
+            raise db_error(e, operation="assign team",
+                           params=(body.team_id, body.board_order, tid, player_id))
         if row is None:
-            raise HTTPException(
-                status_code=404, detail="Player is not registered in this tournament"
-            )
+            raise AppError(404, "PLAYER_NOT_IN_TOURNAMENT",
+                           "Player is not registered in this tournament")
         conn.commit()
     return row
 
@@ -409,7 +451,8 @@ def assign_team(tid: int, player_id: str, body: AssignTeamBody,
 def sync_ranks(tid: int, user=Depends(require_organizer)):
     with db.connect() as conn:
         _check_owner_tid(conn, tid, user)
-        conn.execute("CALL sync_starting_ranks(%s)", (tid,))
+        with db_guard("CALL sync_starting_ranks", conn=conn, params=(tid,)):
+            conn.execute("CALL sync_starting_ranks(%s)", (tid,))
         conn.commit()
     return {"ok": True}
 
@@ -418,7 +461,9 @@ def sync_ranks(tid: int, user=Depends(require_organizer)):
 def withdraw_player(tid: int, player_id: str, user=Depends(require_organizer)):
     with db.connect() as conn:
         _check_owner_tid(conn, tid, user)
-        conn.execute("CALL org_withdraw_player(%s, %s)", (tid, player_id))
+        with db_guard("CALL org_withdraw_player", conn=conn,
+                      params=(tid, player_id)):
+            conn.execute("CALL org_withdraw_player(%s, %s)", (tid, player_id))
         conn.commit()
     return {"ok": True}
 
@@ -528,35 +573,37 @@ def generate_round(tid: int, user=Depends(require_organizer)):
             "SELECT 1 FROM tournaments WHERE id=%s", (tid,)
         ).fetchone()
         if exists is None:
-            raise HTTPException(status_code=404, detail="Tournament not found")
+            raise AppError(404, "TOURNAMENT_NOT_FOUND", "Tournament not found")
         if last >= 50:
-            raise HTTPException(status_code=409, detail="Round limit reached")
+            raise AppError(409, "ROUND_LIMIT_REACHED", "Round limit reached")
         open_round = conn.execute(
             "SELECT 1 FROM rounds WHERE tournament_id=%s AND NOT is_closed", (tid,)
         ).fetchone()
         if open_round:
-            raise HTTPException(status_code=409, detail="Previous round is not closed")
+            raise AppError(409, "PREVIOUS_ROUND_OPEN",
+                           "Previous round is not closed")
 
         round_number = last + 1
-        is_team_event = conn.execute(
+        tournament_type = conn.execute(
             "SELECT tournament_type_id AS t FROM tournaments WHERE id=%s", (tid,)
-        ).fetchone()["t"] == "Match"
+        ).fetchone()["t"]
 
-        if is_team_event:
+        if tournament_type == "Match":
             teams, team_history = _team_state(conn, tid)
             try:
                 result = generate_team_match_round(
                     teams, team_history, round_number
                 )
             except PairingError as e:
-                raise HTTPException(status_code=422, detail=str(e))
+                raise _pairing_error(e)
 
-            conn.execute("CALL org_add_round(%s, %s)", (tid, round_number))
-            rid = conn.execute(
-                "SELECT id FROM rounds WHERE tournament_id=%s AND round_number=%s",
-                (tid, round_number),
-            ).fetchone()["id"]
-            _store_team_round(conn, rid, result["team_matches"])
+            with db_guard("store team round", conn=conn, params=(tid, round_number)):
+                conn.execute("CALL org_add_round(%s, %s)", (tid, round_number))
+                rid = conn.execute(
+                    "SELECT id FROM rounds WHERE tournament_id=%s AND round_number=%s",
+                    (tid, round_number),
+                ).fetchone()["id"]
+                _store_team_round(conn, rid, result["team_matches"])
             conn.commit()
             return {
                 "round_id": rid,
@@ -565,35 +612,47 @@ def generate_round(tid: int, user=Depends(require_organizer)):
             }
 
         players, matches = _tournament_state(conn, tid)
+        # The tournament type selects the pairing engine. Every engine returns
+        # the same {"pairings": [...]} shape (bye = player2_id None), so the
+        # persistence loop below is shared.
+        if tournament_type == "Olympic":
+            engine = generate_olympic_round
+        elif tournament_type == "Round-robin":
+            engine = generate_round_robin_round
+            # the circle method is positional, so seed order must be stable
+            players = sorted(players, key=lambda p: p["seed_number"] or 0)
+        else:
+            engine = generate_swiss_round
         try:
-            result = generate_swiss_round(players, matches, round_number)
+            result = engine(players, matches, round_number)
         except PairingError as e:
-            raise HTTPException(status_code=422, detail=str(e))
+            raise _pairing_error(e)
 
-        conn.execute("CALL org_add_round(%s, %s)", (tid, round_number))
-        rid = conn.execute(
-            "SELECT id FROM rounds WHERE tournament_id=%s AND round_number=%s",
-            (tid, round_number),
-        ).fetchone()["id"]
-        board = 0
-        for m in result["pairings"]:
-            if m["player2_id"] is None:
-                # store bye as a pairing with NULL black and an automatic point
-                board += 1
-                conn.execute(
-                    "CALL org_add_pairing(%s, %s, %s, %s)",
-                    (rid, 999, m["player1_id"], None),
-                )
-                pid = conn.execute(
-                    "SELECT id FROM pairings WHERE round_id=%s AND board_number=999",
-                    (rid,),
-                ).fetchone()["id"]
-                conn.execute("CALL org_set_result(%s, '1BYE')", (pid,))
-            else:
-                conn.execute(
-                    "CALL org_add_pairing(%s, %s, %s, %s)",
-                    (rid, m["board_number"], m["player1_id"], m["player2_id"]),
-                )
+        with db_guard("store round", conn=conn, params=(tid, round_number)):
+            conn.execute("CALL org_add_round(%s, %s)", (tid, round_number))
+            rid = conn.execute(
+                "SELECT id FROM rounds WHERE tournament_id=%s AND round_number=%s",
+                (tid, round_number),
+            ).fetchone()["id"]
+            board = 0
+            for m in result["pairings"]:
+                if m["player2_id"] is None:
+                    # store bye as a pairing with NULL black and an automatic point
+                    board += 1
+                    conn.execute(
+                        "CALL org_add_pairing(%s, %s, %s, %s)",
+                        (rid, 999, m["player1_id"], None),
+                    )
+                    pid = conn.execute(
+                        "SELECT id FROM pairings WHERE round_id=%s AND board_number=999",
+                        (rid,),
+                    ).fetchone()["id"]
+                    conn.execute("CALL org_set_result(%s, '1BYE')", (pid,))
+                else:
+                    conn.execute(
+                        "CALL org_add_pairing(%s, %s, %s, %s)",
+                        (rid, m["board_number"], m["player1_id"], m["player2_id"]),
+                    )
         conn.commit()
     return {"round_id": rid, "round_number": round_number, "pairings": result["pairings"]}
 
@@ -628,9 +687,9 @@ def replace_pairings(rid: int, body: ReplacePairingsBody, user=Depends(require_o
             (rid,),
         ).fetchone()
         if row is None:
-            raise HTTPException(status_code=404, detail="Round not found")
+            raise AppError(404, "ROUND_NOT_FOUND", "Round not found")
         if row["is_closed"]:
-            raise HTTPException(status_code=409, detail="Round is closed")
+            raise AppError(409, "ROUND_CLOSED", "Round is closed")
         tid = row["tournament_id"]
         players, matches = _tournament_state(conn, tid)
         prev = [
@@ -643,22 +702,23 @@ def replace_pairings(rid: int, body: ReplacePairingsBody, user=Depends(require_o
         )
         if not verdict["ok"]:
             return verdict
-        conn.execute("CALL org_cancel_pairings(%s)", (rid,))
-        board = 1
-        for m in body.pairings:
-            if m.get("player2_id") is None:
-                conn.execute("CALL org_add_pairing(%s, %s, %s, %s)",
-                             (rid, 999, m["player1_id"], None))
-                pid = conn.execute(
-                    "SELECT id FROM pairings WHERE round_id=%s AND board_number=999",
-                    (rid,),
-                ).fetchone()["id"]
-                conn.execute("CALL org_set_result(%s, '1BYE')", (pid,))
-            else:
-                conn.execute("CALL org_add_pairing(%s, %s, %s, %s)",
-                             (rid, m.get("board_number") or board,
-                              m["player1_id"], m["player2_id"]))
-            board += 1
+        with db_guard("replace pairings", conn=conn, params=(rid,)):
+            conn.execute("CALL org_cancel_pairings(%s)", (rid,))
+            board = 1
+            for m in body.pairings:
+                if m.get("player2_id") is None:
+                    conn.execute("CALL org_add_pairing(%s, %s, %s, %s)",
+                                 (rid, 999, m["player1_id"], None))
+                    pid = conn.execute(
+                        "SELECT id FROM pairings WHERE round_id=%s AND board_number=999",
+                        (rid,),
+                    ).fetchone()["id"]
+                    conn.execute("CALL org_set_result(%s, '1BYE')", (pid,))
+                else:
+                    conn.execute("CALL org_add_pairing(%s, %s, %s, %s)",
+                                 (rid, m.get("board_number") or board,
+                                  m["player1_id"], m["player2_id"]))
+                board += 1
         conn.commit()
     return verdict
 
@@ -667,7 +727,8 @@ def replace_pairings(rid: int, body: ReplacePairingsBody, user=Depends(require_o
 def cancel_pairings(rid: int, user=Depends(require_organizer)):
     with db.connect() as conn:
         _check_owner_rid(conn, rid, user)
-        conn.execute("CALL org_cancel_pairings(%s)", (rid,))
+        with db_guard("CALL org_cancel_pairings", conn=conn, params=(rid,)):
+            conn.execute("CALL org_cancel_pairings(%s)", (rid,))
         conn.commit()
     return {"ok": True}
 
@@ -683,9 +744,10 @@ def delete_round(rid: int, user=Depends(require_organizer)):
             "SELECT is_closed FROM rounds WHERE id = %s", (rid,)
         ).fetchone()["is_closed"]
         if closed:
-            raise HTTPException(status_code=409, detail="Round is closed")
-        conn.execute("DELETE FROM rounds WHERE id = %s", (rid,))
-        conn.execute("CALL calculate_standings(%s)", (tid,))
+            raise AppError(409, "ROUND_CLOSED", "Round is closed")
+        with db_guard("delete round", conn=conn, params=(rid, tid)):
+            conn.execute("DELETE FROM rounds WHERE id = %s", (rid,))
+            conn.execute("CALL calculate_standings(%s)", (tid,))
         conn.commit()
     return {"ok": True}
 
@@ -701,11 +763,18 @@ def set_result(pid: int, body: ResultBody, user=Depends(require_organizer)):
         try:
             conn.execute("CALL org_set_result(%s, %s)", (pid, body.result))
         except psycopg.errors.RaiseException as e:
+            conn.rollback()
             if "round_closed" in str(e):
-                raise HTTPException(status_code=409, detail="Round is closed")
-            raise
+                raise AppError(409, "ROUND_CLOSED", "Round is closed")
+            raise db_error(e, operation="CALL org_set_result",
+                           params=(pid, body.result))
         except psycopg.errors.ForeignKeyViolation:
-            raise HTTPException(status_code=422, detail="Unknown result code")
+            conn.rollback()
+            raise AppError(422, "UNKNOWN_RESULT_CODE", "Unknown result code")
+        except psycopg.Error as e:
+            conn.rollback()
+            raise db_error(e, operation="CALL org_set_result",
+                           params=(pid, body.result))
         conn.commit()
     return {"ok": True}
 
@@ -717,9 +786,13 @@ def cancel_result(pid: int, user=Depends(require_organizer)):
         try:
             conn.execute("CALL org_cancel_result(%s)", (pid,))
         except psycopg.errors.RaiseException as e:
+            conn.rollback()
             if "round_closed" in str(e):
-                raise HTTPException(status_code=409, detail="Round is closed")
-            raise
+                raise AppError(409, "ROUND_CLOSED", "Round is closed")
+            raise db_error(e, operation="CALL org_cancel_result", params=(pid,))
+        except psycopg.Error as e:
+            conn.rollback()
+            raise db_error(e, operation="CALL org_cancel_result", params=(pid,))
         conn.commit()
     return {"ok": True}
 
@@ -748,9 +821,9 @@ def set_results_batch(rid: int, body: BatchResultsBody, user=Depends(require_org
             "SELECT tournament_id, is_closed FROM rounds WHERE id = %s", (rid,)
         ).fetchone()
         if round_row is None:
-            raise HTTPException(status_code=404, detail="Round not found")
+            raise AppError(404, "ROUND_NOT_FOUND", "Round not found")
         if round_row["is_closed"]:
-            raise HTTPException(status_code=409, detail="Round is closed")
+            raise AppError(409, "ROUND_CLOSED", "Round is closed")
 
         valid_ids = {
             r["id"] for r in conn.execute(
@@ -759,9 +832,10 @@ def set_results_batch(rid: int, body: BatchResultsBody, user=Depends(require_org
         }
         for item in body.results:
             if item.pairing_id not in valid_ids:
-                raise HTTPException(
-                    status_code=422,
-                    detail=f"Pairing {item.pairing_id} is not in this round",
+                raise AppError(
+                    422, "PAIRING_NOT_IN_ROUND",
+                    f"Pairing {item.pairing_id} is not in this round",
+                    {"id": item.pairing_id},
                 )
 
         try:
@@ -774,10 +848,11 @@ def set_results_batch(rid: int, body: BatchResultsBody, user=Depends(require_org
             conn.execute("CALL calculate_standings(%s)", (round_row["tournament_id"],))
         except psycopg.errors.ForeignKeyViolation:
             conn.rollback()
-            raise HTTPException(status_code=422, detail="Unknown result code")
+            raise AppError(422, "UNKNOWN_RESULT_CODE", "Unknown result code")
         except psycopg.Error as e:
             conn.rollback()
-            raise HTTPException(status_code=422, detail=str(e).strip())
+            raise db_error(e, operation="save round results (batch)",
+                           params=(rid,))
         conn.commit()
 
     return {"saved": len(body.results)}
@@ -787,7 +862,8 @@ def set_results_batch(rid: int, body: BatchResultsBody, user=Depends(require_org
 def close_round(tid: int, rid: int, user=Depends(require_organizer)):
     with db.connect() as conn:
         _check_owner_tid(conn, tid, user)
-        conn.execute("CALL org_close_round(%s, %s)", (tid, rid))
+        with db_guard("CALL org_close_round", conn=conn, params=(tid, rid)):
+            conn.execute("CALL org_close_round(%s, %s)", (tid, rid))
         conn.commit()
     return {"ok": True}
 
@@ -796,6 +872,16 @@ def close_round(tid: int, rid: int, user=Depends(require_organizer)):
 def finalize(tid: int, user=Depends(require_organizer)):
     with db.connect() as conn:
         _check_owner_tid(conn, tid, user)
+        # Finalizing again would write a second set of rating-history rows for
+        # the same event, so a completed tournament is refused.
+        row = conn.execute(
+            "SELECT status FROM tournaments WHERE id=%s", (tid,)
+        ).fetchone()
+        if row is None:
+            raise AppError(404, "TOURNAMENT_NOT_FOUND", "Tournament not found")
+        if row["status"] == "COMPLETED":
+            raise AppError(409, "TOURNAMENT_ALREADY_FINALIZED",
+                           "This tournament has already been finalized")
         players, matches = _tournament_state(conn, tid)
         ratings = {p["player_id"]: float(p["current_rating"] or 0) for p in players}
         deltas = calculate_tournament_ratings(
@@ -819,6 +905,8 @@ def finalize(tid: int, user=Depends(require_organizer)):
                 payload.append({"player_id": p["player_id"], "delta": 0,
                                 "new_rating": int(ratings[p["player_id"]])})
         import json
-        conn.execute("CALL finalize_tournament(%s, %s::jsonb)", (tid, json.dumps(payload)))
+        with db_guard("CALL finalize_tournament", conn=conn, params=(tid,)):
+            conn.execute("CALL finalize_tournament(%s, %s::jsonb)",
+                         (tid, json.dumps(payload)))
         conn.commit()
     return {"deltas": payload}

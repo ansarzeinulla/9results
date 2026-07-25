@@ -1,56 +1,88 @@
-"""Olympic (Knockout) pairing engine.
+"""Olympic (Knockout) pairing engine — single elimination.
 
-Single elimination.
+Byes follow the shared convention used by every other engine: a bye is a
+pairing with ``player2_id`` None and ``board_number`` None (there is no special
+"1BYE" result string). Errors are raised as ``PairingError``.
 """
 
-def generate_olympic_round(raw_players, previous_matches, round_number):
-    # Identify active players
-    if round_number == 1:
-        # All players are active
-        active_players = sorted(raw_players, key=lambda p: p.get("current_rating", 0), reverse=True)
-    else:
-        # Find winners of the previous round
-        # previous_matches contains results for all rounds. We need winners of round_number - 1.
-        prev_round_matches = [m for m in previous_matches if m["round_number"] == round_number - 1]
-        
-        winners = []
-        for m in prev_round_matches:
-            if m["result"] == "1-0":
-                winners.append(next(p for p in raw_players if p["player_id"] == m["player1_id"]))
-            elif m["result"] == "0-1":
-                winners.append(next(p for p in raw_players if p["player_id"] == m["player2_id"]))
-            elif m["result"] == "1BYE":
-                winners.append(next(p for p in raw_players if p["player_id"] == m["player1_id"]))
-        
-        # Sort winners by rating to maintain seeding
-        active_players = sorted(winners, key=lambda p: p.get("current_rating", 0), reverse=True)
+from .swiss import PairingError
 
-    n = len(active_players)
+
+def _rating(p):
+    # A missing or None rating sorts as 0, matching the other engines' `or 0`.
+    return p.get("current_rating") or 0
+
+
+def _advance_winners(raw_players, previous_matches, round_number):
+    """The players who won round ``round_number - 1`` and therefore play on.
+
+    A bye (player2_id None) advances its player automatically. A drawn result
+    has no winner in a knockout and is rejected. A winner who is no longer in
+    the field (e.g. withdrawn) is rejected rather than raising StopIteration.
+    """
+    by_id = {p["player_id"]: p for p in raw_players}
+    prev = [m for m in previous_matches if m["round_number"] == round_number - 1]
+
+    winners = []
+    for m in prev:
+        if m["player2_id"] is None:
+            winner_id = m["player1_id"]
+        elif m["result"] == "1-0":
+            winner_id = m["player1_id"]
+        elif m["result"] == "0-1":
+            winner_id = m["player2_id"]
+        else:
+            raise PairingError(
+                "A knockout game must have a decisive result "
+                f"(got {m['result']!r} for board {m['player1_id']} vs "
+                f"{m['player2_id']})",
+                code="KNOCKOUT_NEEDS_DECISIVE",
+                params={"result": str(m["result"]),
+                        "white": m["player1_id"], "black": m["player2_id"]},
+            )
+        if winner_id not in by_id:
+            raise PairingError(
+                f"Winner {winner_id!r} is no longer in the tournament",
+                code="WINNER_GONE", params={"id": winner_id},
+            )
+        winners.append(by_id[winner_id])
+    return winners
+
+
+def generate_olympic_round(raw_players, previous_matches, round_number):
+    if round_number == 1:
+        active = list(raw_players)
+    else:
+        active = _advance_winners(raw_players, previous_matches, round_number)
+
+    active = sorted(active, key=_rating, reverse=True)
+
+    n = len(active)
     if n < 2:
-        # Tournament finished or not enough players
+        # One (or no) player left: the tournament is decided.
         return {"pairings": []}
 
     pairings = []
-    
-    # If odd number of players, top seed gets a bye
-    if n % 2 != 0:
-        bye_player = active_players[0]
+
+    # Odd field: the top seed gets the bye.
+    if n % 2 == 1:
+        bye_player = active[0]
         pairings.append({
             "player1_id": bye_player["player_id"],
             "player2_id": None,
-            "board_number": None
+            "board_number": None,
         })
-        active_players = active_players[1:]
+        active = active[1:]
         n -= 1
 
-    # Pair 1 vs N, 2 vs N-1...
+    # Seeded bracket: 1 vs N, 2 vs N-1, ...
     for i in range(n // 2):
-        p1 = active_players[i]
-        p2 = active_players[-(i + 1)]
+        p1 = active[i]
+        p2 = active[-(i + 1)]
         pairings.append({
             "player1_id": p1["player_id"],
             "player2_id": p2["player_id"],
-            "board_number": i + 1
+            "board_number": i + 1,
         })
-            
+
     return {"pairings": pairings}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
+import { errorText } from "@/lib/api-error";
 
 export interface Team {
   id: number;
@@ -26,6 +27,7 @@ export function TeamManager({
   disabled?: boolean;
 }) {
   const t = useTranslations();
+  const te = useTranslations("errors");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +39,7 @@ export function TeamManager({
       await fn();
       onChange();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(errorText(te, err));
     } finally {
       setBusy(false);
     }
@@ -123,6 +125,7 @@ export function TeamSeat({
   disabled?: boolean;
 }) {
   const t = useTranslations();
+  const te = useTranslations("errors");
   const [busy, setBusy] = useState(false);
 
   const save = async (nextTeam: number | null, nextBoard: number | null) => {
@@ -140,7 +143,7 @@ export function TeamSeat({
       );
       onChange();
     } catch (err) {
-      onError(err instanceof Error ? err.message : String(err));
+      onError(errorText(te, err));
     } finally {
       setBusy(false);
     }

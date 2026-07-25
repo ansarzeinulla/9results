@@ -33,23 +33,27 @@ def _lineup(t):
     player from the pairing."""
     roster = t.get("roster") or []
     if not roster:
-        raise PairingError(f"Team {t['team_id']} has no players")
+        raise PairingError(f"Team {t['team_id']} has no players",
+                           code="TEAM_NO_PLAYERS", params={"team": t["team_id"]})
 
     seats = [p.get("board_order") for p in roster]
     if any(s is None for s in seats):
         raise PairingError(
-            f"Every player in team {t['team_id']} needs a board order"
+            f"Every player in team {t['team_id']} needs a board order",
+            code="TEAM_NEEDS_BOARD_ORDER", params={"team": t["team_id"]},
         )
     if len(set(seats)) != len(seats):
         raise PairingError(
-            f"Team {t['team_id']} has two players on the same board order"
+            f"Team {t['team_id']} has two players on the same board order",
+            code="TEAM_DUPLICATE_BOARD", params={"team": t["team_id"]},
         )
     return sorted(roster, key=lambda p: p["board_order"])
 
 
 def generate_team_match_round(teams, previous_team_matches, round_number):
     if len(teams) < 2:
-        raise PairingError("Need at least 2 teams to pair a round")
+        raise PairingError("Need at least 2 teams to pair a round",
+                           code="NEED_TWO_TEAMS")
 
     lineups = {t["team_id"]: _lineup(t) for t in teams}
 
@@ -57,7 +61,8 @@ def generate_team_match_round(teams, previous_team_matches, round_number):
     if len(sizes) > 1:
         raise PairingError(
             "Every team must have the same number of boards "
-            f"(found {sorted(sizes)})"
+            f"(found {sorted(sizes)})",
+            code="TEAMS_UNEQUAL_BOARDS", params={"sizes": str(sorted(sizes))},
         )
 
     # Level 1: pair the teams, borrowing the individual Swiss engine wholesale.

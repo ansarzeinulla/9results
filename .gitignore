@@ -6,3 +6,6 @@ dist/
 .aider*
 .repomixignore
 .claudeignore
+.claude/
+repomix.config.json
+repomix-output.xml

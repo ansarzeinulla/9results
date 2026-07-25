@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { api, getUser } from "@/lib/api";
+import { errorText } from "@/lib/api-error";
 
 interface Lookup {
   id: string;
@@ -82,6 +83,7 @@ const toPlayerForm = (p: PlayerRecord): PlayerForm => ({
 
 export default function AdminPanel({ federations }: { federations: Lookup[] }) {
   const t = useTranslations();
+  const te = useTranslations("errors");
   const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
   const [tab, setTab] = useState<"player" | "organizer" | "arbiter">("player");
@@ -140,7 +142,7 @@ export default function AdminPanel({ federations }: { federations: Lookup[] }) {
         }
         setMode("create");
       } else {
-        setError(msg);
+        setError(errorText(te, err));
       }
     } finally {
       setBusy(false);
@@ -199,7 +201,7 @@ export default function AdminPanel({ federations }: { federations: Lookup[] }) {
       }
       router.refresh();
     } catch (err) {
-      setError((err as Error).message);
+      setError(errorText(te, err));
     } finally {
       setBusy(false);
     }
@@ -217,7 +219,7 @@ export default function AdminPanel({ federations }: { federations: Lookup[] }) {
       reset();
       router.refresh();
     } catch (err) {
-      setError((err as Error).message);
+      setError(errorText(te, err));
     } finally {
       setBusy(false);
     }

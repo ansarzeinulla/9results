@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { api, getUser } from "@/lib/api";
+import { errorText } from "@/lib/api-error";
 import type { TournamentRow } from "@/lib/data";
 
 /**
@@ -13,6 +14,7 @@ import type { TournamentRow } from "@/lib/data";
  */
 export default function MyTournaments() {
   const t = useTranslations();
+  const te = useTranslations("errors");
   const [rows, setRows] = useState<TournamentRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +25,7 @@ export default function MyTournaments() {
     }
     api<TournamentRow[]>("/my/tournaments")
       .then(setRows)
-      .catch((e) => setError((e as Error).message));
+      .catch((e) => setError(errorText(te, e)));
   }, []);
 
   if (error) return <p className="text-sm text-red-600">{error}</p>;

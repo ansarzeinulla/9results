@@ -3,8 +3,10 @@ import os
 
 import bcrypt
 import jwt
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+from app.errors import AppError
 
 TOKEN_TTL_HOURS = 12
 _bearer = HTTPBearer(auto_error=False)
@@ -38,20 +40,20 @@ def make_token(user_id: int, username: str, role: str) -> str:
 
 def current_user(creds: HTTPAuthorizationCredentials = Depends(_bearer)):
     if creds is None:
-        raise HTTPException(status_code=401, detail="Missing token")
+        raise AppError(401, "MISSING_TOKEN", "Missing token")
     try:
         return jwt.decode(creds.credentials, _secret(), algorithms=["HS256"])
     except jwt.PyJWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise AppError(401, "INVALID_TOKEN", "Invalid token")
 
 
 def require_organizer(user=Depends(current_user)):
     if user.get("role") not in ("ADMIN", "ORGANIZER"):
-        raise HTTPException(status_code=403, detail="Organizer role required")
+        raise AppError(403, "ORGANIZER_REQUIRED", "Organizer role required")
     return user
 
 
 def require_admin(user=Depends(current_user)):
     if user.get("role") != "ADMIN":
-        raise HTTPException(status_code=403, detail="Admin role required")
+        raise AppError(403, "ADMIN_REQUIRED", "Admin role required")
     return user

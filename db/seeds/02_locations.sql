@@ -1,5 +1,10 @@
--- 6. ЛОКАЦИЯЛАР (Қазақстанның облыстары мен қалалары)
-INSERT INTO locations (id) VALUES 
+-- seeds/02_locations.sql
+-- Kazakhstan regions & cities, plus their names in 7 languages.
+-- Load after 01_reference_data.sql (location_translations references languages).
+-- Renamed verbatim from legacy seed2.sql.
+
+-- ЛОКАЦИЯЛАР (Қазақстанның облыстары мен қалалары)
+INSERT INTO locations (id) VALUES
     ('Online'), 
     -- Республикалық маңызы бар қалалар / Republican Cities
     ('Astana'), ('Almaty'), ('Shymkent'),

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
+import { errorText } from "@/lib/api-error";
 
 interface Lookup {
   id: string;
@@ -30,6 +31,7 @@ export default function CreateTournament({
   };
 }) {
   const t = useTranslations();
+  const te = useTranslations("errors");
   const router = useRouter();
   const [form, setForm] = useState({
     name: "",
@@ -70,7 +72,7 @@ export default function CreateTournament({
       // stale dashboard list (its client-side fetch runs on mount only)
       router.push(`/organizer/tournaments/${created.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(errorText(te, err));
     } finally {
       setBusy(false);
     }

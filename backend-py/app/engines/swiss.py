@@ -13,7 +13,17 @@ Output of generate_swiss_round: {"pairings": [{player1_id, player2_id, board_num
 
 
 class PairingError(Exception):
-    pass
+    """A pairing-engine failure.
+
+    ``code`` is a stable identifier the frontend translates into the user's
+    language (falling back to the English ``str(...)`` message); ``params``
+    fills the ``{placeholders}`` in that translated text.
+    """
+
+    def __init__(self, message, code=None, params=None):
+        super().__init__(message)
+        self.code = code
+        self.params = params or {}
 
 
 def _normalize(players):
@@ -95,7 +105,8 @@ def _order_sides(a, b, side_balance, last_side):
 def generate_swiss_round(raw_players, previous_matches, round_number):
     players = _normalize(raw_players)
     if len(players) < 2:
-        raise PairingError("Need at least 2 players to pair a round")
+        raise PairingError("Need at least 2 players to pair a round",
+                           code="NEED_TWO_PLAYERS")
 
     played, had_bye, side_balance, last_side = _build_history(previous_matches)
     ranked = sorted(players, key=_standing_key)
@@ -125,7 +136,8 @@ def generate_swiss_round(raw_players, previous_matches, round_number):
     if raw_pairs is None:
         raise PairingError(
             "No valid pairing exists — all remaining opponent combinations "
-            "have already been played"
+            "have already been played",
+            code="NO_VALID_PAIRING",
         )
 
     def pair_key(pair):

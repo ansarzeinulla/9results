@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
+import { errorText } from "@/lib/api-error";
 import type { TournamentRow } from "@/lib/data";
 
 interface Lookup {
@@ -26,6 +27,7 @@ export default function EditTournament({
   };
 }) {
   const t = useTranslations();
+  const te = useTranslations("errors");
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -62,7 +64,7 @@ export default function EditTournament({
       setOpen(false);
       router.refresh();
     } catch (err) {
-      setError((err as Error).message);
+      setError(errorText(te, err));
     } finally {
       setBusy(false);
     }

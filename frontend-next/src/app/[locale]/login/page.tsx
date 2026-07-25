@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { login } from "@/lib/api";
+import { errorText } from "@/lib/api-error";
 
 export default function LoginPage() {
   const t = useTranslations("login");
+  const te = useTranslations("errors");
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -22,7 +24,7 @@ export default function LoginPage() {
       router.push("/organizer");
       router.refresh();
     } catch (err) {
-      setError((err as Error).message);
+      setError(errorText(te, err));
     } finally {
       setBusy(false);
     }

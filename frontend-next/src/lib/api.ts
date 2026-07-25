@@ -1,6 +1,6 @@
 /** Client-side calls to the FastAPI backend (organizer/admin actions). */
 import { tagsForMutation } from "./cache-rules";
-import { formatApiError } from "./api-error";
+import { apiErrorFromDetail } from "./api-error";
 
 export const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -60,11 +60,13 @@ export async function api<T = unknown>(
     },
   });
   if (!res.ok) {
-    let detail: string = res.statusText;
+    let detail: unknown = null;
     try {
-      detail = formatApiError((await res.json()).detail, res.statusText);
+      detail = (await res.json()).detail;
     } catch {}
-    throw new Error(detail);
+    // Keeps the backend's translation `code`/`params` so callers can localize;
+    // `.message` stays the English fallback (and the verbatim DB diagnostic).
+    throw apiErrorFromDetail(detail, res.status, res.statusText);
   }
   invalidateCache(path, (options.method ?? "GET").toUpperCase());
   return res.json();

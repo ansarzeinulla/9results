@@ -47,7 +47,7 @@ def test_end_date_before_start_date_is_rejected_cleanly(client, token):
         "start_date": "2026-07-26", "end_date": "2026-07-18",
     })
     assert r.status_code == 422, f"expected a clean 422, got {r.status_code}"
-    assert "date" in r.json()["detail"].lower()
+    assert r.json()["detail"]["code"] == "INVALID_DATES"
 
 
 def test_equal_start_and_end_dates_are_allowed(client, token):
@@ -90,4 +90,49 @@ def test_update_with_backwards_dates_is_rejected_cleanly(client, token):
         "start_date": "2026-08-10", "end_date": "2026-08-01",
     })
     assert r.status_code == 422
-    assert "date" in r.json()["detail"].lower()
+    assert r.json()["detail"]["code"] == "INVALID_DATES"
+
+
+# --- added coverage: more constraint paths ---
+
+def test_too_many_rounds_is_422(client, token):
+    r = client.post("/api/tournaments", headers=auth(token), json={
+        **BASE, "slug": "too-many-rounds", "rounds": 51,
+    })
+    assert r.status_code == 422
+
+
+def test_unknown_status_is_422(client, token):
+    r = client.post("/api/tournaments", headers=auth(token), json={
+        **BASE, "slug": "bad-status", "status": "NOT_A_STATUS",
+    })
+    assert r.status_code == 422
+
+
+def test_unknown_tie_break_is_422(client, token):
+    r = client.post("/api/tournaments", headers=auth(token), json={
+        **BASE, "slug": "bad-tiebreak", "tie_breaks": ["Buchholz", "NOPE"],
+    })
+    assert r.status_code == 422
+    assert r.json()["detail"]["code"] == "UNKNOWN_TIE_BREAK"
+
+
+def test_known_tie_breaks_are_accepted(client, token):
+    r = client.post("/api/tournaments", headers=auth(token), json={
+        **BASE, "slug": "good-tiebreaks",
+        "tie_breaks": ["Buchholz", "Berger", "WinCount"],
+    })
+    assert r.status_code == 200, r.text
+
+
+def test_malformed_date_is_422(client, token):
+    r = client.post("/api/tournaments", headers=auth(token), json={
+        **BASE, "slug": "bad-date", "start_date": "not-a-date",
+    })
+    assert r.status_code == 422
+
+
+def test_update_unknown_tournament_is_404(client, token):
+    r = client.put("/api/tournaments/99999999", headers=auth(token),
+                   json={**BASE, "slug": "ghost-tournament"})
+    assert r.status_code == 404

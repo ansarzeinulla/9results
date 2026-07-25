@@ -6,11 +6,12 @@ an existing player to their own tournament by id.
 import json
 
 import psycopg
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from app import db
 from app.auth import require_admin
+from app.errors import AppError, db_error, db_guard
 from app.translit import default_aliases
 
 router = APIRouter(dependencies=[Depends(require_admin)])
@@ -40,23 +41,31 @@ def _upsert(body: PlayerBody, player_id: str, is_create: bool = False):
         # findable in both alphabets from day one
         aliases = default_aliases(body.first_name, body.last_name,
                                   body.middle_name)
+    args = (player_id, body.first_name, body.last_name, body.federation_id,
+            body.rating_classic, body.middle_name, body.gender_id,
+            body.year_of_birth, body.title_id, body.club,
+            body.rating_rapid, body.rating_blitz,
+            None if aliases is None else json.dumps(aliases))
     with db.connect() as conn:
         try:
             conn.execute(
                 """CALL admin_upsert_player(%s, %s, %s, %s, %s, %s, %s, %s,
                                             %s, %s, %s, %s, %s::jsonb)""",
-                (player_id, body.first_name, body.last_name, body.federation_id,
-                 body.rating_classic, body.middle_name, body.gender_id,
-                 body.year_of_birth, body.title_id, body.club,
-                 body.rating_rapid, body.rating_blitz,
-                 None if aliases is None else json.dumps(aliases)),
+                args,
             )
         except psycopg.errors.ForeignKeyViolation as e:
             # unknown federation / gender / title
-            raise HTTPException(status_code=422, detail=f"Unknown reference: {e}")
-        except (psycopg.errors.CheckViolation, psycopg.errors.DataError) as e:
-            # failed CHECK (e.g. year_of_birth) or an over-long value
-            raise HTTPException(status_code=422, detail=str(e))
+            conn.rollback()
+            raise AppError(
+                422, "UNKNOWN_PLAYER_REFERENCE",
+                "Unknown federation, gender or title",
+                {"constraint": getattr(e.diag, "constraint_name", None) or ""},
+            )
+        except psycopg.Error as e:
+            # a failed CHECK (e.g. year_of_birth), an over-long value, or any
+            # other database rejection — send the full English diagnostic.
+            conn.rollback()
+            raise db_error(e, operation="CALL admin_upsert_player", params=args)
         conn.commit()
     return {"ok": True, "id": player_id}
 
@@ -74,7 +83,7 @@ def get_player(player_id: str):
             (player_id,),
         ).fetchone()
     if row is None:
-        raise HTTPException(status_code=404, detail="Player not found")
+        raise AppError(404, "PLAYER_NOT_FOUND", "Player not found")
     return row
 
 
@@ -97,19 +106,20 @@ def delete_player(player_id: str):
             "SELECT 1 FROM players WHERE id = %s", (player_id,)
         ).fetchone()
         if exists is None:
-            raise HTTPException(status_code=404, detail="Player not found")
+            raise AppError(404, "PLAYER_NOT_FOUND", "Player not found")
 
         has_history = conn.execute(
             "SELECT player_has_history(%s) AS h", (player_id,)
         ).fetchone()["h"]
         if has_history:
-            raise HTTPException(
-                status_code=409,
-                detail=("This player has tournament history and cannot be "
-                        "deleted. Withdraw them from the tournament instead."),
+            raise AppError(
+                409, "PLAYER_HAS_HISTORY",
+                "This player has tournament history and cannot be deleted. "
+                "Withdraw them from the tournament instead.",
             )
 
-        conn.execute("DELETE FROM players WHERE id = %s", (player_id,))
+        with db_guard("DELETE FROM players", conn=conn, params=(player_id,)):
+            conn.execute("DELETE FROM players WHERE id = %s", (player_id,))
         conn.commit()
     return {"ok": True, "deleted": player_id}
 
@@ -121,5 +131,5 @@ def update_player(player_id: str, body: PlayerBody):
             "SELECT 1 FROM players WHERE id = %s", (player_id,)
         ).fetchone()
     if exists is None:
-        raise HTTPException(status_code=404, detail="Player not found")
+        raise AppError(404, "PLAYER_NOT_FOUND", "Player not found")
     return _upsert(body, player_id)

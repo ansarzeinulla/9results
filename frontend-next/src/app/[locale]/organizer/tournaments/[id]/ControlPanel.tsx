@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
+import { errorText } from "@/lib/api-error";
 import ResultChip from "@/components/ResultChip";
 import EditTournament from "./EditTournament";
 import PairingEditor from "./PairingEditor";
@@ -47,6 +48,7 @@ export default function ControlPanel({
   };
 }) {
   const t = useTranslations();
+  const te = useTranslations("errors");
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -100,7 +102,7 @@ export default function ControlPanel({
       await fn();
       router.refresh();
     } catch (err) {
-      setError((err as Error).message);
+      setError(errorText(te, err));
     } finally {
       setBusy(false);
     }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
+import { errorText } from "@/lib/api-error";
 import type { PairingRow, ParticipantRow } from "@/lib/data";
 
 interface Issue {
@@ -34,6 +35,7 @@ export default function PairingEditor({
   onClose: () => void;
 }) {
   const t = useTranslations();
+  const te = useTranslations("errors");
   const router = useRouter();
   const [rows, setRows] = useState(
     pairings.map((p) => ({
@@ -81,7 +83,7 @@ export default function PairingEditor({
       );
       setVerdict(res);
     } catch (err) {
-      setError((err as Error).message);
+      setError(errorText(te, err));
     } finally {
       setBusy(false);
     }
@@ -102,7 +104,7 @@ export default function PairingEditor({
       onClose();
       router.refresh();
     } catch (err) {
-      setError((err as Error).message);
+      setError(errorText(te, err));
     } finally {
       setBusy(false);
     }

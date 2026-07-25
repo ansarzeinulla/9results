@@ -41,7 +41,9 @@ def calculate_tournament_ratings(players, matches, k_factor=20):
             continue
         r1 = player_map.get(m["player1_id"])
         r2 = player_map.get(m["player2_id"])
-        if not r1 or not r2:
+        # A rating of 0 is legitimate (a brand-new player); only skip when a
+        # player is genuinely absent from the rating map.
+        if r1 is None or r2 is None:
             continue
         result_num = _RESULT_NUM.get(m["result"])
         if result_num is None:

@@ -235,3 +235,145 @@ def test_no_rematch_over_full_8_player_tournament():
             # deterministic: white wins
             points[m["player1_id"]] += 1
             prev.append(M(rnd, m["player1_id"], m["player2_id"]))
+
+# --- color preference matrix (choose_white x wants_white) ---
+
+def test_choose_white_full_preference_matrix():
+    # differing preferences: each gets what it wants
+    assert choose_white(4, True, 7, False) is True    # p1 wants white -> white
+    assert choose_white(4, False, 7, True) is False   # p1 wants black -> black
+    # both want white, even seed-sum -> larger seed white
+    assert choose_white(2, True, 4, True) is False    # sum 6 even, larger=4 -> p2
+    assert choose_white(4, True, 2, True) is True     # sum 6 even, larger=4 -> p1
+    # both want white, odd seed-sum -> smaller seed white
+    assert choose_white(2, True, 5, True) is True     # sum 7 odd, smaller=2 -> p1
+    assert choose_white(5, True, 2, True) is False
+    # both want black behaves the same as both want white (same-preference tiebreak)
+    assert choose_white(2, False, 4, False) is False  # sum 6 even, larger=4 -> p2
+
+
+def test_wants_white_alternates_off_last_color_when_balanced():
+    assert wants_white(["W", "B", "W", "B"]) is True   # last was B -> want W
+    assert wants_white(["B", "W", "B", "W"]) is False   # last was W -> want B
+
+
+# --- team-mate separation edge cases (round 1 fold) ---
+
+def test_round1_three_members_of_a_team_are_kept_apart():
+    # 6 players; team A has three members that the naive fold would clash.
+    players = [
+        P("a1", 0, 2000, seed=1, team="A"),
+        P("a2", 0, 1950, seed=2, team="A"),
+        P("b1", 0, 1900, seed=3, team="B"),
+        P("a3", 0, 1850, seed=4, team="A"),
+        P("b2", 0, 1800, seed=5, team="B"),
+        P("b3", 0, 1750, seed=6, team="B"),
+    ]
+    pairings = generate_swiss_round(players, [], 1)["pairings"]
+    for p in pairings:
+        if p["player2_id"] is not None:
+            assert p["player1_id"][0] != p["player2_id"][0], \
+                f"team-mates paired: {p['player1_id']} vs {p['player2_id']}"
+
+
+def test_round1_impossible_team_separation_raises():
+    # 4 players, 3 on team A: no fold can keep them all apart.
+    players = [
+        P("a1", 0, 2000, seed=1, team="A"),
+        P("a2", 0, 1900, seed=2, team="A"),
+        P("a3", 0, 1800, seed=3, team="A"),
+        P("b1", 0, 1700, seed=4, team="B"),
+    ]
+    with pytest.raises(PairingError, match="team-mates"):
+        generate_swiss_round(players, [], 1)
+
+
+# --- float-down cascade ---
+
+def test_two_floats_cascade_across_score_groups():
+    # score groups of sizes 3 (score 2) and 3 (score 1): each odd group floats
+    # one player down; everyone must still be paired, nobody left over.
+    players = [
+        P("p1", 2, 2000, seed=1), P("p2", 2, 1950, seed=2), P("p3", 2, 1900, seed=3),
+        P("p4", 1, 1850, seed=4), P("p5", 1, 1800, seed=5), P("p6", 1, 1750, seed=6),
+    ]
+    pairings = generate_swiss_round(players, [], 2)["pairings"]
+    seated = set()
+    for p in pairings:
+        seated.add(p["player1_id"])
+        if p["player2_id"]:
+            seated.add(p["player2_id"])
+    assert seated == {f"p{i}" for i in range(1, 7)}
+    assert len(pair_set(pairings)) == 3
+
+
+def test_unresolvable_float_raises_pairing_error():
+    # Everyone has already played everyone possible in their reachable groups,
+    # so a floated player cannot be placed.
+    players = [P("p1", 1, 2000, seed=1), P("p2", 1, 1900, seed=2),
+               P("p3", 1, 1800, seed=3), P("p4", 1, 1700, seed=4)]
+    # all four already met each other except the final needed pairing
+    prev = [
+        M(1, "p1", "p2"), M(1, "p3", "p4"),
+        M(2, "p1", "p3"), M(2, "p2", "p4"),
+        M(3, "p1", "p4"), M(3, "p2", "p3"),
+    ]
+    with pytest.raises(PairingError):
+        generate_swiss_round(players, prev, 4)
+
+
+# --- bye fallback when everyone has already had one ---
+
+def test_bye_falls_back_to_whole_field_when_all_have_byed():
+    # 3 players, all three already had a bye -> a bye must still be given.
+    players = [P("p1", 1, 2000, seed=1), P("p2", 1, 1900, seed=2),
+               P("p3", 0, 1800, seed=3)]
+    prev = [
+        {"round_number": 1, "player1_id": "p1", "player2_id": None, "result": "1BYE"},
+        {"round_number": 2, "player1_id": "p2", "player2_id": None, "result": "1BYE"},
+        {"round_number": 3, "player1_id": "p3", "player2_id": None, "result": "1BYE"},
+    ]
+    pairings = generate_swiss_round(players, prev, 4)["pairings"]
+    bye = next(p for p in pairings if p["player2_id"] is None)
+    # lowest score then lowest rating among the (all-byed) field -> p3
+    assert bye["player1_id"] == "p3"
+
+
+# --- heavier no-rematch stress on the PRODUCTION engine ---
+
+def _simulate(players, rounds):
+    points = {p["player_id"]: 0.0 for p in players}
+    byes = set()
+    prev = []
+    met = set()
+    for rnd in range(1, rounds + 1):
+        for p in players:
+            p["current_points"] = points[p["player_id"]]
+        pairings = generate_swiss_round(players, prev, rnd)["pairings"]
+        round_byes = 0
+        for m in pairings:
+            if m["player2_id"] is None:
+                round_byes += 1
+                assert m["player1_id"] not in byes, "a player byed twice"
+                byes.add(m["player1_id"])
+                points[m["player1_id"]] += 1
+                prev.append({"round_number": rnd, "player1_id": m["player1_id"],
+                             "player2_id": None, "result": "1BYE"})
+                continue
+            key = ":".join(sorted((m["player1_id"], m["player2_id"])))
+            assert key not in met, f"rematch {key} in round {rnd}"
+            met.add(key)
+            points[m["player1_id"]] += 1  # deterministic: white wins
+            prev.append(M(rnd, m["player1_id"], m["player2_id"]))
+        assert round_byes <= 1, "more than one bye in a round"
+    return met
+
+
+def test_no_rematch_over_full_8_player_7_round_event():
+    players = [P(f"p{i}", 0, 2000 - i * 30, seed=i) for i in range(1, 9)]
+    _simulate(players, 7)
+
+
+def test_no_rematch_over_32_player_5_round_event():
+    players = [P(f"p{i:02d}", 0, 2400 - i * 10, seed=i) for i in range(1, 33)]
+    _simulate(players, 5)

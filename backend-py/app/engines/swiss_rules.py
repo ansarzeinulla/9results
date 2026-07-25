@@ -29,7 +29,8 @@ from app.engines.swiss import PairingError
 def validate_total_rounds(total_rounds: int) -> None:
     """Rule: the number of rounds must be odd."""
     if total_rounds % 2 == 0:
-        raise PairingError("Total number of rounds must be odd")
+        raise PairingError("Total number of rounds must be odd",
+                           code="ROUNDS_MUST_BE_ODD")
 
 
 def wants_white(color_history: list[str]) -> bool:
@@ -154,7 +155,8 @@ def _separate_team_mates(g1, g2):
                 break
         else:
             raise PairingError(
-                "No valid pairing exists — team-mates cannot be kept apart"
+                "No valid pairing exists — team-mates cannot be kept apart",
+                code="NO_VALID_PAIRING_TEAMMATES",
             )
     return g2
 
@@ -204,7 +206,8 @@ def _next_round(players):
 
     if carry:
         raise PairingError(
-            "No valid pairing exists — floated players could not be paired"
+            "No valid pairing exists — floated players could not be paired",
+            code="NO_VALID_PAIRING_FLOAT",
         )
     return pairs, bye
 
@@ -212,7 +215,8 @@ def _next_round(players):
 def generate_swiss_round(raw_players, previous_matches, round_number):
     players = _build(raw_players, previous_matches)
     if len(players) < 2:
-        raise PairingError("Need at least 2 players to pair a round")
+        raise PairingError("Need at least 2 players to pair a round",
+                           code="NEED_TWO_PLAYERS")
 
     pairs, bye = (
         _first_round(players) if round_number == 1 else _next_round(players)

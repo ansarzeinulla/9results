@@ -119,3 +119,37 @@ def test_empty_roster_is_rejected():
     empty["roster"] = []
     with pytest.raises(PairingError, match="no players"):
         generate_team_match_round([empty, team(2)], [], 1)
+
+
+# --- added coverage ---
+
+def test_teams_never_meet_twice_over_several_rounds():
+    """Team-level no-rematch is inherited from the Swiss engine."""
+    teams = [team(i) for i in range(1, 5)]
+    history = []
+    met = set()
+    for rnd in range(1, 4):
+        res = generate_team_match_round(teams, history, rnd)
+        for m in res["team_matches"]:
+            if m["team2_id"] is None:
+                history.append({"round_number": rnd, "team1_id": m["team1_id"],
+                                "team2_id": None})
+                continue
+            key = frozenset((m["team1_id"], m["team2_id"]))
+            assert key not in met, f"teams {key} met twice"
+            met.add(key)
+            history.append({"round_number": rnd, "team1_id": m["team1_id"],
+                            "team2_id": m["team2_id"]})
+
+
+def test_mismatched_roster_sizes_are_rejected_before_any_board_is_built():
+    a = team(1, boards=3)
+    b = team(2, boards=4)
+    with pytest.raises(PairingError, match="same number of boards"):
+        generate_team_match_round([a, b], [], 1)
+
+
+def test_team_bye_has_empty_pairings_list():
+    res = generate_team_match_round([team(1), team(2), team(3)], [], 1)
+    bye = next(m for m in res["team_matches"] if m["team2_id"] is None)
+    assert bye["pairings"] == []

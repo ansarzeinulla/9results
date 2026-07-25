@@ -182,3 +182,18 @@ def test_legacy_ownerless_tournament_is_admin_only(
     r = client.post(f"/api/tournaments/{tid}/players/sync-ranks",
                     headers=auth(admin_token))
     assert r.status_code == 200
+
+
+def test_team_endpoints_are_owner_only(client, org_a, org_b, a_tournament):
+    """The team CRUD endpoints must also refuse a non-owner organizer."""
+    b = auth(org_b)
+    # list, create, assign, delete
+    assert client.get(f"/api/tournaments/{a_tournament}/teams",
+                      headers=b).status_code == 403
+    assert client.post(f"/api/tournaments/{a_tournament}/teams", headers=b,
+                       json={"name": "Intruders"}).status_code == 403
+    assert client.put(
+        f"/api/tournaments/{a_tournament}/players/x/team", headers=b,
+        json={"team_id": 1, "board_order": 1}).status_code == 403
+    assert client.delete(f"/api/tournaments/{a_tournament}/teams/1",
+                         headers=b).status_code == 403

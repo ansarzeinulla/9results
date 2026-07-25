@@ -258,3 +258,56 @@ def test_validate_string_points_no_crash_no_false_warning():
     res = validate([pair(1, 2, 1), pair(3, 4, 2)], players=str_players)
     assert res["ok"] is True
     assert res["warnings"] == []
+
+
+# --- backtracking / _order_sides / bye-retry (added coverage) ---
+
+def test_backtracking_finds_a_valid_matching_when_greedy_would_fail():
+    """A greedy first-choice pairing paints itself into a corner, but a valid
+    perfect matching exists — the recursive search must find it (no rematch)."""
+    players = [P(i + 1, 1, 2000 - i * 10) for i in range(6)]
+    # Everyone is on 1 point (one score group). Prior rounds already used up
+    # several pairings, so only one legal perfect matching remains.
+    prev = [
+        M(1, 1, 2), M(1, 3, 4), M(1, 5, 6),
+        M(2, 1, 3), M(2, 2, 5), M(2, 4, 6),
+    ]
+    pairings = generate_swiss_round(players, prev, 3)["pairings"]
+    keys = pair_set(pairings)
+    assert len(keys) == 3
+    played = {(m["player1_id"], m["player2_id"]) for m in prev}
+    for k in keys:
+        a, b = (int(x) for x in k.split(":"))
+        assert (a, b) not in played and (b, a) not in played
+
+
+def test_order_sides_gives_side1_to_the_player_who_had_it_less():
+    """Two players meet after unbalanced side histories; the one who has been
+    player1 (side 1) fewer times takes side 1 now (the side_balance tier)."""
+    # p1 was side 1 twice (vs 10, 11); p2 was side 2 twice (vs 12, 13).
+    prev = [M(1, 1, 10), M(2, 1, 11), M(1, 12, 2), M(2, 13, 2)]
+    pairings = generate_swiss_round(
+        [P(1, 0, 2000), P(2, 0, 1900)], prev, 3
+    )["pairings"]
+    board1 = next(m for m in pairings if m["board_number"] == 1)
+    assert board1["player1_id"] == 2  # p2 has been side1 less -> gets it now
+
+
+def test_bye_candidate_retry_picks_a_different_bye_when_first_is_unpairable():
+    """The lowest-ranked fresh player is tried for the bye first; if giving it
+    the bye leaves the rest unpairable, a different bye is chosen."""
+    # 5 players; construct history so byeing the natural choice strands a
+    # rematch, forcing the engine to bye someone else and still pair the rest.
+    players = [P(i + 1, 0, 2000 - i * 10) for i in range(5)]
+    prev = [
+        M(1, 1, 5), M(1, 2, 3),   # r1
+        M(2, 1, 2), M(2, 4, 3),   # r2 ; p5 had bye r? none yet
+    ]
+    res = generate_swiss_round(players, prev, 3)["pairings"]
+    # exactly one bye, four players paired, no rematch
+    byes = [m for m in res if m["player2_id"] is None]
+    assert len(byes) == 1
+    played = {(m["player1_id"], m["player2_id"]) for m in prev}
+    for k in pair_set(res):
+        a, b = (int(x) for x in k.split(":"))
+        assert (a, b) not in played and (b, a) not in played

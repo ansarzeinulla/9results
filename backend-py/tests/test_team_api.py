@@ -108,7 +108,7 @@ def test_two_players_cannot_share_a_board(client, token, player_ids):
     # which player_ids[0] occupies.
     r = seat(client, token, tid, player_ids[1], team_ids[0], 1)
     assert r.status_code == 409, r.text
-    assert "board" in r.json()["detail"].lower()
+    assert r.json()["detail"]["code"] == "BOARD_TAKEN"
 
 
 def test_assigning_a_team_from_another_tournament_is_rejected(
@@ -159,7 +159,7 @@ def test_uneven_rosters_are_refused_with_a_clean_422(client, token, player_ids):
 
     r = client.post(f"/api/tournaments/{tid}/generate-round", headers=auth(token))
     assert r.status_code == 422, r.text
-    assert "same number of boards" in r.json()["detail"]
+    assert r.json()["detail"]["code"] == "TEAMS_UNEQUAL_BOARDS"
 
 
 def test_player_without_a_board_order_is_refused(client, token, player_ids):
@@ -178,7 +178,7 @@ def test_player_without_a_board_order_is_refused(client, token, player_ids):
 
     r = client.post(f"/api/tournaments/{tid}/generate-round", headers=auth(token))
     assert r.status_code == 422, r.text
-    assert "board order" in r.json()["detail"]
+    assert r.json()["detail"]["code"] == "TEAM_NEEDS_BOARD_ORDER"
 
 
 def test_odd_team_count_gives_a_bye_scored_on_every_board(
