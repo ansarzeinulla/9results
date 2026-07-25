@@ -79,6 +79,7 @@
     "tieBreak": "Tie-break",
     "rounds": "Number of rounds",
     "timeControl": "Time control",
+    "arbiters": "Arbiters (comma-separated IDs)",
     "lastUpdate": "Last update",
     "gender": "Gender",
     "ageCategory": "Age",
@@ -179,6 +180,7 @@
   },
   "dashboard": {
     "title": "My Tournaments",
+    "myTournaments": "My Tournaments",
     "create": "Create Tournament",
     "empty": "No tournaments yet — create one below.",
     "createBtn": "Create",

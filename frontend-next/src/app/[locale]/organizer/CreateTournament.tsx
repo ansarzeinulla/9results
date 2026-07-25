@@ -41,10 +41,9 @@ export default function CreateTournament({
   const today = getTodayString();
   const [form, setForm] = useState({
     name: "",
-    federation_id: "KAZ",
     location_id: lookups.locations[0]?.id ?? "",
     level_id: "",
-    rating_type_id: "",
+    rating_type_id: lookups.ratingTypes[0]?.id ?? "",
     start_date: today,
     end_date: today,
     tournament_type_id: "Swiss",
@@ -53,6 +52,15 @@ export default function CreateTournament({
   });
   // Ordered tie-break criteria; the same criterion may be picked twice.
   const [tieBreaks, setTieBreaks] = useState(["", "", "", ""]);
+  // Assigned arbiters: comma-separated official ids.
+  const [arbiters, setArbiters] = useState("");
+
+  // TEAM participant categories only make sense for the Team-match format;
+  // hide them for Swiss / Round-robin / Olympic.
+  const isTeamFormat = form.tournament_type_id === "Team-match";
+  const participantOptions = isTeamFormat
+    ? lookups.participantTypes
+    : lookups.participantTypes.filter((p) => !p.id.startsWith("Team"));
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -72,6 +80,10 @@ export default function CreateTournament({
           participant_type_id: form.participant_type_id || null,
           time_control: form.time_control || null,
           tie_breaks: tieBreaks.filter(Boolean),
+          arbiter_ids: arbiters
+            .split(",")
+            .map((s) => parseInt(s.trim(), 10))
+            .filter((n) => Number.isFinite(n)),
         }),
       });
       // straight to the control panel of the new tournament — also avoids a
@@ -96,17 +108,6 @@ export default function CreateTournament({
         onChange={(e) => set("name", e.target.value)}
         required
       />
-      <select
-        className={cls}
-        value={form.federation_id}
-        onChange={(e) => set("federation_id", e.target.value)}
-      >
-        {lookups.federations.map((f) => (
-          <option key={f.id} value={f.id}>
-            {f.name}
-          </option>
-        ))}
-      </select>
       <select
         className={cls}
         value={form.location_id}
@@ -159,7 +160,18 @@ export default function CreateTournament({
       <select
         className={cls}
         value={form.tournament_type_id}
-        onChange={(e) => set("tournament_type_id", e.target.value)}
+        onChange={(e) => {
+          const type = e.target.value;
+          // Switching to a non-team format drops any TEAM participant category.
+          const dropsTeam =
+            type !== "Team-match" &&
+            form.participant_type_id.startsWith("Team");
+          setForm({
+            ...form,
+            tournament_type_id: type,
+            ...(dropsTeam ? { participant_type_id: "" } : {}),
+          });
+        }}
         title={t("fields.system")}
       >
         {lookups.tournamentTypes.map((s) => (
@@ -174,7 +186,7 @@ export default function CreateTournament({
         onChange={(e) => set("participant_type_id", e.target.value)}
       >
         <option value="">{t("tournaments.anyParticipantType")}</option>
-        {lookups.participantTypes.map((p) => (
+        {participantOptions.map((p) => (
           <option key={p.id} value={p.id}>
             {p.name}
           </option>
@@ -185,6 +197,12 @@ export default function CreateTournament({
         placeholder={t("fields.timeControl")}
         value={form.time_control}
         onChange={(e) => set("time_control", e.target.value)}
+      />
+      <input
+        className={`${cls} sm:col-span-2`}
+        placeholder={t("fields.arbiters")}
+        value={arbiters}
+        onChange={(e) => setArbiters(e.target.value)}
       />
       <div className="sm:col-span-2">
         <div className="mb-1 text-sm font-medium">{t("fields.tieBreaks")}</div>

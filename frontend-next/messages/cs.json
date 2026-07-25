@@ -79,6 +79,7 @@
     "tieBreak": "Pomocné hodnocení",
     "rounds": "Počet kol",
     "timeControl": "Časová kontrola",
+    "arbiters": "Rozhodčí (ID oddělená čárkami)",
     "lastUpdate": "Poslední aktualizace",
     "gender": "Pohlaví",
     "ageCategory": "Věk",
@@ -179,6 +180,7 @@
   },
   "dashboard": {
     "title": "Moje turnaje",
+    "myTournaments": "Moje turnaje",
     "create": "Vytvořit turnaj",
     "empty": "Zatím žádné turnaje — vytvořte jeden níže.",
     "createBtn": "Vytvořit",

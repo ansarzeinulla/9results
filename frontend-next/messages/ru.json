@@ -79,6 +79,7 @@
     "tieBreak": "Тай-брейк",
     "rounds": "Число туров",
     "timeControl": "Контроль",
+    "arbiters": "Судьи (ID через запятую)",
     "lastUpdate": "Обновлено",
     "gender": "Пол",
     "ageCategory": "Возраст",
@@ -179,6 +180,7 @@
   },
   "dashboard": {
     "title": "Мои турниры",
+    "myTournaments": "Мои турниры",
     "create": "Создать турнир",
     "empty": "Пока нет турниров — создайте ниже.",
     "createBtn": "Создать",

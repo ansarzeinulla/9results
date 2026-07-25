@@ -41,9 +41,20 @@ export function getUser(): { username: string; role: string } | null {
   return raw ? JSON.parse(raw) : null;
 }
 
+/** Broadcast that the stored auth changed so the header (and any listener in
+ *  the same tab) can react without a hard refresh. `storage` only fires in
+ *  *other* tabs, so we dispatch our own event for the current one. */
+export const AUTH_CHANGED = "auth-changed";
+function notifyAuthChanged() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(AUTH_CHANGED));
+  }
+}
+
 export function logout() {
   window.localStorage.removeItem("token");
   window.localStorage.removeItem("user");
+  notifyAuthChanged();
 }
 
 export async function api<T = unknown>(
@@ -79,5 +90,6 @@ export async function login(username: string, password: string) {
   );
   window.localStorage.setItem("token", data.token);
   window.localStorage.setItem("user", JSON.stringify(data.user));
+  notifyAuthChanged();
   return data.user;
 }

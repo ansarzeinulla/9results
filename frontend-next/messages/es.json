@@ -79,6 +79,7 @@
     "tieBreak": "Desempate",
     "rounds": "Número de rondas",
     "timeControl": "Control de tiempo",
+    "arbiters": "Árbitros (IDs separados por comas)",
     "lastUpdate": "Última actualización",
     "gender": "Género",
     "ageCategory": "Edad",
@@ -179,6 +180,7 @@
   },
   "dashboard": {
     "title": "Mis torneos",
+    "myTournaments": "Mis torneos",
     "create": "Crear torneo",
     "empty": "Aún no hay torneos — crea uno abajo.",
     "createBtn": "Crear",

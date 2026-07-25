@@ -79,6 +79,7 @@
     "tieBreak": "Averaj",
     "rounds": "Tur sayısı",
     "timeControl": "Süre kontrolü",
+    "arbiters": "Hakemler (virgülle ayrılmış ID'ler)",
     "lastUpdate": "Son güncelleme",
     "gender": "Cinsiyet",
     "ageCategory": "Yaş",
@@ -179,6 +180,7 @@
   },
   "dashboard": {
     "title": "Turnuvalarım",
+    "myTournaments": "Turnuvalarım",
     "create": "Turnuva oluştur",
     "empty": "Henüz turnuva yok — aşağıdan bir tane oluşturun.",
     "createBtn": "Oluştur",

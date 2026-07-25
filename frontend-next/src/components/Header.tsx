@@ -3,7 +3,7 @@
 import { useTranslations, useLocale } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
-import { getUser, logout } from "@/lib/api";
+import { AUTH_CHANGED, getUser, logout } from "@/lib/api";
 
 const LOCALES = [
   { code: "en", label: "🇬🇧 English" },
@@ -38,7 +38,17 @@ function LangSwitcher() {
 export default function Header() {
   const t = useTranslations();
   const [user, setUser] = useState<{ username: string; role: string } | null>(null);
-  useEffect(() => setUser(getUser()), []);
+  useEffect(() => {
+    const sync = () => setUser(getUser());
+    sync();
+    // Same-tab login/logout dispatches AUTH_CHANGED; other tabs fire `storage`.
+    window.addEventListener(AUTH_CHANGED, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(AUTH_CHANGED, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
 
   return (
     <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/90 backdrop-blur">
@@ -50,20 +60,21 @@ export default function Header() {
           <LangSwitcher />
           {user ? (
             <div className="flex items-center gap-2 text-sm">
-              {user.role === "ADMIN" && (
+              {user.role === "ADMIN" ? (
                 <Link
                   href="/admin"
-                  className="h-9 rounded-lg border border-emerald-600 px-3 py-1.5 font-medium text-emerald-700 hover:bg-emerald-50"
+                  className="h-9 rounded-lg bg-emerald-600 px-3 py-1.5 font-medium text-white hover:bg-emerald-700"
                 >
                   {t("nav.adminPanel")}
                 </Link>
+              ) : (
+                <Link
+                  href="/organizer"
+                  className="h-9 rounded-lg bg-emerald-600 px-3 py-1.5 font-medium text-white hover:bg-emerald-700"
+                >
+                  {t("nav.dashboard")}
+                </Link>
               )}
-              <Link
-                href="/organizer"
-                className="h-9 rounded-lg bg-emerald-600 px-3 py-1.5 font-medium text-white hover:bg-emerald-700"
-              >
-                {t("nav.dashboard")}
-              </Link>
               <button
                 onClick={() => {
                   logout();

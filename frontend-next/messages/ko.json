@@ -79,6 +79,7 @@
     "tieBreak": "타이브레이크",
     "rounds": "라운드 수",
     "timeControl": "시간 제한",
+    "arbiters": "심판 (쉼표로 구분된 ID)",
     "lastUpdate": "마지막 업데이트",
     "gender": "성별",
     "ageCategory": "연령",
@@ -179,6 +180,7 @@
   },
   "dashboard": {
     "title": "내 대회",
+    "myTournaments": "내 대회",
     "create": "대회 만들기",
     "empty": "아직 대회가 없습니다 — 아래에서 만드세요.",
     "createBtn": "만들기",

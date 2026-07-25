@@ -1173,12 +1173,23 @@ export async function getLookups(locale: string) {
       "SELECT location_id AS id, name FROM location_translations WHERE lang_code = $1 ORDER BY name",
       [lang]
     ),
+    // Every level / rating type must appear even when its translation row is
+    // missing, so we drive the list from the base reference table and fall
+    // back to the id as the label (as tournament_types / participant_types do).
     sql<{ id: string; name: string }>(
-      "SELECT level_id AS id, name FROM level_translations WHERE lang_code = $1",
+      `SELECT l.id, COALESCE(t.name, l.id) AS name
+         FROM tournament_levels l
+         LEFT JOIN level_translations t
+           ON t.level_id = l.id AND t.lang_code = $1
+        ORDER BY l.id`,
       [lang]
     ),
     sql<{ id: string; name: string }>(
-      "SELECT rating_type_id AS id, name FROM rating_translations WHERE lang_code = $1",
+      `SELECT r.id, COALESCE(t.name, r.id) AS name
+         FROM rating_types r
+         LEFT JOIN rating_translations t
+           ON t.rating_type_id = r.id AND t.lang_code = $1
+        ORDER BY r.id`,
       [lang]
     ),
     sql<{ id: string; name: string }>("SELECT id, id AS name FROM federations", []),
