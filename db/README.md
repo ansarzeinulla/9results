@@ -54,6 +54,12 @@ run both** against the same database.
 - `build/` collapses each table to its final shape. Columns added by later
   legacy migrations (e.g. `players.aliases`, `tournament_participants.team_id`,
   `tournaments.status` as an FK) appear inline, not as `ALTER TABLE`.
+- `build/06_functions.sql` is safe to re-run on an existing database: its
+  section 0 drops procedure signatures that later migrations widened
+  (`admin_create_official`, `admin_upsert_player`) before recreating them, so a
+  rebuild can't leave a stale shorter overload behind. Two overloads that differ
+  only by a defaulted trailing argument make old-arity calls ambiguous and
+  Postgres raises `42725 ... is not unique`.
 - The backend connects as the table owner and bypasses RLS; `anon` is
   read-only. See the review note at the top of `build/07_security.sql` about
   newer lookup tables that are intentionally not exposed to `anon`.

@@ -6,6 +6,23 @@
 -- Consolidated from legacy migrations 001, 002, 005, 006.
 
 -- ==========================================
+-- 0. DROP SUPERSEDED OVERLOADS
+-- ==========================================
+-- CREATE OR REPLACE matches on the FULL argument signature, so when a
+-- procedure gained an argument its earlier, shorter form is left behind as a
+-- second overload rather than being replaced. Because the added arguments have
+-- DEFAULTs, a call using the old arity then matches BOTH overloads and Postgres
+-- raises "procedure ... is not unique" (42725). Running this script over a
+-- database that previously had the legacy signatures would reintroduce exactly
+-- that collision, so drop the stale forms first. Signatures are matched by
+-- input argument types only (lengths and DEFAULTs are ignored).
+DROP PROCEDURE IF EXISTS admin_create_official(
+    VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR);              -- pre-federation (5-arg)
+DROP PROCEDURE IF EXISTS admin_upsert_player(
+    VARCHAR, VARCHAR, VARCHAR, VARCHAR, INT,
+    VARCHAR, VARCHAR, INT, VARCHAR, VARCHAR, INT, INT);        -- pre-aliases (12-arg)
+
+-- ==========================================
 -- 1. TRIGGERS: bookkeeping columns
 -- ==========================================
 -- Bump tournaments.last_updated on every write.
