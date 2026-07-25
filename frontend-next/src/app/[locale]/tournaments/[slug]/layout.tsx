@@ -7,6 +7,7 @@ import TabNav from "./TabNav";
 import SwipeNavigator from "@/components/SwipeNavigator";
 import PullToRefresh from "@/components/PullToRefresh";
 import ShareButton from "@/components/ShareButton";
+import PrintButton from "@/components/PrintButton";
 
 export default async function TournamentLayout({
   children,
@@ -24,12 +25,18 @@ export default async function TournamentLayout({
   return (
     <PullToRefresh>
       <div className="mb-4">
-        <Link href="/tournaments" className="text-sm text-neutral-500 hover:underline">
+        <Link
+          href="/tournaments"
+          className="no-print text-sm text-neutral-500 hover:underline"
+        >
           ← {t("tournaments.title")}
         </Link>
         <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-2xl font-bold md:text-3xl">{tournament.name}</h1>
-          <ShareButton title={tournament.name} />
+          <div className="flex items-center gap-2">
+            <PrintButton />
+            <ShareButton title={tournament.name} />
+          </div>
         </div>
       </div>
       <TabNav slug={slug} />

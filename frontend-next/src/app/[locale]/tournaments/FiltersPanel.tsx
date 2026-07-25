@@ -52,12 +52,15 @@ export default function FiltersPanel({
     router.push(`${pathname}?${qp}`);
   };
   const reset = () => {
+    // Return to the default view (current & upcoming events), exactly like a
+    // fresh page load — not the "?dateFrom=" all-time dump that showed past
+    // tournaments and looked broken.
     setForm({
       q: "", federation: "", location: "", level: "", ratingType: "",
-      dateFrom: "", dateTo: "", organizer: "", timeControl: "",
+      dateFrom: today(), dateTo: "", organizer: "", timeControl: "",
       participantType: "", system: "",
     });
-    router.push(`${pathname}?dateFrom=`);
+    router.push(pathname);
   };
 
   const inputCls =

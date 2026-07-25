@@ -17,3 +17,65 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ==========================================================================
+   Print: clean A4 output for pairings, standings, alphabetical and starting
+   lists — chrome (site header, nav, buttons, anything marked .no-print) is
+   hidden, tables get simple borders and never break across a page.
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Site chrome and interactive controls never print. */
+  header,
+  nav,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  main,
+  .max-w-6xl,
+  .max-w-3xl {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  a {
+    color: #000 !important;
+    text-decoration: none !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 11pt;
+  }
+
+  th,
+  td {
+    border-bottom: 1px solid #999 !important;
+    padding: 3px 6px !important;
+  }
+
+  thead {
+    display: table-header-group; /* repeat headers on each printed page */
+  }
+
+  tr,
+  td,
+  th,
+  li {
+    page-break-inside: avoid;
+  }
+}

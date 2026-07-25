@@ -80,6 +80,12 @@ export default function ControlPanel({
   const lastRound = rounds[rounds.length - 1] ?? null;
   const finished = tournament.status === "COMPLETED";
 
+  // Organizers only work the current (open) round. A closed round is history —
+  // it stays visible on the public page, not here. So show its pairings only
+  // while the round is in progress; otherwise show nothing.
+  const isCurrentRoundOpen = !!lastRound && !lastRound.is_closed && !finished;
+  const currentPairings = isCurrentRoundOpen ? lastRoundPairings : [];
+
   const resultOf = (p: PairingRow) =>
     p.id in draft ? draft[p.id] : p.result_id;
 
@@ -302,10 +308,9 @@ export default function ControlPanel({
             <span className="text-sm text-amber-600">●{dirtyCount}</span>
           )}
         </div>
-        {lastRound && (
+        {isCurrentRoundOpen && lastRound && (
           <p className="mb-2 text-sm text-neutral-500">
             {t("tournamentView.round", { n: lastRound.round_number })}
-            {lastRound.is_closed ? " ✓" : ""}
           </p>
         )}
 
@@ -323,7 +328,7 @@ export default function ControlPanel({
         )}
 
         <div className="space-y-2">
-          {lastRoundPairings.map((m) => {
+          {currentPairings.map((m) => {
             const current = resultOf(m);
             const unsaved = m.id in draft && draft[m.id] !== m.result_id;
             return (
