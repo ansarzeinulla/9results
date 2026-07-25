@@ -11,6 +11,11 @@ interface Lookup {
   name: string;
 }
 
+const getTodayString = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 const slugify = (s: string) =>
   s
     .toLowerCase()
@@ -33,16 +38,17 @@ export default function CreateTournament({
   const t = useTranslations();
   const te = useTranslations("errors");
   const router = useRouter();
+  const today = getTodayString();
   const [form, setForm] = useState({
     name: "",
     federation_id: "KAZ",
-    location_id: lookups.locations[0]?.id ?? "Astana",
+    location_id: lookups.locations[0]?.id ?? "",
     level_id: "",
-    rating_type_id: "Classic",
-    start_date: "",
-    end_date: "",
+    rating_type_id: "",
+    start_date: today,
+    end_date: today,
     tournament_type_id: "Swiss",
-    participant_type_id: "",
+    participant_type_id: "All",
     time_control: "",
   });
   // Ordered tie-break criteria; the same criterion may be picked twice.
