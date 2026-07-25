@@ -18,6 +18,9 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     role_id VARCHAR(20) REFERENCES user_roles(id),
     official_id INT REFERENCES officials(id), -- NULL for the main admin
+    -- The organizer's "home" federation. Tournaments they create inherit this
+    -- automatically, so the create form no longer asks for a federation.
+    federation_id VARCHAR(4) REFERENCES federations(id),
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

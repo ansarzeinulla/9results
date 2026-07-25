@@ -77,7 +77,7 @@ INSERT INTO participant_types (id) VALUES
 -- ==========================================
 -- System / pairing engine.
 INSERT INTO tournament_types (id) VALUES
-    ('Swiss'), ('Round-robin'), ('Olympic'), ('Match');
+    ('Swiss'), ('Round-robin'), ('Olympic'), ('Team-match');
 
 INSERT INTO tournament_levels (id) VALUES
     ('International'), ('National'), ('Regional'), ('Club'), ('Other');

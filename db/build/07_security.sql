@@ -46,7 +46,7 @@ BEGIN
         'participant_types', 'genders', 'titles', 'match_results', 'statuses',
         'players', 'tournaments', 'tournament_participants',
         'rounds', 'pairings', 'standings_history', 'rating_history',
-        'teams', 'team_matches'
+        'teams', 'team_matches', 'tournament_arbiters'
     ]
     LOOP
         EXECUTE format('GRANT SELECT ON %I TO anon', t);

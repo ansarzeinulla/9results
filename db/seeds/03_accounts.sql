@@ -8,5 +8,7 @@
 INSERT INTO users (username, password_hash, role_id)
 VALUES ('admin', '$2b$12$7Thwno4xgoYwL73Rb1qnJOR3m38P3.T0.NmHYp/1d.i4cONmTqXqa', 'ADMIN');
 
-INSERT INTO users (username, password_hash, role_id)
-VALUES ('organizer', '$2b$12$7Thwno4xgoYwL73Rb1qnJOR3m38P3.T0.NmHYp/1d.i4cONmTqXqa', 'ORGANIZER');
+-- The organizer has a dedicated home federation (KAZ); tournaments they create
+-- inherit it automatically.
+INSERT INTO users (username, password_hash, role_id, federation_id)
+VALUES ('organizer', '$2b$12$7Thwno4xgoYwL73Rb1qnJOR3m38P3.T0.NmHYp/1d.i4cONmTqXqa', 'ORGANIZER', 'KAZ');

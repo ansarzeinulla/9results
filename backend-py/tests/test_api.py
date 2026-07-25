@@ -21,6 +21,14 @@ def admin_token(client):
     return r.json()["token"]
 
 
+@pytest.fixture(scope="session")
+def organizer_token(client):
+    r = client.post("/api/auth/login",
+                    json={"username": "organizer", "password": "admin12345"})
+    assert r.status_code == 200, r.text
+    return r.json()["token"]
+
+
 def auth(token):
     return {"Authorization": f"Bearer {token}"}
 
@@ -40,11 +48,11 @@ def test_protected_route_requires_token(client):
     assert r.status_code in (401, 403)
 
 
-def test_tournament_created_without_rounds(client, admin_token):
+def test_tournament_created_without_rounds(client, organizer_token):
     # rounds is no longer declared upfront — the schedule grows as new
     # pairings are generated, so creation without it must succeed.
-    r = client.post("/api/tournaments", headers=auth(admin_token), json={
-        "name": "Even Cup", "slug": "even-cup", "federation_id": "KAZ",
+    r = client.post("/api/tournaments", headers=auth(organizer_token), json={
+        "name": "Even Cup", "slug": "even-cup",
         "location_id": "Astana", "rating_type_id": "Classic",
         "tournament_type_id": "Swiss", "start_date": "2026-12-01",
         "end_date": "2026-12-05",
@@ -72,17 +80,18 @@ def test_admin_upsert_player(client, admin_token):
     assert r.status_code == 200, r.text
 
 
-def test_full_tournament_lifecycle(client, admin_token, migrated_db):
-    h = auth(admin_token)
+def test_full_tournament_lifecycle(client, admin_token, organizer_token, migrated_db):
+    h = auth(admin_token)          # admin: global player registry
+    ho = auth(organizer_token)     # organizer owns the tournament
     for i in range(1, 5):
         assert client.post("/api/players", headers=h, json={
             "id": f"lc{i}", "first_name": f"L{i}", "last_name": "Cycle",
             "federation_id": "KAZ", "rating_classic": 1900 - i * 50,
         }).status_code == 200
 
-    r = client.post("/api/tournaments", headers=h, json={
+    r = client.post("/api/tournaments", headers=ho, json={
         "name": "Lifecycle Cup", "slug": "lifecycle-cup",
-        "federation_id": "KAZ", "location_id": "Astana",
+        "location_id": "Astana",
         "rating_type_id": "Classic", "tournament_type_id": "Swiss",
         "start_date": "2026-08-01", "end_date": "2026-08-05", "rounds": 3,
     })
@@ -140,20 +149,22 @@ def test_full_tournament_lifecycle(client, admin_token, migrated_db):
         assert n_hist == 4
 
 
-def test_validate_pairings_endpoint(client, admin_token):
+def test_validate_pairings_endpoint(client, admin_token, organizer_token):
     h = auth(admin_token)
+    ho = auth(organizer_token)
     for i in range(1, 3):
         client.post("/api/players", headers=h, json={
             "id": f"vp{i}", "first_name": f"V{i}", "last_name": "Val",
             "federation_id": "KAZ", "rating_classic": 1500,
         })
-    r = client.post("/api/tournaments", headers=h, json={
-        "name": "Val Cup", "slug": "val-cup", "federation_id": "KAZ",
+    r = client.post("/api/tournaments", headers=ho, json={
+        "name": "Val Cup", "slug": "val-cup",
         "location_id": "Astana", "rating_type_id": "Classic",
         "tournament_type_id": "Swiss", "start_date": "2026-09-01",
         "end_date": "2026-09-02", "rounds": 3,
     })
     tid = r.json()["id"]
+    h = ho  # organizer (owner) manages the rest
     for i in range(1, 3):
         client.post(f"/api/tournaments/{tid}/players", headers=h,
                     json={"player_id": f"vp{i}"})

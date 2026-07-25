@@ -53,7 +53,7 @@ def player_ids(client, admin_token):
     return ids
 
 
-def make_tournament(client, token, slug, ttype="Match"):
+def make_tournament(client, token, slug, ttype="Team-match"):
     r = client.post("/api/tournaments", headers=auth(token), json={
         "name": f"Team {slug}", "slug": slug,
         "federation_id": "KAZ", "location_id": "Online",

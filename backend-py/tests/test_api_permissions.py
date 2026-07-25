@@ -58,29 +58,32 @@ def test_garbage_token_rejected(client):
     assert r.status_code == 401
 
 
-def test_withdrawn_player_excluded_from_pairing(client, admin_token, migrated_db):
-    h = auth(admin_token)
+def test_withdrawn_player_excluded_from_pairing(
+    client, admin_token, organizer_token, migrated_db
+):
+    h = auth(admin_token)          # admin: global player registry
+    ho = auth(organizer_token)     # organizer: owns and runs the tournament
     for i in range(1, 6):
         client.post("/api/players", headers=h, json={
             "id": f"wd{i}", "first_name": f"W{i}", "last_name": "Draw",
             "federation_id": "KAZ", "rating_classic": 1700 - i * 10,
         })
-    r = client.post("/api/tournaments", headers=h, json={
-        "name": "Withdraw Cup", "slug": "withdraw-cup", "federation_id": "KAZ",
+    r = client.post("/api/tournaments", headers=ho, json={
+        "name": "Withdraw Cup", "slug": "withdraw-cup",
         "location_id": "Astana", "rating_type_id": "Classic",
         "tournament_type_id": "Swiss", "start_date": "2026-11-01",
         "end_date": "2026-11-02", "rounds": 3,
     })
     tid = r.json()["id"]
     for i in range(1, 6):
-        client.post(f"/api/tournaments/{tid}/players", headers=h,
+        client.post(f"/api/tournaments/{tid}/players", headers=ho,
                     json={"player_id": f"wd{i}"})
     # withdraw one of the five -> four active players, no bye needed
     assert client.post(
-        f"/api/tournaments/{tid}/withdraw/wd5", headers=h
+        f"/api/tournaments/{tid}/withdraw/wd5", headers=ho
     ).status_code == 200
 
-    r = client.post(f"/api/tournaments/{tid}/generate-round", headers=h)
+    r = client.post(f"/api/tournaments/{tid}/generate-round", headers=ho)
     assert r.status_code == 200, r.text
     pairings = r.json()["pairings"]
     seated = {p["player1_id"] for p in pairings} | {

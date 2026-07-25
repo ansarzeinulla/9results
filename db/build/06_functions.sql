@@ -374,7 +374,8 @@ $$;
 -- Create an official plus a matching ORGANIZER login account.
 CREATE OR REPLACE PROCEDURE admin_create_official(
     p_first VARCHAR(50), p_last VARCHAR(50), p_title VARCHAR(10),
-    p_username VARCHAR(50), p_password_hash VARCHAR(255)
+    p_username VARCHAR(50), p_password_hash VARCHAR(255),
+    p_federation VARCHAR(4) DEFAULT NULL
 )
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -384,8 +385,8 @@ BEGIN
     VALUES (p_first, p_last, p_title)
     RETURNING id INTO v_official_id;
 
-    INSERT INTO users (username, password_hash, role_id, official_id)
-    VALUES (p_username, p_password_hash, 'ORGANIZER', v_official_id);
+    INSERT INTO users (username, password_hash, role_id, official_id, federation_id)
+    VALUES (p_username, p_password_hash, 'ORGANIZER', v_official_id, p_federation);
 END;
 $$;
 

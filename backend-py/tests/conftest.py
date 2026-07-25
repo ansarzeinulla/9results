@@ -115,7 +115,7 @@ def make_players(client, token, prefix, n, rating=1700):
 def make_tournament(client, token, slug, type_id="Swiss", rounds=None,
                     start_date="2026-04-01", end_date="2026-04-05"):
     body = {
-        "name": slug, "slug": slug, "federation_id": "KAZ",
+        "name": slug, "slug": slug,
         "location_id": "Astana", "rating_type_id": "Classic",
         "tournament_type_id": type_id, "start_date": start_date,
         "end_date": end_date,
@@ -123,5 +123,11 @@ def make_tournament(client, token, slug, type_id="Swiss", rounds=None,
     if rounds is not None:
         body["rounds"] = rounds
     r = client.post("/api/tournaments", headers=auth(token), json=body)
+    # Admins can no longer create tournaments; when a test uses the admin token
+    # as a convenience super-user, create as the seeded organizer instead. The
+    # admin still manages the tournament afterwards via its ownership bypass.
+    if r.status_code == 403 and "ADMIN_CANNOT_CREATE" in r.text:
+        org = _login(client, "organizer", "admin12345")
+        r = client.post("/api/tournaments", headers=auth(org), json=body)
     assert r.status_code == 200, r.text
     return r.json()["id"]

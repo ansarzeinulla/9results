@@ -72,7 +72,7 @@ CREATE TABLE rating_translations (
     PRIMARY KEY (rating_type_id, lang_code)
 );
 
--- The "System" of an event (Swiss / Round-robin / Olympic / Match).
+-- The "System" of an event (Swiss / Round-robin / Olympic / Team-match).
 CREATE TABLE tournament_types (
     id VARCHAR(50) PRIMARY KEY
 );

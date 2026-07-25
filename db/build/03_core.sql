@@ -78,3 +78,15 @@ CREATE TABLE teams (
     tournament_id INT REFERENCES tournaments(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL
 );
+
+-- ==========================================
+-- TOURNAMENT ARBITERS
+-- ==========================================
+-- A tournament may be assigned several arbiters (officials). Replaces the
+-- single tournaments.arbiter_id for assignment purposes; that column is kept
+-- for the legacy "chief arbiter" display but new arbiters live here.
+CREATE TABLE tournament_arbiters (
+    tournament_id INT REFERENCES tournaments(id) ON DELETE CASCADE,
+    official_id INT REFERENCES officials(id),
+    PRIMARY KEY (tournament_id, official_id)
+);

@@ -61,7 +61,7 @@ def test_bulk_add_empty_input(client, admin_token):
 def _team_setup(client, token, slug):
     h = auth(token)
     ids = make_players(client, token, slug, 2)
-    tid = make_tournament(client, token, slug + "-cup", type_id="Match")
+    tid = make_tournament(client, token, slug + "-cup", type_id="Team-match")
     for pid in ids:
         client.post(f"/api/tournaments/{tid}/players", headers=h,
                     json={"player_id": pid})
@@ -119,7 +119,7 @@ def test_clearing_assignment_removes_player_from_team(client, admin_token):
 
 
 def test_blank_team_name_is_422(client, admin_token):
-    tid = make_tournament(client, admin_token, "blank-team", type_id="Match")
+    tid = make_tournament(client, admin_token, "blank-team", type_id="Team-match")
     r = client.post(f"/api/tournaments/{tid}/teams", headers=auth(admin_token),
                     json={"name": "   "})
     assert r.status_code == 422

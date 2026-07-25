@@ -74,6 +74,10 @@ BEGIN
         'National', 'Classic', 'Swiss', 'All', 3, 'REGISTRATION'
     ) RETURNING id INTO t1_id;
 
+    -- Assigned arbiters (multi-arbiter join table)
+    INSERT INTO tournament_arbiters (tournament_id, official_id)
+    VALUES (t1_id, arbiter1_id), (t1_id, arbiter2_id);
+
     -- Ranking Criteria
     INSERT INTO tournament_tie_breaks (tournament_id, tie_break_id, position) 
     VALUES (t1_id, 'Points', 1), (t1_id, 'Buchholz', 2), (t1_id, 'Berger', 3);
@@ -138,7 +142,11 @@ BEGIN
         'National', 'Blitz', 'Round-robin', 'All', 3, 'REGISTRATION'
     ) RETURNING id INTO t2_id;
 
-    INSERT INTO tournament_tie_breaks (tournament_id, tie_break_id, position) 
+    -- Assigned arbiters (multi-arbiter join table)
+    INSERT INTO tournament_arbiters (tournament_id, official_id)
+    VALUES (t2_id, arbiter2_id);
+
+    INSERT INTO tournament_tie_breaks (tournament_id, tie_break_id, position)
     VALUES (t2_id, 'Points', 1), (t2_id, 'DirectEncounter', 2), (t2_id, 'Berger', 3);
 
     -- Add Players

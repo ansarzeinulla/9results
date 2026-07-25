@@ -102,10 +102,28 @@ def test_organizer_is_not_forbidden_on_tournament_endpoints(
     assert r.status_code not in (401, 403), f"organizer blocked from {method} {path}"
 
 
+# Admins run the admin panel only; they may not CREATE tournaments. They keep
+# management access to existing tournaments (ownership bypass) for support.
+ADMIN_FORBIDDEN = [("post", "/api/tournaments")]
+
+
 @pytest.mark.parametrize("method,path", ORGANIZER_ALLOWED)
 def test_admin_may_also_run_tournaments(client, admin_token, method, path):
+    if (method, path) in ADMIN_FORBIDDEN:
+        pytest.skip("admin is forbidden from creating tournaments")
     r = call(client, method, path, auth(admin_token))
     assert r.status_code not in (401, 403), f"admin blocked from {method} {path}"
+
+
+def test_admin_cannot_create_tournaments(client, admin_token):
+    # A valid body so the request reaches the role check rather than 422.
+    r = client.post("/api/tournaments", headers=auth(admin_token), json={
+        "name": "Admin Cup", "slug": "admin-cup", "location_id": "Astana",
+        "rating_type_id": "Classic", "tournament_type_id": "Swiss",
+        "start_date": "2026-10-01", "end_date": "2026-10-02",
+    })
+    assert r.status_code == 403
+    assert r.json()["detail"]["code"] == "ADMIN_CANNOT_CREATE"
 
 
 def test_login_is_public(client):

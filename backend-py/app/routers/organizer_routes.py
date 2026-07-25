@@ -108,7 +108,8 @@ def _tournament_write_error(e: Exception) -> AppError:
 class TournamentBody(BaseModel):
     name: str
     slug: str
-    federation_id: str
+    # federation is no longer supplied by the client — it is inherited from the
+    # organizer's home federation (users.federation_id) on create.
     location_id: str
     rating_type_id: str
     tournament_type_id: str
@@ -123,6 +124,32 @@ class TournamentBody(BaseModel):
     status: str | None = None
     # Ordered tie-break criteria (TB1..TB4); duplicates are allowed.
     tie_breaks: list[str] | None = None
+    # Assigned arbiters, by official id (from a comma-separated field on the form).
+    arbiter_ids: list[int] | None = None
+
+
+def _organizer_federation(conn, user: dict) -> str | None:
+    """The home federation a new tournament inherits from its organizer."""
+    row = conn.execute(
+        "SELECT federation_id FROM users WHERE id = %s", (_user_id(user),)
+    ).fetchone()
+    return row["federation_id"] if row else None
+
+
+def _save_arbiters(conn, tid: int, arbiter_ids: list[int] | None) -> None:
+    if arbiter_ids is None:
+        return
+    conn.execute("DELETE FROM tournament_arbiters WHERE tournament_id = %s", (tid,))
+    for oid in dict.fromkeys(arbiter_ids):  # de-dup, preserve order
+        try:
+            conn.execute(
+                """INSERT INTO tournament_arbiters (tournament_id, official_id)
+                   VALUES (%s, %s)""",
+                (tid, oid),
+            )
+        except psycopg.errors.ForeignKeyViolation:
+            conn.rollback()
+            raise AppError(422, "UNKNOWN_ARBITER", "Unknown arbiter id", {"id": oid})
 
 
 def _save_tie_breaks(conn, tid: int, tie_breaks: list[str] | None) -> None:
@@ -139,7 +166,12 @@ def _save_tie_breaks(conn, tid: int, tie_breaks: list[str] | None) -> None:
 
 @router.post("/tournaments")
 def create_tournament(body: TournamentBody, user=Depends(require_organizer)):
+    # Admins run the admin panel only — they may not create tournaments.
+    if user.get("role") == "ADMIN":
+        raise AppError(403, "ADMIN_CANNOT_CREATE",
+                       "Admins cannot create tournaments")
     with db.connect() as conn:
+        federation_id = _organizer_federation(conn, user)
         try:
             row = conn.execute(
                 """INSERT INTO tournaments (name, slug, federation_id, location_id,
@@ -149,7 +181,7 @@ def create_tournament(body: TournamentBody, user=Depends(require_organizer)):
                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                            COALESCE(%s, 'REGISTRATION'), %s)
                    RETURNING id, slug""",
-                (body.name, body.slug, body.federation_id, body.location_id,
+                (body.name, body.slug, federation_id, body.location_id,
                  body.rating_type_id, body.tournament_type_id, body.start_date,
                  body.end_date, body.rounds, body.level_id,
                  body.participant_type_id, body.time_control, body.status,
@@ -162,6 +194,7 @@ def create_tournament(body: TournamentBody, user=Depends(require_organizer)):
         except psycopg.errors.ForeignKeyViolation:
             conn.rollback()
             raise AppError(422, "UNKNOWN_TIE_BREAK", "Unknown tie-break criterion")
+        _save_arbiters(conn, row["id"], body.arbiter_ids)
         conn.commit()
     return row
 
@@ -190,13 +223,13 @@ def update_tournament(tid: int, body: TournamentBody, user=Depends(require_organ
         _check_owner_tid(conn, tid, user)
         try:
             row = conn.execute(
-                """UPDATE tournaments SET name=%s, slug=%s, federation_id=%s,
+                """UPDATE tournaments SET name=%s, slug=%s,
                        location_id=%s, rating_type_id=%s, tournament_type_id=%s,
                        start_date=%s, end_date=%s, rounds=%s, level_id=%s,
                        participant_type_id=%s, time_control=%s,
                        status=COALESCE(%s, status)
                    WHERE id=%s RETURNING id""",
-                (body.name, body.slug, body.federation_id, body.location_id,
+                (body.name, body.slug, body.location_id,
                  body.rating_type_id, body.tournament_type_id, body.start_date,
                  body.end_date, body.rounds, body.level_id,
                  body.participant_type_id, body.time_control, body.status, tid),
@@ -208,6 +241,7 @@ def update_tournament(tid: int, body: TournamentBody, user=Depends(require_organ
         except psycopg.errors.ForeignKeyViolation:
             conn.rollback()
             raise AppError(422, "UNKNOWN_TIE_BREAK", "Unknown tie-break criterion")
+        _save_arbiters(conn, tid, body.arbiter_ids)
         conn.commit()
     if row is None:
         raise AppError(404, "TOURNAMENT_NOT_FOUND", "Tournament not found")
@@ -588,7 +622,7 @@ def generate_round(tid: int, user=Depends(require_organizer)):
             "SELECT tournament_type_id AS t FROM tournaments WHERE id=%s", (tid,)
         ).fetchone()["t"]
 
-        if tournament_type == "Match":
+        if tournament_type == "Team-match":
             teams, team_history = _team_state(conn, tid)
             try:
                 result = generate_team_match_round(
