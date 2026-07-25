@@ -21,7 +21,10 @@ db/
 ├── seeds/            # reference data + bootstrap accounts
 │   ├── 01_reference_data.sql   languages, statuses, tie-breaks, time controls, …
 │   ├── 02_locations.sql        Kazakhstan regions/cities + translations
-│   └── 03_accounts.sql         admin & organizer login accounts
+│   ├── 03_accounts.sql         admin & organizer login accounts
+│   ├── 04_maybe.sql            small hand-written demo (10 players, 2 tournaments)
+│   └── 05_simulation.sql       large stratified-random set: 200 players, 200
+│                               arbiters, 100 played-out Swiss tournaments
 ├── migrations/
 │   └── _legacy/      # the original append-only chain 001–009 (archived)
 └── docs/
