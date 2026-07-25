@@ -43,25 +43,17 @@ export default function MyTournaments() {
   return (
     <ul className="divide-y divide-neutral-100">
       {rows.map((tr) => (
-        <li key={tr.id} className="flex items-center justify-between py-3">
-          <div>
-            <Link
-              href={`/organizer/tournaments/${tr.id}`}
-              className="font-medium text-emerald-700 hover:underline"
-            >
-              {tr.name}
-            </Link>
-            <div className="text-sm text-neutral-500">
-              {String(tr.start_date).slice(0, 10)} — {String(tr.end_date).slice(0, 10)} ·{" "}
-              {tr.status}
-            </div>
-          </div>
+        <li key={tr.id} className="py-3">
           <Link
-            href={`/tournaments/${tr.slug ?? tr.id}`}
-            className="text-sm text-neutral-500 hover:underline"
+            href={`/organizer/tournaments/${tr.id}`}
+            className="font-medium text-emerald-700 hover:underline"
           >
-            {t("common.publicPage")}
+            {tr.name}
           </Link>
+          <div className="text-sm text-neutral-500">
+            {String(tr.start_date).slice(0, 10)} — {String(tr.end_date).slice(0, 10)} ·{" "}
+            {tr.status}
+          </div>
         </li>
       ))}
     </ul>

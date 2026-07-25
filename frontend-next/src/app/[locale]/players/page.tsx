@@ -48,6 +48,7 @@ export default async function PlayersPage({
           <thead>
             <tr className="border-b border-neutral-300 text-left text-neutral-500">
               <th className="w-10 py-2 pr-3">#</th>
+              <th className="py-2 pr-3">{t("fields.id")}</th>
               <th className="w-12 py-2 pr-3">{t("fields.title")}</th>
               <th className="w-full py-2 pr-3">{t("fields.player")}</th>
               <th className="py-2 pr-3">{t("fields.ratingClassic")}</th>
@@ -66,6 +67,7 @@ export default async function PlayersPage({
                 <td className="py-2 pr-3 text-neutral-400">
                   {(page - 1) * PAGE_SIZE + i + 1}
                 </td>
+                <td className="py-2 pr-3 font-mono text-xs text-neutral-500">{p.id}</td>
                 <td className="py-2 pr-3 text-neutral-500">{p.title_id ?? ""}</td>
                 <td className="py-2 pr-3 font-medium">
                   <Link href={`/players/${p.id}`} className="hover:underline">

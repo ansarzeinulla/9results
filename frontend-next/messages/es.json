@@ -10,6 +10,7 @@
     "games": "Partidas",
     "arena": "Arena",
     "engine": "Motor",
+    "underConstruction": "En construcción",
     "var": "AAV",
     "registerPlayer": "Registrar jugador",
     "organizerLogin": "Acceso de organizador",
@@ -90,7 +91,8 @@
     "director": "Director",
     "tieBreaks": "Tie-breaks",
     "participantType": "Participant type",
-    "type": "Type"
+    "type": "Type",
+    "id": "ID"
   },
   "view": {
     "label": "Seleccionar vista",
@@ -209,6 +211,7 @@
     "notFound": "No hay jugador con este ID.",
     "confirmAdd": "Añadir al torneo",
     "playerFound": "Jugador encontrado",
+    "officialFound": "Oficial encontrado",
     "editPairings": "Editar emparejamientos",
     "savePairings": "Guardar emparejamientos",
     "deleteRound": "Eliminar ronda",

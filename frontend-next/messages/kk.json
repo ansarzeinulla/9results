@@ -10,6 +10,7 @@
     "games": "Ойындар",
     "arena": "Арена",
     "engine": "Қозғалтқыш",
+    "underConstruction": "Әзірленуде",
     "var": "ВКТ",
     "registerPlayer": "Ойыншыны тіркеу",
     "organizerLogin": "Ұйымдастырушы кірісі",
@@ -90,7 +91,8 @@
     "director": "Director",
     "tieBreaks": "Tie-breaks",
     "participantType": "Participant type",
-    "type": "Type"
+    "type": "Type",
+    "id": "ID"
   },
   "view": {
     "label": "Көріністі таңдау",
@@ -208,6 +210,7 @@
     "notFound": "Мұндай ID-мен ойыншы табылмады.",
     "confirmAdd": "Турнирге қосу",
     "playerFound": "Ойыншы табылды",
+    "officialFound": "Төреші табылды",
     "editPairings": "Жұптарды өзгерту",
     "savePairings": "Жұптарды сақтау",
     "deleteRound": "Турды жою",

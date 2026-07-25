@@ -10,6 +10,7 @@
     "games": "게임",
     "arena": "아레나",
     "engine": "엔진",
+    "underConstruction": "준비 중",
     "var": "영상 보조 심판",
     "registerPlayer": "선수 등록",
     "organizerLogin": "주최자 로그인",
@@ -90,7 +91,8 @@
     "director": "Director",
     "tieBreaks": "Tie-breaks",
     "participantType": "Participant type",
-    "type": "Type"
+    "type": "Type",
+    "id": "ID"
   },
   "view": {
     "label": "보기 선택",
@@ -209,6 +211,7 @@
     "notFound": "이 ID의 선수가 없습니다.",
     "confirmAdd": "대회에 추가",
     "playerFound": "선수를 찾았습니다",
+    "officialFound": "임원을 찾았습니다",
     "editPairings": "대진 편집",
     "savePairings": "대진 저장",
     "deleteRound": "라운드 삭제",

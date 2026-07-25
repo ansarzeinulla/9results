@@ -9,6 +9,7 @@
     "players": "Hráči",
     "arena": "Arena",
     "engine": "Engine",
+    "underConstruction": "Ve výstavbě",
     "var": "VAR",
     "games": "Hry",
     "registerPlayer": "Registrovat hráče",
@@ -90,7 +91,8 @@
     "director": "Director",
     "tieBreaks": "Tie-breaks",
     "participantType": "Participant type",
-    "type": "Type"
+    "type": "Type",
+    "id": "ID"
   },
   "view": {
     "label": "Vybrat zobrazení",
@@ -209,6 +211,7 @@
     "notFound": "Žádný hráč s tímto ID.",
     "confirmAdd": "Přidat do turnaje",
     "playerFound": "Hráč nalezen",
+    "officialFound": "Rozhodčí nalezen",
     "editPairings": "Upravit nasazení",
     "savePairings": "Uložit nasazení",
     "deleteRound": "Smazat kolo",

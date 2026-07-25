@@ -10,6 +10,7 @@
     "games": "Игры",
     "arena": "Арена",
     "engine": "Движок",
+    "underConstruction": "В разработке",
     "var": "ВПС",
     "registerPlayer": "Регистрация игрока",
     "organizerLogin": "Вход для организатора",
@@ -90,7 +91,8 @@
     "director": "Директор",
     "tieBreaks": "Тай-брейки",
     "participantType": "Категория участников",
-    "type": "Тип"
+    "type": "Тип",
+    "id": "ID"
   },
   "view": {
     "label": "Выбрать вид",
@@ -209,6 +211,7 @@
     "notFound": "Игрок с таким ID не найден.",
     "confirmAdd": "Добавить в турнир",
     "playerFound": "Игрок найден",
+    "officialFound": "Судья найден",
     "editPairings": "Изменить пары",
     "savePairings": "Сохранить пары",
     "deleteRound": "Удалить тур",

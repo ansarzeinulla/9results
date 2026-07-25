@@ -67,6 +67,10 @@ export default async function TournamentsPage({
                     {tr.time_control ? ` · ${tr.time_control}` : ""} ·{" "}
                     {tr.rating_type_name ?? tr.rating_type_id} · {tr.start_date}
                   </div>
+                  <div className="mt-0.5 text-xs text-neutral-400">
+                    {t("fields.level")}: {tr.level_name ?? tr.level_id ?? "—"} ·{" "}
+                    {t("fields.participantType")}: {tr.participant_type_id ?? "—"}
+                  </div>
                 </Link>
               ))}
             </div>
@@ -76,6 +80,8 @@ export default async function TournamentsPage({
                 <tr className="border-b border-neutral-300 text-left text-neutral-500">
                   <th className="w-full py-2 pr-4">{t("fields.name")}</th>
                   <th className="py-2 pr-4">{t("fields.system")}</th>
+                  <th className="py-2 pr-4">{t("fields.level")}</th>
+                  <th className="py-2 pr-4">{t("fields.participantType")}</th>
                   <th className="py-2 pr-4">{t("fields.timeControl")}</th>
                   <th className="py-2 pr-4">{t("fields.ratingType")}</th>
                   <th className="py-2 pr-4">{t("fields.federation")}</th>
@@ -99,6 +105,12 @@ export default async function TournamentsPage({
                     </td>
                     <td className="whitespace-nowrap py-2 pr-4">
                       {tr.tournament_type_name ?? tr.tournament_type_id}
+                    </td>
+                    <td className="whitespace-nowrap py-2 pr-4">
+                      {tr.level_name ?? tr.level_id ?? "—"}
+                    </td>
+                    <td className="whitespace-nowrap py-2 pr-4">
+                      {tr.participant_type_id ?? "—"}
                     </td>
                     <td className="whitespace-nowrap py-2 pr-4">{tr.time_control}</td>
                     <td className="whitespace-nowrap py-2 pr-4">

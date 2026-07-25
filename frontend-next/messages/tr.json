@@ -10,6 +10,7 @@
     "games": "Oyunlar",
     "arena": "Arena",
     "engine": "Motor",
+    "underConstruction": "Yapım aşamasında",
     "var": "VYH",
     "registerPlayer": "Oyuncu kaydı",
     "organizerLogin": "Organizatör girişi",
@@ -90,7 +91,8 @@
     "director": "Director",
     "tieBreaks": "Tie-breaks",
     "participantType": "Participant type",
-    "type": "Type"
+    "type": "Type",
+    "id": "ID"
   },
   "view": {
     "label": "Görünüm seç",
@@ -209,6 +211,7 @@
     "notFound": "Bu kimliğe sahip oyuncu yok.",
     "confirmAdd": "Turnuvaya ekle",
     "playerFound": "Oyuncu bulundu",
+    "officialFound": "Yetkili bulundu",
     "editPairings": "Eşleşmeleri düzenle",
     "savePairings": "Eşleşmeleri kaydet",
     "deleteRound": "Turu sil",

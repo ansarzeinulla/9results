@@ -19,8 +19,9 @@ export default async function Home({
     { href: "/arbiters", label: t("nav.arbiters"), count: counts.arbiters },
   ];
 
+  // The engine is live and lives on its own site; the rest are placeholders.
   const construction = [
-    { label: t("nav.engine") },
+    { label: t("nav.engine"), href: "https://9qumalaq.vercel.app/" },
     { label: t("nav.arena") },
     { label: t("nav.games") },
     { label: t("nav.var") },
@@ -46,15 +47,28 @@ export default async function Home({
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {construction.map((item) => (
-            <div
-              key={item.label}
-              className="rounded-xl bg-white/5 p-4 text-emerald-200 opacity-70"
-            >
-              <div className="text-sm font-medium">{item.label}</div>
-              <div className="text-xs">{t("nav.underConstruction")}</div>
-            </div>
-          ))}
+          {construction.map((item) =>
+            item.href ? (
+              <a
+                key={item.label}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-xl bg-white/10 p-4 hover:bg-white/20"
+              >
+                <div className="text-sm font-medium">{item.label}</div>
+                <div className="text-xs text-emerald-200">↗</div>
+              </a>
+            ) : (
+              <div
+                key={item.label}
+                className="rounded-xl bg-white/5 p-4 text-emerald-200 opacity-70"
+              >
+                <div className="text-sm font-medium">{item.label}</div>
+                <div className="text-xs">{t("nav.underConstruction")}</div>
+              </div>
+            )
+          )}
         </div>
       </section>
     </div>

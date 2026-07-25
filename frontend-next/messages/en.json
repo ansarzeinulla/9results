@@ -10,6 +10,7 @@
     "games": "Games",
     "arena": "Arena",
     "engine": "Engine",
+    "underConstruction": "Under construction",
     "var": "VAR",
     "registerPlayer": "Register Player",
     "organizerLogin": "Organizer Login",
@@ -90,7 +91,8 @@
     "director": "Director",
     "tieBreaks": "Tie-breaks",
     "participantType": "Participant type",
-    "type": "Type"
+    "type": "Type",
+    "id": "ID"
   },
   "view": {
     "label": "Select view",
@@ -209,6 +211,7 @@
     "notFound": "No player with this ID.",
     "confirmAdd": "Add to tournament",
     "playerFound": "Player found",
+    "officialFound": "Official found",
     "editPairings": "Edit pairings",
     "savePairings": "Save pairings",
     "deleteRound": "Delete round",
