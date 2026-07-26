@@ -300,7 +300,11 @@ export default function AdminPanel({ federations }: { federations: Lookup[] }) {
                   {federations.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
                 </select>
                 <select className={cls} value={playerForm.gender_id} onChange={(e) => setPlayerForm({...playerForm, gender_id: e.target.value})}>
-                  {GENDERS.map((g) => <option key={g} value={g}>{g === "" ? t("common.none") : g}</option>)}
+                  {GENDERS.map((g) => (
+                    <option key={g} value={g}>
+                      {g === "" ? t("common.none") : g === "M" ? t("gender.male") : t("gender.female")}
+                    </option>
+                  ))}
                 </select>
                 <input className={cls} type="number" placeholder={t("fields.birthYear")} value={playerForm.year_of_birth} onChange={(e) => setPlayerForm({...playerForm, year_of_birth: e.target.value})} />
                 <select className={cls} value={playerForm.title_id} onChange={(e) => setPlayerForm({...playerForm, title_id: e.target.value})}>

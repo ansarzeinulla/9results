@@ -35,7 +35,8 @@
     "apply": "Apply",
     "actions": "Actions",
     "publicPage": "Public page",
-    "optional": "optional"
+    "optional": "optional",
+    "create": "Create"
   },
   "home": {
     "searchPlaceholder": "Search tournaments or players…",
@@ -222,7 +223,10 @@
     "deleteRoundConfirm": "Delete round {n} completely? Its results will be reverted.",
     "pairingsSaved": "Pairings saved.",
     "roundDeleted": "Round deleted.",
-    "syncRanks": "Sync start numbers"
+    "syncRanks": "Sync start numbers",
+    "addPlayerById": "Add player by ID",
+    "addOrganizerById": "Find organizer by ID",
+    "addArbiterById": "Find arbiter by ID"
   },
   "changeRatings": {
     "title": "Change Ratings",
@@ -258,7 +262,10 @@
     "addOrganizer": "Add Organizer",
     "organizerCreated": "Organizer account created.",
     "deletePlayer": "Delete player",
-    "aliases": "Other spellings (Cyrillic/Latin), comma-separated"
+    "aliases": "Other spellings (Cyrillic/Latin), comma-separated",
+    "players": "Players",
+    "arbiters": "Arbiters",
+    "addArbiter": "Add Arbiter"
   },
   "swiss": {
     "REMATCH": "{a} and {b} have already played each other",

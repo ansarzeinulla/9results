@@ -35,7 +35,8 @@
     "apply": "Uygula",
     "actions": "İşlemler",
     "publicPage": "Herkese açık sayfa",
-    "optional": "isteğe bağlı"
+    "optional": "isteğe bağlı",
+    "create": "Oluştur"
   },
   "home": {
     "searchPlaceholder": "Turnuva veya oyuncu ara…",
@@ -222,7 +223,10 @@
     "deleteRoundConfirm": "{n}. tur tamamen silinsin mi? Sonuçları geri alınacak.",
     "pairingsSaved": "Eşleşmeler kaydedildi.",
     "roundDeleted": "Tur silindi.",
-    "syncRanks": "Başlangıç numaralarını eşitle"
+    "syncRanks": "Başlangıç numaralarını eşitle",
+    "addPlayerById": "Kimliğe göre oyuncu ekle",
+    "addOrganizerById": "Kimliğe göre organizatör bul",
+    "addArbiterById": "Kimliğe göre hakem bul"
   },
   "changeRatings": {
     "title": "Reytingleri değiştir",
@@ -258,7 +262,10 @@
     "addOrganizer": "Organizatör ekle",
     "organizerCreated": "Organizatör hesabı oluşturuldu.",
     "deletePlayer": "Oyuncuyu sil",
-    "aliases": "Diğer yazımlar (Kiril/Latin), virgülle ayrılmış"
+    "aliases": "Diğer yazımlar (Kiril/Latin), virgülle ayrılmış",
+    "players": "Oyuncular",
+    "arbiters": "Hakemler",
+    "addArbiter": "Hakem ekle"
   },
   "swiss": {
     "REMATCH": "{a} ve {b} birbirleriyle zaten oynadı",

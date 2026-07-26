@@ -35,7 +35,8 @@
     "apply": "Aplicar",
     "actions": "Acciones",
     "publicPage": "Página pública",
-    "optional": "opcional"
+    "optional": "opcional",
+    "create": "Crear"
   },
   "home": {
     "searchPlaceholder": "Buscar torneos o jugadores…",
@@ -222,7 +223,10 @@
     "deleteRoundConfirm": "¿Eliminar completamente la ronda {n}? Sus resultados se revertirán.",
     "pairingsSaved": "Emparejamientos guardados.",
     "roundDeleted": "Ronda eliminada.",
-    "syncRanks": "Sincronizar números de salida"
+    "syncRanks": "Sincronizar números de salida",
+    "addPlayerById": "Añadir jugador por ID",
+    "addOrganizerById": "Buscar organizador por ID",
+    "addArbiterById": "Buscar árbitro por ID"
   },
   "changeRatings": {
     "title": "Cambiar ratings",
@@ -258,7 +262,10 @@
     "addOrganizer": "Añadir organizador",
     "organizerCreated": "Cuenta de organizador creada.",
     "deletePlayer": "Eliminar jugador",
-    "aliases": "Otras grafías (cirílico/latino), separadas por comas"
+    "aliases": "Otras grafías (cirílico/latino), separadas por comas",
+    "players": "Jugadores",
+    "arbiters": "Árbitros",
+    "addArbiter": "Añadir árbitro"
   },
   "swiss": {
     "REMATCH": "{a} y {b} ya han jugado entre sí",

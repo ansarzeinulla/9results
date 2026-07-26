@@ -35,7 +35,8 @@
     "apply": "적용",
     "actions": "작업",
     "publicPage": "공개 페이지",
-    "optional": "선택 사항"
+    "optional": "선택 사항",
+    "create": "생성"
   },
   "home": {
     "searchPlaceholder": "대회 또는 선수 검색…",
@@ -222,7 +223,10 @@
     "deleteRoundConfirm": "{n}라운드를 완전히 삭제할까요? 결과가 되돌려집니다.",
     "pairingsSaved": "대진이 저장되었습니다.",
     "roundDeleted": "라운드가 삭제되었습니다.",
-    "syncRanks": "시작 번호 동기화"
+    "syncRanks": "시작 번호 동기화",
+    "addPlayerById": "ID로 선수 추가",
+    "addOrganizerById": "ID로 주최자 찾기",
+    "addArbiterById": "ID로 심판 찾기"
   },
   "changeRatings": {
     "title": "레이팅 변경",
@@ -258,7 +262,10 @@
     "addOrganizer": "주최자 추가",
     "organizerCreated": "주최자 계정이 생성되었습니다.",
     "deletePlayer": "선수 삭제",
-    "aliases": "다른 표기 (키릴/라틴), 쉼표로 구분"
+    "aliases": "다른 표기 (키릴/라틴), 쉼표로 구분",
+    "players": "선수",
+    "arbiters": "심판",
+    "addArbiter": "심판 추가"
   },
   "swiss": {
     "REMATCH": "{a}와(과) {b}은(는) 이미 대결했습니다",

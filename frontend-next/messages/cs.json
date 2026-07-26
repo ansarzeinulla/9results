@@ -35,7 +35,8 @@
     "apply": "Použít",
     "actions": "Akce",
     "publicPage": "Veřejná stránka",
-    "optional": "volitelné"
+    "optional": "volitelné",
+    "create": "Vytvořit"
   },
   "home": {
     "searchPlaceholder": "Hledat turnaje nebo hráče…",
@@ -222,7 +223,10 @@
     "deleteRoundConfirm": "Smazat {n}. kolo úplně? Jeho výsledky budou vráceny zpět.",
     "pairingsSaved": "Nasazení uložena.",
     "roundDeleted": "Kolo smazáno.",
-    "syncRanks": "Synchronizovat startovní čísla"
+    "syncRanks": "Synchronizovat startovní čísla",
+    "addPlayerById": "Přidat hráče podle ID",
+    "addOrganizerById": "Najít pořadatele podle ID",
+    "addArbiterById": "Najít rozhodčího podle ID"
   },
   "changeRatings": {
     "title": "Změnit ratingy",
@@ -258,7 +262,10 @@
     "addOrganizer": "Přidat pořadatele",
     "organizerCreated": "Účet pořadatele byl vytvořen.",
     "deletePlayer": "Smazat hráče",
-    "aliases": "Jiné zápisy (cyrilice/latinka), oddělené čárkami"
+    "aliases": "Jiné zápisy (cyrilice/latinka), oddělené čárkami",
+    "players": "Hráči",
+    "arbiters": "Rozhodčí",
+    "addArbiter": "Přidat rozhodčího"
   },
   "swiss": {
     "REMATCH": "{a} a {b} spolu už hráli",
