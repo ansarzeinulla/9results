@@ -18,8 +18,8 @@
     "logout": "Cerrar sesión",
     "adminPanel": "Admin",
     "login": "Iniciar sesión",
-    "organizers": "Organizers",
-    "arbiters": "Arbiters",
+    "organizers": "Organizadores",
+    "arbiters": "Árbitros y oficiales",
     "engineRating": "Rating del motor"
   },
   "common": {
@@ -309,16 +309,16 @@
     "current": "Current standings"
   },
   "organizers": {
-    "title": "Organizers",
-    "empty": "No organizers found.",
-    "searchName": "Search by name…",
-    "tournamentsOrganized": "Tournaments organized"
+    "title": "Organizadores",
+    "empty": "No se encontraron organizadores.",
+    "searchName": "Buscar por nombre…",
+    "tournamentsOrganized": "Torneos organizados"
   },
   "arbiters": {
-    "title": "Arbiters & Officials",
-    "empty": "No officials found.",
-    "searchName": "Search by name…",
-    "tournamentsArbitrated": "Tournaments officiated"
+    "title": "Árbitros y oficiales",
+    "empty": "No se encontraron oficiales.",
+    "searchName": "Buscar por nombre…",
+    "tournamentsArbitrated": "Torneos arbitrados"
   },
   "teams": {
     "title": "Equipos",

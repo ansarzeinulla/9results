@@ -28,16 +28,16 @@ export default async function OrganizersPage({
           <thead>
             <tr className="border-b border-neutral-300 text-left text-neutral-500">
               <th className="py-2 pr-3">{t("fields.id")}</th>
-              <th className="w-full py-2 pr-3">{t("fields.name")}</th>
+              <th className="py-2 pr-3">{t("fields.name")}</th>
               <th className="py-2 pr-3">{t("fields.federation")}</th>
-              <th className="py-2">{t("organizers.tournamentsOrganized")}</th>
+              <th className="w-full py-2">{t("organizers.tournamentsOrganized")}</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.id} className="border-b border-neutral-100 hover:bg-neutral-50">
                 <td className="py-2 pr-3 font-mono text-xs text-neutral-500">{r.id}</td>
-                <td className="py-2 pr-3 font-medium">
+                <td className="whitespace-nowrap py-2 pr-3">
                   <Link href={`/organizers/${r.id}`} className="hover:underline">
                     {r.name}
                   </Link>

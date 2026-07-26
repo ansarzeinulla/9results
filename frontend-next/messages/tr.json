@@ -18,8 +18,8 @@
     "logout": "Çıkış yap",
     "adminPanel": "Yönetim",
     "login": "Giriş yap",
-    "organizers": "Organizers",
-    "arbiters": "Arbiters",
+    "organizers": "Organizatörler",
+    "arbiters": "Hakemler ve görevliler",
     "engineRating": "Motor reytingi"
   },
   "common": {
@@ -309,16 +309,16 @@
     "current": "Current standings"
   },
   "organizers": {
-    "title": "Organizers",
-    "empty": "No organizers found.",
-    "searchName": "Search by name…",
-    "tournamentsOrganized": "Tournaments organized"
+    "title": "Organizatörler",
+    "empty": "Organizatör bulunamadı.",
+    "searchName": "İsme göre ara…",
+    "tournamentsOrganized": "Düzenlenen turnuvalar"
   },
   "arbiters": {
-    "title": "Arbiters & Officials",
-    "empty": "No officials found.",
-    "searchName": "Search by name…",
-    "tournamentsArbitrated": "Tournaments officiated"
+    "title": "Hakemler ve görevliler",
+    "empty": "Görevli bulunamadı.",
+    "searchName": "İsme göre ara…",
+    "tournamentsArbitrated": "Yönetilen turnuvalar"
   },
   "teams": {
     "title": "Takımlar",

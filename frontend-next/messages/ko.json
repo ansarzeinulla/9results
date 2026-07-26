@@ -18,8 +18,8 @@
     "logout": "로그아웃",
     "adminPanel": "관리자",
     "login": "로그인",
-    "organizers": "Organizers",
-    "arbiters": "Arbiters",
+    "organizers": "주최자",
+    "arbiters": "심판 및 임원",
     "engineRating": "엔진 레이팅"
   },
   "common": {
@@ -309,16 +309,16 @@
     "current": "Current standings"
   },
   "organizers": {
-    "title": "Organizers",
-    "empty": "No organizers found.",
-    "searchName": "Search by name…",
-    "tournamentsOrganized": "Tournaments organized"
+    "title": "주최자",
+    "empty": "주최자를 찾을 수 없습니다.",
+    "searchName": "이름으로 검색…",
+    "tournamentsOrganized": "개최한 대회 수"
   },
   "arbiters": {
-    "title": "Arbiters & Officials",
-    "empty": "No officials found.",
-    "searchName": "Search by name…",
-    "tournamentsArbitrated": "Tournaments officiated"
+    "title": "심판 및 임원",
+    "empty": "임원을 찾을 수 없습니다.",
+    "searchName": "이름으로 검색…",
+    "tournamentsArbitrated": "심판한 대회 수"
   },
   "teams": {
     "title": "팀",

@@ -18,8 +18,8 @@
     "logout": "Odhlásit se",
     "adminPanel": "Správa",
     "login": "Přihlásit se",
-    "organizers": "Organizers",
-    "arbiters": "Arbiters",
+    "organizers": "Pořadatelé",
+    "arbiters": "Rozhodčí a funkcionáři",
     "engineRating": "Rating enginu"
   },
   "common": {
@@ -309,16 +309,16 @@
     "current": "Current standings"
   },
   "organizers": {
-    "title": "Organizers",
-    "empty": "No organizers found.",
-    "searchName": "Search by name…",
-    "tournamentsOrganized": "Tournaments organized"
+    "title": "Pořadatelé",
+    "empty": "Žádní pořadatelé nenalezeni.",
+    "searchName": "Hledat podle jména…",
+    "tournamentsOrganized": "Uspořádané turnaje"
   },
   "arbiters": {
-    "title": "Arbiters & Officials",
-    "empty": "No officials found.",
-    "searchName": "Search by name…",
-    "tournamentsArbitrated": "Tournaments officiated"
+    "title": "Rozhodčí a funkcionáři",
+    "empty": "Žádní funkcionáři nenalezeni.",
+    "searchName": "Hledat podle jména…",
+    "tournamentsArbitrated": "Rozhodované turnaje"
   },
   "teams": {
     "title": "Týmy",

@@ -678,9 +678,18 @@ export interface PlayerFilters {
   minClassic?: string;
   minRapid?: string;
   minBlitz?: string;
+  /** Which rating to rank by. Always descending — nobody looks for the
+   *  lowest-rated player, so the columns have one sort direction only. */
+  sort?: "classic" | "rapid" | "blitz";
   page?: number;
   pageSize?: number;
 }
+
+const RATING_COLUMN = {
+  classic: "rating_classic",
+  rapid: "rating_rapid",
+  blitz: "rating_blitz",
+} as const;
 
 export interface PlayerRow {
   id: string;
@@ -721,7 +730,7 @@ export async function listPlayers(f: PlayerFilters = {}) {
     let q = supabase()
       .from("players")
       .select("*", { count: "exact" })
-      .order("rating_classic", { ascending: false })
+      .order(RATING_COLUMN[f.sort ?? "classic"], { ascending: false })
       .range(offset, offset + pageSize - 1);
     if (f.id) q = q.ilike("id", `%${f.id}%`);
     if (f.firstName) q = q.ilike("first_name", `%${f.firstName}%`);
@@ -762,7 +771,7 @@ export async function listPlayers(f: PlayerFilters = {}) {
   const rows = await sql<PlayerRow & { total: string }>(
     `SELECT p.*, COUNT(*) OVER() AS total FROM players p
      WHERE ${conds.join(" AND ")}
-     ORDER BY p.rating_classic DESC
+     ORDER BY p.${RATING_COLUMN[f.sort ?? "classic"]} DESC
      LIMIT $${params.length - 1} OFFSET $${params.length}`,
     params
   );
@@ -918,7 +927,8 @@ export interface OrganizationRow {
 
 export async function listOrganizations(q?: string, federation?: string): Promise<OrganizationRow[]> {
   if (useSupabase) {
-    let query = supabase().from("organizations").select("*").order("name").limit(100);
+    // v_organizations = organizations + tournaments_count (see build/06).
+    let query = supabase().from("v_organizations").select("*").order("name").limit(100);
     if (q) query = query.ilike("name", `%${q}%`);
     if (federation) query = query.eq("federation_id", federation);
     const { data } = await query;
@@ -935,9 +945,8 @@ export async function listOrganizations(q?: string, federation?: string): Promis
     conds.push(`o.federation_id = $${params.length}`);
   }
   return sql<OrganizationRow>(
-    `SELECT o.*, (SELECT COUNT(*) FROM tournaments t WHERE t.organizer_id = o.id)::int
-            AS tournaments_count
-     FROM organizations o WHERE ${conds.join(" AND ")} ORDER BY o.name LIMIT 100`,
+    `SELECT * FROM v_organizations o
+      WHERE ${conds.join(" AND ")} ORDER BY o.name LIMIT 100`,
     params
   );
 }
@@ -987,7 +996,8 @@ export interface OfficialRow {
 /** Arbiters/officials directory: everyone in the officials table. */
 export async function listOfficials(q?: string, title?: string): Promise<OfficialRow[]> {
   if (useSupabase) {
-    let query = supabase().from("officials").select("*").order("last_name").limit(100);
+    // v_officials = officials + tournaments_count (see build/06).
+    let query = supabase().from("v_officials").select("*").order("last_name").limit(100);
     if (q) query = query.or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%`);
     if (title) query = query.eq("title", title);
     const { data } = await query;
@@ -1004,10 +1014,8 @@ export async function listOfficials(q?: string, title?: string): Promise<Officia
     conds.push(`o.title = $${params.length}`);
   }
   return sql<OfficialRow>(
-    `SELECT o.*, (SELECT COUNT(*) FROM tournaments t
-                  WHERE t.arbiter_id = o.id OR t.director_id = o.id)::int
-            AS tournaments_count
-     FROM officials o WHERE ${conds.join(" AND ")} ORDER BY o.last_name, o.first_name LIMIT 100`,
+    `SELECT * FROM v_officials o
+      WHERE ${conds.join(" AND ")} ORDER BY o.last_name, o.first_name LIMIT 100`,
     params
   );
 }

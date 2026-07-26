@@ -69,6 +69,12 @@ GRANT EXECUTE ON FUNCTION translit_latin TO anon;
 GRANT EXECUTE ON FUNCTION search_players_fuzzy TO anon;
 GRANT EXECUTE ON FUNCTION omni_search TO anon;
 
+-- Directory views (organizations / officials + their tournament counts). A
+-- view runs with its owner's rights, so the base-table RLS policies above are
+-- what actually gates the rows; anon only needs the grant.
+GRANT SELECT ON v_organizations TO anon;
+GRANT SELECT ON v_officials TO anon;
+
 -- ==========================================
 -- 3. ACCOUNT TABLES: invisible to anon
 -- ==========================================

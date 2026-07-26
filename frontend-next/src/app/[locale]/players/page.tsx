@@ -17,6 +17,8 @@ export default async function PlayersPage({
   const sp = await searchParams;
   const t = await getTranslations();
   const page = Math.max(1, Number(sp.page) || 1);
+  const sort =
+    sp.sort === "rapid" || sp.sort === "blitz" ? sp.sort : "classic";
   const [{ rows, total }, lookups] = await Promise.all([
     cachedPlayersList({
       q: sp.q,
@@ -32,12 +34,33 @@ export default async function PlayersPage({
       minClassic: sp.minClassic,
       minRapid: sp.minRapid,
       minBlitz: sp.minBlitz,
+      sort,
       page,
       pageSize: PAGE_SIZE,
     }),
     cachedLookups(locale),
   ]);
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  /** Rating column header: a link that re-sorts by that rating, descending. */
+  const sortLink = (key: "classic" | "rapid" | "blitz", label: string) => {
+    const qp = new URLSearchParams(
+      Object.entries(sp).filter(([k, v]) => v && k !== "page") as [
+        string,
+        string,
+      ][]
+    );
+    qp.set("sort", key);
+    return (
+      <Link
+        href={`/players?${qp}`}
+        className={sort === key ? "text-emerald-700" : "hover:underline"}
+      >
+        {label}
+        {sort === key ? " ↓" : ""}
+      </Link>
+    );
+  };
 
   return (
     <div>
@@ -50,12 +73,19 @@ export default async function PlayersPage({
               <th className="w-10 py-2 pr-3">#</th>
               <th className="py-2 pr-3">{t("fields.id")}</th>
               <th className="w-12 py-2 pr-3">{t("fields.title")}</th>
-              <th className="w-full py-2 pr-3">{t("fields.player")}</th>
-              <th className="py-2 pr-3">{t("fields.ratingClassic")}</th>
-              <th className="hidden py-2 pr-3 sm:table-cell">{t("fields.ratingRapid")}</th>
-              <th className="hidden py-2 pr-3 sm:table-cell">{t("fields.ratingBlitz")}</th>
+              <th className="py-2 pr-3">{t("fields.player")}</th>
+              <th className="hidden py-2 pr-3 sm:table-cell">{t("fields.birthYear")}</th>
+              <th className="py-2 pr-3">
+                {sortLink("classic", t("fields.ratingClassic"))}
+              </th>
+              <th className="hidden py-2 pr-3 sm:table-cell">
+                {sortLink("rapid", t("fields.ratingRapid"))}
+              </th>
+              <th className="hidden py-2 pr-3 sm:table-cell">
+                {sortLink("blitz", t("fields.ratingBlitz"))}
+              </th>
               <th className="hidden py-2 pr-3 sm:table-cell">{t("fields.federation")}</th>
-              <th className="hidden py-2 sm:table-cell">{t("fields.club")}</th>
+              <th className="hidden w-full py-2 sm:table-cell">{t("fields.club")}</th>
             </tr>
           </thead>
           <tbody>
@@ -69,10 +99,13 @@ export default async function PlayersPage({
                 </td>
                 <td className="py-2 pr-3 font-mono text-xs text-neutral-500">{p.id}</td>
                 <td className="py-2 pr-3 text-neutral-500">{p.title_id ?? ""}</td>
-                <td className="py-2 pr-3 font-medium">
+                <td className="whitespace-nowrap py-2 pr-3">
                   <Link href={`/players/${p.id}`} className="hover:underline">
                     {p.last_name} {p.first_name} {p.middle_name ?? ""}
                   </Link>
+                </td>
+                <td className="hidden py-2 pr-3 tabular-nums text-neutral-500 sm:table-cell">
+                  {p.year_of_birth ?? ""}
                 </td>
                 <td className="py-2 pr-3 tabular-nums">{p.rating_classic}</td>
                 <td className="hidden py-2 pr-3 tabular-nums sm:table-cell">{p.rating_rapid}</td>

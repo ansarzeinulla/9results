@@ -18,8 +18,8 @@
     "logout": "Шығу",
     "adminPanel": "Әкімші",
     "login": "Кіру",
-    "organizers": "Organizers",
-    "arbiters": "Arbiters",
+    "organizers": "Ұйымдастырушылар",
+    "arbiters": "Төрешілер",
     "engineRating": "Қозғалтқыш рейтингі"
   },
   "common": {
@@ -309,16 +309,16 @@
     "current": "Current standings"
   },
   "organizers": {
-    "title": "Organizers",
-    "empty": "No organizers found.",
-    "searchName": "Search by name…",
-    "tournamentsOrganized": "Tournaments organized"
+    "title": "Ұйымдастырушылар",
+    "empty": "Ұйымдастырушылар табылмады.",
+    "searchName": "Атауы бойынша іздеу…",
+    "tournamentsOrganized": "Өткізген жарыстары"
   },
   "arbiters": {
-    "title": "Arbiters & Officials",
-    "empty": "No officials found.",
-    "searchName": "Search by name…",
-    "tournamentsArbitrated": "Tournaments officiated"
+    "title": "Төрешілер",
+    "empty": "Төрешілер табылмады.",
+    "searchName": "Аты бойынша іздеу…",
+    "tournamentsArbitrated": "Төрелік еткен жарыстары"
   },
   "teams": {
     "title": "Командалар",

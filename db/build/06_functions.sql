@@ -588,3 +588,29 @@ SECURITY DEFINER SET search_path = public AS $$
         LIMIT 1
     ) m ON TRUE;
 $$;
+
+-- ==========================================
+-- 10. DIRECTORY COUNTERS
+-- ==========================================
+-- The organizer / arbiter directories show how many tournaments each person
+-- ran. The number is derived, not stored: a denormalized counter column would
+-- have to be maintained on every insert, delete and organizer reassignment,
+-- and silently drifts the first time one of those paths is missed.
+CREATE OR REPLACE VIEW v_organizations AS
+SELECT o.*,
+       (SELECT COUNT(*) FROM tournaments t WHERE t.organizer_id = o.id)::INT
+           AS tournaments_count
+FROM organizations o;
+
+-- An official counts a tournament once whether they were its arbiter, its
+-- director, or one of the extra arbiters in tournament_arbiters.
+CREATE OR REPLACE VIEW v_officials AS
+SELECT o.*,
+       (SELECT COUNT(*) FROM tournaments t
+         WHERE t.arbiter_id = o.id
+            OR t.director_id = o.id
+            OR EXISTS (SELECT 1 FROM tournament_arbiters ta
+                        WHERE ta.tournament_id = t.id
+                          AND ta.official_id = o.id))::INT
+           AS tournaments_count
+FROM officials o;
