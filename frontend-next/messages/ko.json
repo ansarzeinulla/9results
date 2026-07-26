@@ -189,7 +189,8 @@
     "create": "대회 만들기",
     "empty": "아직 대회가 없습니다 — 아래에서 만드세요.",
     "createBtn": "만들기",
-    "deleteConfirm": "\"{name}\" 대회를 완전히 삭제할까요?"
+    "deleteConfirm": "\"{name}\" 대회를 완전히 삭제할까요?",
+    "creating": "생성 중…"
   },
   "admin": {
     "settings": "설정",

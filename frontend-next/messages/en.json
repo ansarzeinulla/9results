@@ -189,7 +189,8 @@
     "create": "Create Tournament",
     "empty": "No tournaments yet — create one below.",
     "createBtn": "Create",
-    "deleteConfirm": "Delete tournament \"{name}\" completely?"
+    "deleteConfirm": "Delete tournament \"{name}\" completely?",
+    "creating": "Creating…"
   },
   "admin": {
     "settings": "Settings",

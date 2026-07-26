@@ -101,6 +101,7 @@ export default function CreateTournament({
 
   return (
     <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2">
+      <fieldset disabled={busy} className="contents disabled:opacity-60" aria-busy={busy}>
       <input
         className={`${cls} sm:col-span-2`}
         placeholder={t("fields.name")}
@@ -230,11 +231,12 @@ export default function CreateTournament({
         </div>
       </div>
       {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
+      </fieldset>
       <button
         disabled={busy}
         className="rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50 sm:col-span-2"
       >
-        {t("dashboard.createBtn")}
+        {busy ? t("dashboard.creating") : t("dashboard.createBtn")}
       </button>
     </form>
   );

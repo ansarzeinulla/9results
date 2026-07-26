@@ -189,7 +189,8 @@
     "create": "Turnuva oluştur",
     "empty": "Henüz turnuva yok — aşağıdan bir tane oluşturun.",
     "createBtn": "Oluştur",
-    "deleteConfirm": "\"{name}\" turnuvası tamamen silinsin mi?"
+    "deleteConfirm": "\"{name}\" turnuvası tamamen silinsin mi?",
+    "creating": "Oluşturuluyor…"
   },
   "admin": {
     "settings": "Ayarlar",

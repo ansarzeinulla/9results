@@ -189,7 +189,8 @@
     "create": "Vytvořit turnaj",
     "empty": "Zatím žádné turnaje — vytvořte jeden níže.",
     "createBtn": "Vytvořit",
-    "deleteConfirm": "Smazat turnaj „{name}“ úplně?"
+    "deleteConfirm": "Smazat turnaj „{name}“ úplně?",
+    "creating": "Vytváření…"
   },
   "admin": {
     "settings": "Nastavení",

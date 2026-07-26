@@ -1,7 +1,8 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { Link } from "@/i18n/navigation";
 import { cachedPlayerProfile } from "@/lib/cached";
+import TournamentHistoryTable from "@/components/TournamentHistoryTable";
+import RatingChart from "@/components/RatingChart";
 
 export default async function PlayerProfile({
   params,
@@ -56,46 +57,46 @@ export default async function PlayerProfile({
       </div>
 
       <h2 className="mt-8 text-lg font-semibold">{t("players.history")}</h2>
-      {tournaments.length === 0 ? (
-        <p className="mt-2 text-sm text-neutral-500">{t("players.noHistory")}</p>
-      ) : (
-        <ul className="mt-2 divide-y divide-neutral-100 text-sm">
-          {tournaments.map((tr) => (
-            <li key={String(tr.id)} className="flex justify-between py-2">
-              <Link
-                href={`/tournaments/${tr.slug ?? tr.id}`}
-                className="font-medium hover:underline"
-              >
-                {String(tr.name)}
-              </Link>
-              <span className="text-neutral-500">
-                {tr.final_rank ? `#${tr.final_rank} · ` : ""}
-                {tr.points != null ? `${Number(tr.points)} ${t("fields.points")}` : ""}
-                {tr.rating_change != null
-                  ? ` · ${Number(tr.rating_change) > 0 ? "+" : ""}${Number(tr.rating_change)}`
-                  : ""}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <TournamentHistoryTable
+        rows={tournaments.map((tr) => ({
+          id: String(tr.id),
+          slug: tr.slug as string | null,
+          name: String(tr.name),
+          start_date: String(tr.start_date),
+          end_date: String(tr.end_date),
+          final_rank: tr.final_rank,
+          points: tr.points,
+          rating_change: tr.rating_change,
+        }))}
+      />
 
       <h2 className="mt-8 text-lg font-semibold">{t("players.ratingHistory")}</h2>
       {history.length === 0 ? (
         <p className="mt-2 text-sm text-neutral-500">{t("players.noRatingHistory")}</p>
       ) : (
-        <ul className="mt-2 divide-y divide-neutral-100 text-sm">
-          {history.map((h, i) => (
-            <li key={i} className="flex justify-between py-2">
-              <span>
-                {String(h.tournament_name ?? "")} ({String(h.rating_type_id)})
-              </span>
-              <span className="font-mono">
-                {String(h.rating_before)} → {String(h.rating_after)}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <>
+          <RatingChart
+            points={history
+              .slice()
+              .reverse()
+              .map((h) => ({
+                rating_after: h.rating_after as number | string,
+                created_at: String(h.created_at),
+              }))}
+          />
+          <ul className="mt-2 divide-y divide-neutral-100 text-sm">
+            {history.map((h, i) => (
+              <li key={i} className="flex justify-between py-2">
+                <span>
+                  {String(h.tournament_name ?? "")} ({String(h.rating_type_id)})
+                </span>
+                <span className="font-mono">
+                  {String(h.rating_before)} → {String(h.rating_after)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </div>
   );

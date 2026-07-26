@@ -189,7 +189,8 @@
     "create": "Crear torneo",
     "empty": "Aún no hay torneos — crea uno abajo.",
     "createBtn": "Crear",
-    "deleteConfirm": "¿Eliminar completamente el torneo \"{name}\"?"
+    "deleteConfirm": "¿Eliminar completamente el torneo \"{name}\"?",
+    "creating": "Creando…"
   },
   "admin": {
     "settings": "Ajustes",
