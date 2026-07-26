@@ -134,11 +134,13 @@
     "createdFrom": "Oluşturma başlangıcı",
     "createdTo": "Oluşturma bitişi",
     "searchName": "Ada göre ara…",
-    "anyLocation": "Any location",
-    "anyParticipantType": "Any participant type",
-    "anySystem": "Any system",
-    "organizerName": "Organizer name",
-    "timeControlFilter": "Time control"
+    "anyLocation": "Herhangi bir yer",
+    "anyParticipantType": "Herhangi bir kategori",
+    "anySystem": "Herhangi bir sistem",
+    "organizerName": "Organizatör adı",
+    "timeControlFilter": "Süre kontrolü",
+    "sortDateDesc": "Önce en yeni",
+    "sortDateAsc": "Önce en eski"
   },
   "tournamentView": {
     "standings": "Sıralama",
@@ -373,5 +375,21 @@
     "TEAM_DUPLICATE_BOARD": "{team} takımında aynı masada iki oyuncu var",
     "TEAMS_UNEQUAL_BOARDS": "Tüm takımların masa sayısı aynı olmalı ({sizes} bulundu)",
     "PAIRING_FAILED": "Eşleşmeler oluşturulamadı"
+  },
+  "optionGroup": {
+    "general": "Genel",
+    "teams": "Takım",
+    "other": "Diğer",
+    "age": "{n} yaş altı",
+    "loc_online": "Çevrimiçi",
+    "loc_kz": "Kazakistan",
+    "loc_kg": "Kırgızistan",
+    "loc_uz": "Özbekistan",
+    "loc_tr": "Türkiye",
+    "loc_mn": "Moğolistan",
+    "loc_ru": "Rusya",
+    "loc_cz": "Çekya",
+    "loc_other": "Diğer ülkeler",
+    "loc_world": "Makro bölgeler"
   }
 }

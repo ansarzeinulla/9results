@@ -55,22 +55,23 @@ INSERT INTO match_results (id) VALUES
     ('2-0'), ('1-1'), ('0-2');
 
 -- Age brackets, adult/general categories, team categories and veteran brackets.
+-- Youth brackets are every age 5..21 in all three flavours (B = boys,
+-- G = girls, U = open), not only the even ones: odd brackets (U9, U11, …) are
+-- regular school-level categories.
+INSERT INTO participant_types (id)
+SELECT prefix || age::TEXT
+  FROM generate_series(5, 21) AS age,
+       (VALUES ('B'), ('G'), ('U')) AS p(prefix)
+ON CONFLICT (id) DO NOTHING;
+
 INSERT INTO participant_types (id) VALUES
-    -- Youth (to age 20)
-    ('B6'), ('G6'), ('U6'),
-    ('B8'), ('G8'), ('U8'),
-    ('B10'), ('G10'), ('U10'),
-    ('B12'), ('G12'), ('U12'),
-    ('B14'), ('G14'), ('U14'),
-    ('B16'), ('G16'), ('U16'),
-    ('B18'), ('G18'), ('U18'),
-    ('B20'), ('G20'), ('U20'),
     -- Adults and general categories
     ('Men'), ('Women'), ('Seniors'), ('Veterans'), ('All'),
     -- Team categories
     ('Team_Men'), ('Team_Women'), ('Team_Mixed'),
     -- Veteran brackets
-    ('V50'), ('V60'), ('V65');
+    ('V50'), ('V60'), ('V65')
+ON CONFLICT (id) DO NOTHING;
 
 -- ==========================================
 -- TOURNAMENT VOCABULARIES
@@ -158,3 +159,99 @@ SELECT tb.id, l.id,
        END
 FROM tie_breaks tb CROSS JOIN languages l
 ON CONFLICT (tie_break_id, lang_code) DO NOTHING;
+
+-- Tournament level names — without these the level filter renders empty.
+INSERT INTO level_translations (level_id, lang_code, name) VALUES
+    ('International', 'RUS', 'Международный'),
+    ('International', 'KAZ', 'Халықаралық'),
+    ('International', 'ENG', 'International'),
+    ('International', 'SPA', 'Internacional'),
+    ('International', 'TUR', 'Uluslararası'),
+    ('International', 'KOR', '국제'),
+    ('International', 'CZE', 'Mezinárodní'),
+    ('National', 'RUS', 'Национальный'),
+    ('National', 'KAZ', 'Ұлттық'),
+    ('National', 'ENG', 'National'),
+    ('National', 'SPA', 'Nacional'),
+    ('National', 'TUR', 'Ulusal'),
+    ('National', 'KOR', '전국'),
+    ('National', 'CZE', 'Národní'),
+    ('Regional', 'RUS', 'Региональный'),
+    ('Regional', 'KAZ', 'Аймақтық'),
+    ('Regional', 'ENG', 'Regional'),
+    ('Regional', 'SPA', 'Regional'),
+    ('Regional', 'TUR', 'Bölgesel'),
+    ('Regional', 'KOR', '지역'),
+    ('Regional', 'CZE', 'Regionální'),
+    ('Club', 'RUS', 'Клубный'),
+    ('Club', 'KAZ', 'Клубтық'),
+    ('Club', 'ENG', 'Club'),
+    ('Club', 'SPA', 'De club'),
+    ('Club', 'TUR', 'Kulüp'),
+    ('Club', 'KOR', '클럽'),
+    ('Club', 'CZE', 'Klubový'),
+    ('Other', 'RUS', 'Другой'),
+    ('Other', 'KAZ', 'Басқа'),
+    ('Other', 'ENG', 'Other'),
+    ('Other', 'SPA', 'Otro'),
+    ('Other', 'TUR', 'Diğer'),
+    ('Other', 'KOR', '기타'),
+    ('Other', 'CZE', 'Jiný')
+ON CONFLICT (level_id, lang_code) DO NOTHING;
+
+-- Rated categories ("None" is translated above).
+INSERT INTO rating_translations (rating_type_id, lang_code, name) VALUES
+    ('Classic', 'RUS', 'Классика'),
+    ('Classic', 'KAZ', 'Классика'),
+    ('Classic', 'ENG', 'Classic'),
+    ('Classic', 'SPA', 'Clásico'),
+    ('Classic', 'TUR', 'Klasik'),
+    ('Classic', 'KOR', '클래식'),
+    ('Classic', 'CZE', 'Klasik'),
+    ('Rapid', 'RUS', 'Рапид'),
+    ('Rapid', 'KAZ', 'Рапид'),
+    ('Rapid', 'ENG', 'Rapid'),
+    ('Rapid', 'SPA', 'Rápido'),
+    ('Rapid', 'TUR', 'Hızlı'),
+    ('Rapid', 'KOR', '래피드'),
+    ('Rapid', 'CZE', 'Rapid'),
+    ('Blitz', 'RUS', 'Блиц'),
+    ('Blitz', 'KAZ', 'Блиц'),
+    ('Blitz', 'ENG', 'Blitz'),
+    ('Blitz', 'SPA', 'Blitz'),
+    ('Blitz', 'TUR', 'Yıldırım'),
+    ('Blitz', 'KOR', '블리츠'),
+    ('Blitz', 'CZE', 'Blesk')
+ON CONFLICT (rating_type_id, lang_code) DO NOTHING;
+
+-- Pairing systems.
+INSERT INTO type_translations (tournament_type_id, lang_code, name) VALUES
+    ('Swiss', 'RUS', 'Швейцарская'),
+    ('Swiss', 'KAZ', 'Швейцариялық'),
+    ('Swiss', 'ENG', 'Swiss'),
+    ('Swiss', 'SPA', 'Suizo'),
+    ('Swiss', 'TUR', 'İsviçre'),
+    ('Swiss', 'KOR', '스위스'),
+    ('Swiss', 'CZE', 'Švýcarský'),
+    ('Round-robin', 'RUS', 'Круговая'),
+    ('Round-robin', 'KAZ', 'Айналмалы'),
+    ('Round-robin', 'ENG', 'Round-robin'),
+    ('Round-robin', 'SPA', 'Todos contra todos'),
+    ('Round-robin', 'TUR', 'Lig usulü'),
+    ('Round-robin', 'KOR', '라운드로빈'),
+    ('Round-robin', 'CZE', 'Každý s každým'),
+    ('Olympic', 'RUS', 'Олимпийская'),
+    ('Olympic', 'KAZ', 'Олимпиялық'),
+    ('Olympic', 'ENG', 'Olympic (knock-out)'),
+    ('Olympic', 'SPA', 'Eliminatoria'),
+    ('Olympic', 'TUR', 'Eleme'),
+    ('Olympic', 'KOR', '토너먼트'),
+    ('Olympic', 'CZE', 'Vyřazovací'),
+    ('Team-match', 'RUS', 'Командный матч'),
+    ('Team-match', 'KAZ', 'Командалық матч'),
+    ('Team-match', 'ENG', 'Team match'),
+    ('Team-match', 'SPA', 'Match por equipos'),
+    ('Team-match', 'TUR', 'Takım maçı'),
+    ('Team-match', 'KOR', '단체전'),
+    ('Team-match', 'CZE', 'Týmový zápas')
+ON CONFLICT (tournament_type_id, lang_code) DO NOTHING;

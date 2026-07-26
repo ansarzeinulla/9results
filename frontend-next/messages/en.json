@@ -138,7 +138,9 @@
     "anyParticipantType": "Any participant type",
     "anySystem": "Any system",
     "organizerName": "Organizer name",
-    "timeControlFilter": "Time control"
+    "timeControlFilter": "Time control",
+    "sortDateDesc": "Newest first",
+    "sortDateAsc": "Oldest first"
   },
   "tournamentView": {
     "standings": "Standings",
@@ -373,5 +375,21 @@
     "TEAM_DUPLICATE_BOARD": "Team {team} has two players on the same board order",
     "TEAMS_UNEQUAL_BOARDS": "Every team must have the same number of boards (found {sizes})",
     "PAIRING_FAILED": "Could not generate pairings"
+  },
+  "optionGroup": {
+    "general": "General",
+    "teams": "Teams",
+    "other": "Other",
+    "age": "Under {n}",
+    "loc_online": "Online",
+    "loc_kz": "Kazakhstan",
+    "loc_kg": "Kyrgyzstan",
+    "loc_uz": "Uzbekistan",
+    "loc_tr": "Türkiye",
+    "loc_mn": "Mongolia",
+    "loc_ru": "Russia",
+    "loc_cz": "Czechia",
+    "loc_other": "Other countries",
+    "loc_world": "World regions"
   }
 }

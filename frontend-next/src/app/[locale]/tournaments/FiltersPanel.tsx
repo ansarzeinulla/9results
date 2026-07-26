@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
+import GroupedSelect from "@/components/GroupedSelect";
+import { groupLocations, groupParticipantTypes } from "@/lib/option-groups";
 
 interface Lookup {
   id: string;
@@ -43,7 +45,17 @@ export default function FiltersPanel({
     timeControl: sp.get("timeControl") ?? "",
     participantType: sp.get("participantType") ?? "",
     system: sp.get("system") ?? "",
+    sort: sp.get("sort") ?? "",
   });
+
+  const locationGroups = useMemo(
+    () => groupLocations(lookups.locations),
+    [lookups.locations]
+  );
+  const participantGroups = useMemo(
+    () => groupParticipantTypes(lookups.participantTypes),
+    [lookups.participantTypes]
+  );
 
   const apply = () => {
     const qp = new URLSearchParams();
@@ -58,7 +70,7 @@ export default function FiltersPanel({
     setForm({
       q: "", federation: "", location: "", level: "", ratingType: "",
       dateFrom: today(), dateTo: "", organizer: "", timeControl: "",
-      participantType: "", system: "",
+      participantType: "", system: "", sort: "",
     });
     router.push(pathname);
   };
@@ -104,11 +116,31 @@ export default function FiltersPanel({
           {txt("organizer", t("tournaments.organizerName"))}
           {txt("timeControl", t("tournaments.timeControlFilter"))}
           {sel("federation", t("tournaments.anyFederation"), lookups.federations)}
-          {sel("location", t("tournaments.anyLocation"), lookups.locations)}
+          <GroupedSelect
+            className={inputCls}
+            groups={locationGroups}
+            value={form.location}
+            onChange={(v) => setForm({ ...form, location: v })}
+            placeholder={t("tournaments.anyLocation")}
+          />
           {sel("level", t("tournaments.anyLevel"), lookups.levels)}
           {sel("ratingType", t("tournaments.anyRatingType"), lookups.ratingTypes)}
-          {sel("participantType", t("tournaments.anyParticipantType"), lookups.participantTypes)}
+          <GroupedSelect
+            className={inputCls}
+            groups={participantGroups}
+            value={form.participantType}
+            onChange={(v) => setForm({ ...form, participantType: v })}
+            placeholder={t("tournaments.anyParticipantType")}
+          />
           {sel("system", t("tournaments.anySystem"), lookups.tournamentTypes)}
+          <select
+            className={inputCls}
+            value={form.sort}
+            onChange={(e) => setForm({ ...form, sort: e.target.value })}
+          >
+            <option value="">{t("tournaments.sortDateDesc")}</option>
+            <option value="date_asc">{t("tournaments.sortDateAsc")}</option>
+          </select>
           <input
             type="date"
             className={inputCls}

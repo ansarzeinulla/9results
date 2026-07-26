@@ -134,11 +134,13 @@
     "createdFrom": "생성 시작일",
     "createdTo": "생성 종료일",
     "searchName": "이름으로 검색…",
-    "anyLocation": "Any location",
-    "anyParticipantType": "Any participant type",
-    "anySystem": "Any system",
-    "organizerName": "Organizer name",
-    "timeControlFilter": "Time control"
+    "anyLocation": "모든 장소",
+    "anyParticipantType": "모든 부문",
+    "anySystem": "모든 방식",
+    "organizerName": "주최자 이름",
+    "timeControlFilter": "시간 제한",
+    "sortDateDesc": "최신순",
+    "sortDateAsc": "오래된순"
   },
   "tournamentView": {
     "standings": "순위",
@@ -373,5 +375,21 @@
     "TEAM_DUPLICATE_BOARD": "{team} 팀에 같은 보드에 두 선수가 있습니다",
     "TEAMS_UNEQUAL_BOARDS": "모든 팀의 보드 수가 같아야 합니다 ({sizes} 발견됨)",
     "PAIRING_FAILED": "대진을 생성할 수 없습니다"
+  },
+  "optionGroup": {
+    "general": "일반",
+    "teams": "단체전",
+    "other": "기타",
+    "age": "{n}세 이하",
+    "loc_online": "온라인",
+    "loc_kz": "카자흐스탄",
+    "loc_kg": "키르기스스탄",
+    "loc_uz": "우즈베키스탄",
+    "loc_tr": "튀르키예",
+    "loc_mn": "몽골",
+    "loc_ru": "러시아",
+    "loc_cz": "체코",
+    "loc_other": "기타 국가",
+    "loc_world": "대륙/권역"
   }
 }

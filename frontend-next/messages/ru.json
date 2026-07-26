@@ -138,7 +138,9 @@
     "anyParticipantType": "Любая категория",
     "anySystem": "Любая система",
     "organizerName": "Название организатора",
-    "timeControlFilter": "Контроль времени"
+    "timeControlFilter": "Контроль времени",
+    "sortDateDesc": "Сначала новые",
+    "sortDateAsc": "Сначала старые"
   },
   "tournamentView": {
     "standings": "Турнирная таблица",
@@ -373,5 +375,21 @@
     "TEAM_DUPLICATE_BOARD": "В команде {team} два игрока на одной доске",
     "TEAMS_UNEQUAL_BOARDS": "У всех команд должно быть одинаковое число досок (найдено {sizes})",
     "PAIRING_FAILED": "Не удалось составить пары"
+  },
+  "optionGroup": {
+    "general": "Общие",
+    "teams": "Командные",
+    "other": "Прочее",
+    "age": "До {n}",
+    "loc_online": "Онлайн",
+    "loc_kz": "Казахстан",
+    "loc_kg": "Кыргызстан",
+    "loc_uz": "Узбекистан",
+    "loc_tr": "Турция",
+    "loc_mn": "Монголия",
+    "loc_ru": "Россия",
+    "loc_cz": "Чехия",
+    "loc_other": "Другие страны",
+    "loc_world": "Макрорегионы"
   }
 }

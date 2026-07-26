@@ -36,6 +36,7 @@ export default async function TournamentsPage({
       timeControl: sp.timeControl,
       participantType: sp.participantType,
       system: sp.system,
+      sort: sp.sort === "date_asc" ? "date_asc" : "date_desc",
       page,
       pageSize: PAGE_SIZE,
     }),

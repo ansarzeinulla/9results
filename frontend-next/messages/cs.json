@@ -134,11 +134,13 @@
     "createdFrom": "Vytvořeno od",
     "createdTo": "Vytvořeno do",
     "searchName": "Hledat podle jména…",
-    "anyLocation": "Any location",
-    "anyParticipantType": "Any participant type",
-    "anySystem": "Any system",
-    "organizerName": "Organizer name",
-    "timeControlFilter": "Time control"
+    "anyLocation": "Libovolné místo",
+    "anyParticipantType": "Libovolná kategorie",
+    "anySystem": "Libovolný systém",
+    "organizerName": "Název pořadatele",
+    "timeControlFilter": "Časová kontrola",
+    "sortDateDesc": "Nejnovější první",
+    "sortDateAsc": "Nejstarší první"
   },
   "tournamentView": {
     "standings": "Pořadí",
@@ -373,5 +375,21 @@
     "TEAM_DUPLICATE_BOARD": "Tým {team} má dva hráče na stejné šachovnici",
     "TEAMS_UNEQUAL_BOARDS": "Všechny týmy musí mít stejný počet šachovnic (nalezeno {sizes})",
     "PAIRING_FAILED": "Nasazení se nepodařilo vytvořit"
+  },
+  "optionGroup": {
+    "general": "Obecné",
+    "teams": "Týmové",
+    "other": "Ostatní",
+    "age": "Do {n} let",
+    "loc_online": "Online",
+    "loc_kz": "Kazachstán",
+    "loc_kg": "Kyrgyzstán",
+    "loc_uz": "Uzbekistán",
+    "loc_tr": "Turecko",
+    "loc_mn": "Mongolsko",
+    "loc_ru": "Rusko",
+    "loc_cz": "Česko",
+    "loc_other": "Ostatní země",
+    "loc_world": "Makroregiony"
   }
 }

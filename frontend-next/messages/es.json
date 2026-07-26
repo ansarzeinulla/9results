@@ -134,11 +134,13 @@
     "createdFrom": "Creado desde",
     "createdTo": "Creado hasta",
     "searchName": "Buscar por nombre…",
-    "anyLocation": "Any location",
-    "anyParticipantType": "Any participant type",
-    "anySystem": "Any system",
-    "organizerName": "Organizer name",
-    "timeControlFilter": "Time control"
+    "anyLocation": "Cualquier lugar",
+    "anyParticipantType": "Cualquier categoría",
+    "anySystem": "Cualquier sistema",
+    "organizerName": "Nombre del organizador",
+    "timeControlFilter": "Control de tiempo",
+    "sortDateDesc": "Más recientes primero",
+    "sortDateAsc": "Más antiguos primero"
   },
   "tournamentView": {
     "standings": "Clasificación",
@@ -373,5 +375,21 @@
     "TEAM_DUPLICATE_BOARD": "El equipo {team} tiene dos jugadores en el mismo tablero",
     "TEAMS_UNEQUAL_BOARDS": "Todos los equipos deben tener el mismo número de tableros (se encontró {sizes})",
     "PAIRING_FAILED": "No se pudieron generar los emparejamientos"
+  },
+  "optionGroup": {
+    "general": "General",
+    "teams": "Equipos",
+    "other": "Otros",
+    "age": "Sub-{n}",
+    "loc_online": "En línea",
+    "loc_kz": "Kazajistán",
+    "loc_kg": "Kirguistán",
+    "loc_uz": "Uzbekistán",
+    "loc_tr": "Turquía",
+    "loc_mn": "Mongolia",
+    "loc_ru": "Rusia",
+    "loc_cz": "Chequia",
+    "loc_other": "Otros países",
+    "loc_world": "Macrorregiones"
   }
 }

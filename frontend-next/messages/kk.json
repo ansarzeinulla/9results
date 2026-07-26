@@ -139,11 +139,13 @@
     "createdFrom": "Құрылған күннен",
     "createdTo": "Құрылған күнге дейін",
     "searchName": "Атауы бойынша іздеу…",
-    "anyLocation": "Any location",
-    "anyParticipantType": "Any participant type",
-    "anySystem": "Any system",
-    "organizerName": "Organizer name",
-    "timeControlFilter": "Time control"
+    "anyLocation": "Кез келген орын",
+    "anyParticipantType": "Кез келген санат",
+    "anySystem": "Кез келген жүйе",
+    "organizerName": "Ұйымдастырушы атауы",
+    "timeControlFilter": "Уақыт бақылауы",
+    "sortDateDesc": "Алдымен жаңалары",
+    "sortDateAsc": "Алдымен ескілері"
   },
   "tournamentView": {
     "standings": "Жарыс кестесі",
@@ -373,5 +375,21 @@
     "TEAM_DUPLICATE_BOARD": "{team} командасында екі ойыншы бір тақтада",
     "TEAMS_UNEQUAL_BOARDS": "Барлық командада тақта саны бірдей болуы керек ({sizes} табылды)",
     "PAIRING_FAILED": "Жұп құру мүмкін болмады"
+  },
+  "optionGroup": {
+    "general": "Жалпы",
+    "teams": "Командалық",
+    "other": "Басқа",
+    "age": "{n} жасқа дейін",
+    "loc_online": "Онлайн",
+    "loc_kz": "Қазақстан",
+    "loc_kg": "Қырғызстан",
+    "loc_uz": "Өзбекстан",
+    "loc_tr": "Түркия",
+    "loc_mn": "Моңғолия",
+    "loc_ru": "Ресей",
+    "loc_cz": "Чехия",
+    "loc_other": "Басқа елдер",
+    "loc_world": "Макроаймақтар"
   }
 }

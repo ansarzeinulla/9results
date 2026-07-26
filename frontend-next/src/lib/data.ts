@@ -201,6 +201,8 @@ export interface TournamentFilters {
   timeControl?: string;
   participantType?: string;
   system?: string; // tournament_type_id: Swiss, Round-robin, …
+  /** Start-date order; newest first unless asked otherwise. */
+  sort?: "date_desc" | "date_asc";
   page?: number;
   pageSize?: number;
 }
@@ -209,6 +211,7 @@ export async function listTournaments(locale: string, f: TournamentFilters = {})
   const pageSize = f.pageSize ?? 100;
   const offset = ((f.page ?? 1) - 1) * pageSize;
   const lang = dbLang(locale);
+  const ascending = f.sort === "date_asc";
   if (useSupabase) {
     let q = supabase()
       .from("tournaments")
@@ -219,7 +222,7 @@ export async function listTournaments(locale: string, f: TournamentFilters = {})
         { count: "exact" }
       )
       .neq("status", "DRAFT")
-      .order("start_date", { ascending: false })
+      .order("start_date", { ascending })
       .range(offset, offset + pageSize - 1);
     if (f.q) q = q.ilike("name", `%${f.q}%`);
     if (f.federation) q = q.eq("federation_id", f.federation);
@@ -286,7 +289,7 @@ export async function listTournaments(locale: string, f: TournamentFilters = {})
        ON typt.tournament_type_id = t.tournament_type_id AND typt.lang_code = $1
      LEFT JOIN organizations org ON org.id = t.organizer_id
      WHERE ${conds.join(" AND ")}
-     ORDER BY t.start_date DESC
+     ORDER BY t.start_date ${ascending ? "ASC" : "DESC"}
      LIMIT $${params.length - 1} OFFSET $${params.length}`,
     params
   );
@@ -1137,25 +1140,57 @@ export async function getLookups(locale: string) {
   const lang = dbLang(locale);
   if (useSupabase) {
     const sb = supabase();
-    const [locs, levels, ratings, feds, titles, ptypes, ttypes, tbreaks] =
-      await Promise.all([
-        sb.from("location_translations").select("location_id, name").eq("lang_code", lang),
-        sb.from("level_translations").select("level_id, name").eq("lang_code", lang),
-        sb.from("rating_translations").select("rating_type_id, name").eq("lang_code", lang),
-        sb.from("federations").select("id"),
-        sb.from("titles").select("id"),
-        sb.from("participant_types").select("id"),
-        sb.from("tournament_types").select("id"),
-        sb.from("tie_breaks").select("id"),
-      ]);
+    // The lists are driven by the base reference tables and only *labelled* by
+    // the translations: a missing translation row must not drop the option, or
+    // the filter renders as an empty (apparently disabled) select.
+    const [
+      locBase, locs, levBase, levels, ratBase, ratings,
+      feds, titles, ptypes, ttypes, tbreaks,
+    ] = await Promise.all([
+      sb.from("locations").select("id"),
+      sb.from("location_translations").select("location_id, name").eq("lang_code", lang),
+      sb.from("tournament_levels").select("id"),
+      sb.from("level_translations").select("level_id, name").eq("lang_code", lang),
+      sb.from("rating_types").select("id"),
+      sb.from("rating_translations").select("rating_type_id, name").eq("lang_code", lang),
+      sb.from("federations").select("id"),
+      sb.from("titles").select("id"),
+      sb.from("participant_types").select("id"),
+      sb.from("tournament_types").select("id"),
+      sb.from("tie_breaks").select("id"),
+    ]);
+    const typeNames = await sb
+      .from("type_translations")
+      .select("tournament_type_id, name")
+      .eq("lang_code", lang);
+    const label = (rows: { name: string }[] | null, key: string) =>
+      new Map(
+        (rows ?? []).map((r) => [
+          (r as unknown as Record<string, string>)[key],
+          r.name,
+        ])
+      );
+    const locName = label(locs.data, "location_id");
+    const levName = label(levels.data, "level_id");
+    const ratName = label(ratings.data, "rating_type_id");
+    const typName = label(typeNames.data, "tournament_type_id");
     return {
-      locations: (locs.data ?? []).map((r) => ({ id: r.location_id, name: r.name })),
-      levels: (levels.data ?? []).map((r) => ({ id: r.level_id, name: r.name })),
-      ratingTypes: (ratings.data ?? []).map((r) => ({ id: r.rating_type_id, name: r.name })),
+      locations: (locBase.data ?? [])
+        .map((r) => ({ id: r.id, name: locName.get(r.id) ?? r.id }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+      levels: (levBase.data ?? [])
+        .map((r) => ({ id: r.id, name: levName.get(r.id) ?? r.id }))
+        .sort((a, b) => a.id.localeCompare(b.id)),
+      ratingTypes: (ratBase.data ?? [])
+        .map((r) => ({ id: r.id, name: ratName.get(r.id) ?? r.id }))
+        .sort((a, b) => a.id.localeCompare(b.id)),
       federations: (feds.data ?? []).map((r) => ({ id: r.id, name: r.id })),
       titles: (titles.data ?? []).map((r) => ({ id: r.id, name: r.id })),
       participantTypes: (ptypes.data ?? []).map((r) => ({ id: r.id, name: r.id })),
-      tournamentTypes: (ttypes.data ?? []).map((r) => ({ id: r.id, name: r.id })),
+      tournamentTypes: (ttypes.data ?? []).map((r) => ({
+        id: r.id,
+        name: typName.get(r.id) ?? r.id,
+      })),
       tieBreaks: (tbreaks.data ?? []).map((r) => ({ id: r.id, name: r.id })),
     };
   }
@@ -1198,7 +1233,12 @@ export async function getLookups(locale: string) {
       "SELECT id, id AS name FROM participant_types ORDER BY id", []
     ),
     sql<{ id: string; name: string }>(
-      "SELECT id, id AS name FROM tournament_types ORDER BY id", []
+      `SELECT tt.id, COALESCE(t.name, tt.id) AS name
+         FROM tournament_types tt
+         LEFT JOIN type_translations t
+           ON t.tournament_type_id = tt.id AND t.lang_code = $1
+        ORDER BY tt.id`,
+      [lang]
     ),
     sql<{ id: string; name: string }>("SELECT id, id AS name FROM tie_breaks ORDER BY id", []),
   ]);
