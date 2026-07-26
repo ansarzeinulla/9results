@@ -7,11 +7,11 @@
     "home": "Ana sayfa",
     "tournaments": "Turnuvalar",
     "players": "Oyuncular",
-    "games": "Oyunlar",
+    "games": "Oyun veritabanı",
     "arena": "Arena",
     "engine": "Motor",
     "underConstruction": "Yapım aşamasında",
-    "var": "VYH",
+    "var": "Canlı yayın",
     "registerPlayer": "Oyuncu kaydı",
     "organizerLogin": "Organizatör girişi",
     "dashboard": "Panel",
@@ -19,7 +19,8 @@
     "adminPanel": "Yönetim",
     "login": "Giriş yap",
     "organizers": "Organizers",
-    "arbiters": "Arbiters"
+    "arbiters": "Arbiters",
+    "engineRating": "Motor reytingi"
   },
   "common": {
     "search": "Ara",

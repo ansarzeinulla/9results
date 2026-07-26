@@ -7,11 +7,11 @@
     "home": "홈",
     "tournaments": "대회",
     "players": "선수",
-    "games": "게임",
+    "games": "기보 데이터베이스",
     "arena": "아레나",
     "engine": "엔진",
     "underConstruction": "준비 중",
-    "var": "영상 보조 심판",
+    "var": "라이브 중계",
     "registerPlayer": "선수 등록",
     "organizerLogin": "주최자 로그인",
     "dashboard": "대시보드",
@@ -19,7 +19,8 @@
     "adminPanel": "관리자",
     "login": "로그인",
     "organizers": "Organizers",
-    "arbiters": "Arbiters"
+    "arbiters": "Arbiters",
+    "engineRating": "엔진 레이팅"
   },
   "common": {
     "search": "검색",

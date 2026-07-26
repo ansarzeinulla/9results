@@ -7,11 +7,11 @@
     "home": "Главная",
     "tournaments": "Турниры",
     "players": "Игроки",
-    "games": "Игры",
+    "games": "База партий",
     "arena": "Арена",
     "engine": "Движок",
     "underConstruction": "В разработке",
-    "var": "ВПС",
+    "var": "Прямая трансляция",
     "registerPlayer": "Регистрация игрока",
     "organizerLogin": "Вход для организатора",
     "dashboard": "Панель",
@@ -19,7 +19,8 @@
     "adminPanel": "Админ",
     "login": "Войти",
     "organizers": "Организаторы",
-    "arbiters": "Судьи"
+    "arbiters": "Судьи",
+    "engineRating": "Рейтинг движка"
   },
   "common": {
     "search": "Поиск",

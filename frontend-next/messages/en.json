@@ -7,11 +7,11 @@
     "home": "Home",
     "tournaments": "Tournaments",
     "players": "Players",
-    "games": "Games",
+    "games": "Games database",
     "arena": "Arena",
     "engine": "Engine",
     "underConstruction": "Under construction",
-    "var": "VAR",
+    "var": "Live broadcast",
     "registerPlayer": "Register Player",
     "organizerLogin": "Organizer Login",
     "dashboard": "Dashboard",
@@ -19,7 +19,8 @@
     "adminPanel": "Admin",
     "login": "Sign in",
     "organizers": "Organizers",
-    "arbiters": "Arbiters"
+    "arbiters": "Arbiters",
+    "engineRating": "Engine rating"
   },
   "common": {
     "search": "Search",

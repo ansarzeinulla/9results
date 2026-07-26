@@ -21,18 +21,21 @@ export default async function Home({
 
   // The engine is live and lives on its own site; the rest are placeholders.
   const construction = [
-    { label: t("nav.engine"), href: "https://9qumalaq.vercel.app/" },
-    { label: t("nav.arena") },
-    { label: t("nav.games") },
-    { label: t("nav.var") },
+    {
+      label: t("nav.engine"),
+      sub: t("nav.engineRating"),
+      count: 0,
+      href: "https://9qumalaq.vercel.app/",
+    },
+    { label: t("nav.arena"), sub: t("nav.games"), count: 0 },
+    { label: t("nav.var"), count: 0 },
   ];
 
   return (
     <div className="space-y-8">
       <section className="rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-800 px-6 py-10 text-white">
         <h1 className="text-3xl font-bold md:text-4xl">9ecosystem</h1>
-        <p className="mt-2 max-w-xl text-emerald-100">{t("app.tagline")}</p>
-        
+
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {items.map((item) => (
             <Link
@@ -47,8 +50,17 @@ export default async function Home({
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {construction.map((item) =>
-            item.href ? (
+          {construction.map((item) => {
+            const body = (
+              <>
+                <div className="text-2xl font-bold">{item.count}</div>
+                <div className="text-sm text-emerald-100">{item.label}</div>
+                {item.sub ? (
+                  <div className="text-xs text-emerald-200">{item.sub}</div>
+                ) : null}
+              </>
+            );
+            return item.href ? (
               <a
                 key={item.label}
                 href={item.href}
@@ -56,19 +68,14 @@ export default async function Home({
                 rel="noopener noreferrer"
                 className="rounded-xl bg-white/10 p-4 hover:bg-white/20"
               >
-                <div className="text-sm font-medium">{item.label}</div>
-                <div className="text-xs text-emerald-200">↗</div>
+                {body}
               </a>
             ) : (
-              <div
-                key={item.label}
-                className="rounded-xl bg-white/5 p-4 text-emerald-200 opacity-70"
-              >
-                <div className="text-sm font-medium">{item.label}</div>
-                <div className="text-xs">{t("nav.underConstruction")}</div>
+              <div key={item.label} className="rounded-xl bg-white/5 p-4">
+                {body}
               </div>
-            )
-          )}
+            );
+          })}
         </div>
       </section>
     </div>

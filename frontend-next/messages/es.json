@@ -7,11 +7,11 @@
     "home": "Inicio",
     "tournaments": "Torneos",
     "players": "Jugadores",
-    "games": "Partidas",
+    "games": "Base de datos de partidas",
     "arena": "Arena",
     "engine": "Motor",
     "underConstruction": "En construcción",
-    "var": "AAV",
+    "var": "Transmisión en vivo",
     "registerPlayer": "Registrar jugador",
     "organizerLogin": "Acceso de organizador",
     "dashboard": "Panel",
@@ -19,7 +19,8 @@
     "adminPanel": "Admin",
     "login": "Iniciar sesión",
     "organizers": "Organizers",
-    "arbiters": "Arbiters"
+    "arbiters": "Arbiters",
+    "engineRating": "Rating del motor"
   },
   "common": {
     "search": "Buscar",

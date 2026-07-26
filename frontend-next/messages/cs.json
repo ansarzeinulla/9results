@@ -10,8 +10,8 @@
     "arena": "Arena",
     "engine": "Engine",
     "underConstruction": "Ve výstavbě",
-    "var": "VAR",
-    "games": "Hry",
+    "var": "Živý přenos",
+    "games": "Databáze partií",
     "registerPlayer": "Registrovat hráče",
     "organizerLogin": "Přihlášení pořadatele",
     "dashboard": "Přehled",
@@ -19,7 +19,8 @@
     "adminPanel": "Správa",
     "login": "Přihlásit se",
     "organizers": "Organizers",
-    "arbiters": "Arbiters"
+    "arbiters": "Arbiters",
+    "engineRating": "Rating enginu"
   },
   "common": {
     "search": "Hledat",
