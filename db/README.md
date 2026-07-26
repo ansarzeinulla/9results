@@ -33,7 +33,20 @@ db/
 
 ## Rebuild from scratch (fresh database)
 
-Run the `build/` files, then the `seeds/`, each group in numeric order:
+`db/rebuild.sh` drops the local database and replays `build/` then `seeds/`:
+
+```bash
+db/rebuild.sh            # rebuilds results_togyz
+DB=scratch db/rebuild.sh # some other local database
+```
+
+With `DATABASE_URL` set it applies **only** the seeds and drops nothing, which
+is how new reference data (locations, participant types, translations) reaches
+a deployed database — every seed is `ON CONFLICT DO NOTHING`, so re-running is
+harmless. `build/` is not idempotent; apply it only to an empty database.
+
+The equivalent by hand is the `build/` files, then the `seeds/`, each group in
+numeric order:
 
 ```bash
 for f in db/build/*.sql db/seeds/*.sql; do
