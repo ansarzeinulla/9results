@@ -49,6 +49,7 @@ CREATE TABLE tournament_participants (
     tie_break_1 DECIMAL(6,2) DEFAULT 0.0,
     tie_break_2 DECIMAL(6,2) DEFAULT 0.0,
     tie_break_3 DECIMAL(6,2) DEFAULT 0.0,
+    tie_break_4 DECIMAL(6,2) DEFAULT 0.0,
     final_rank INT,
 
     rating_change DECIMAL(5,1),
@@ -91,6 +92,7 @@ CREATE TABLE standings_history (
     tie_break_1 DECIMAL(6,2),
     tie_break_2 DECIMAL(6,2),
     tie_break_3 DECIMAL(6,2),
+    tie_break_4 DECIMAL(6,2),
     rank_after_round INT,
 
     PRIMARY KEY (round_id, player_id)

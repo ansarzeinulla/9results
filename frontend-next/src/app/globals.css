@@ -18,6 +18,11 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Print-only blocks (the sheet masthead) — see PrintHeader.tsx. */
+.print-only {
+  display: none;
+}
+
 /* ==========================================================================
    Print: clean A4 output for pairings, standings, alphabetical and starting
    lists — chrome (site header, nav, buttons, anything marked .no-print) is
@@ -41,6 +46,11 @@ body {
   button,
   .no-print {
     display: none !important;
+  }
+
+  /* …except our own masthead, which only exists for the printed sheet. */
+  header.print-only {
+    display: block !important;
   }
 
   main,

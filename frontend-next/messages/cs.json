@@ -64,10 +64,10 @@
     "ratingClassic": "Klasický rating",
     "createdAt": "Vytvořeno",
     "endedAt": "Ukončeno",
-    "rank": "Poř.",
-    "sno": "Č.",
+    "rank": "#",
+    "sno": "#",
     "player": "Jméno",
-    "rating": "Rtg",
+    "rating": "Rating",
     "points": "Body",
     "buchholz": "TB1",
     "rp": "Rp",
@@ -81,15 +81,15 @@
     "tieBreak": "Pomocné hodnocení",
     "rounds": "Počet kol",
     "timeControl": "Časová kontrola",
-    "arbiters": "Rozhodčí (ID oddělená čárkami)",
+    "arbiters": "Rozhodčí",
     "lastUpdate": "Poslední aktualizace",
     "gender": "Pohlaví",
     "ageCategory": "Věk",
-    "playerId": "ID hráče",
+    "playerId": "ID",
     "date": "Datum",
     "system": "System",
-    "arbiter": "Arbiter",
-    "director": "Director",
+    "arbiter": "Rozhodčí",
+    "director": "Ředitel",
     "tieBreaks": "Tie-breaks",
     "participantType": "Participant type",
     "type": "Type",
@@ -305,8 +305,7 @@
     "copied": "Odkaz zkopírován!"
   },
   "standings": {
-    "afterRound": "Standings after round {n}",
-    "current": "Current standings"
+    "afterRound": "Standings after round {n}"
   },
   "organizers": {
     "title": "Pořadatelé",
@@ -391,5 +390,20 @@
     "loc_cz": "Česko",
     "loc_other": "Ostatní země",
     "loc_world": "Makroregiony"
+  },
+  "help": {
+    "open": "Jak se počítají pomocná hodnocení",
+    "title": "Jak se tato tabulka počítá",
+    "tbHeading": "Pomocná hodnocení",
+    "tb1": "TB1 — Počet výher.",
+    "tb2": "TB2 — Buchholz: součet konečných skóre všech vašich soupeřů.",
+    "tb3": "TB3 — Sonneborn-Berger: skóre soupeřů, které jste porazili, plus polovina skóre těch, s nimiž jste remizovali.",
+    "tb4": "TB4 — Kumulativní skóre: součet vašeho průběžného skóre po každém kole.",
+    "order": "Nejprve se řadí podle bodů, poté podle pomocných hodnocení v pořadí zvoleném turnajem — to najdete na kartě Informace.",
+    "titlesHeading": "Tituly hráčů",
+    "titles": "MSIC — mistr sportu mezinárodní třídy · MS — mistr sportu · CMS — kandidát mistra sportu · R1 / R2 / R3 — první, druhá a třetí třída.",
+    "arbiterTitlesHeading": "Tituly rozhodčích",
+    "arbiterTitles": "IA — mezinárodní rozhodčí · FA — rozhodčí federace · NA — národní rozhodčí.",
+    "close": "Zavřít"
   }
 }

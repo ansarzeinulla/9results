@@ -10,8 +10,17 @@ export default async function InfoTab({
   const { locale, slug } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("fields");
-  const { tournament: tr, tieBreaks } = await cachedTournamentInfo(locale, slug);
+  const { tournament: tr, tieBreaks, arbiters } = await cachedTournamentInfo(
+    locale,
+    slug
+  );
   if (!tr) notFound();
+
+  // tournament_arbiters is the full panel; arbiter_id is the one named on the
+  // tournament row. Either can be empty, and both may name the same person.
+  const arbiterNames = [
+    ...new Set([...(tr.arbiter_name ? [tr.arbiter_name] : []), ...arbiters]),
+  ];
 
   const rows: [string, string | number | null][] = [
     [t("federation"), tr.federation_id],
@@ -22,8 +31,6 @@ export default async function InfoTab({
     [t("ratingType"), tr.rating_type_name ?? tr.rating_type_id],
     [t("timeControl"), tr.time_control],
     [t("organizer"), tr.organizer_name ?? null],
-    [t("arbiter"), tr.arbiter_name ?? null],
-    [t("director"), tr.director_name ?? null],
     [
       t("tieBreaks"),
       tieBreaks.length
@@ -35,6 +42,9 @@ export default async function InfoTab({
       t("lastUpdate"),
       tr.last_updated ? String(tr.last_updated).slice(0, 16).replace("T", " ") : null,
     ],
+    // The officials go last: they are the longest values and a panel of
+    // arbiters needs the full width of the row to stay readable.
+    [t("director"), tr.director_name ?? null],
   ];
 
   return (
@@ -47,6 +57,14 @@ export default async function InfoTab({
             <dd className="font-medium">{v}</dd>
           </div>
         ))}
+      {arbiterNames.length > 0 && (
+        <div className="border-b border-neutral-100 pb-2 sm:col-span-2">
+          <dt className="text-neutral-500">
+            {arbiterNames.length > 1 ? t("arbiters") : t("arbiter")}
+          </dt>
+          <dd className="mt-1 font-medium">{arbiterNames.join(", ")}</dd>
+        </div>
+      )}
     </dl>
   );
 }

@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { ParticipantRow } from "@/lib/data";
+import TieBreakHelp from "@/components/TieBreakHelp";
 
 export default async function ParticipantsTable({
   rows,
@@ -18,16 +19,20 @@ export default async function ParticipantsTable({
           <tr className="border-b border-neutral-300 text-left text-neutral-500">
             <th className="w-10 py-2 pr-3">{showStandings ? t("rank") : t("sno")}</th>
             <th className="w-12 py-2 pr-3">{t("title")}</th>
-            <th className="w-full py-2 pr-3">{t("player")}</th>
+            <th className="py-2 pr-3">{t("player")}</th>
             <th className="hidden py-2 pr-3 sm:table-cell">{t("playerId")}</th>
-            <th className="hidden py-2 pr-3 sm:table-cell">{t("club")}</th>
+            <th className="hidden w-full py-2 pr-3 sm:table-cell">{t("club")}</th>
             <th className="py-2 pr-3">{t("rating")}</th>
             {showStandings && (
               <>
                 <th className="py-2 pr-3 font-bold">{t("points")}</th>
                 <th className="hidden py-2 pr-3 sm:table-cell">TB1</th>
                 <th className="hidden py-2 pr-3 sm:table-cell">TB2</th>
-                <th className="hidden py-2 sm:table-cell">TB3</th>
+                <th className="hidden py-2 pr-3 sm:table-cell">TB3</th>
+                <th className="hidden whitespace-nowrap py-2 sm:table-cell">
+                  TB4
+                  <TieBreakHelp />
+                </th>
               </>
             )}
           </tr>
@@ -42,7 +47,7 @@ export default async function ParticipantsTable({
                 {showStandings ? (p.final_rank ?? i + 1) : (p.starting_rank ?? i + 1)}
               </td>
               <td className="py-2 pr-3 text-neutral-500">{p.title_id ?? ""}</td>
-              <td className="py-2 pr-3 font-medium">
+              <td className="whitespace-nowrap py-2 pr-3">
                 <Link href={`/players/${p.player_id}`} className="hover:underline">
                   {p.last_name} {p.first_name}
                 </Link>
@@ -65,7 +70,8 @@ export default async function ParticipantsTable({
                   <td className="py-2 pr-3 font-bold">{Number(p.points)}</td>
                   <td className="hidden py-2 pr-3 sm:table-cell">{Number(p.tie_break_1)}</td>
                   <td className="hidden py-2 pr-3 sm:table-cell">{Number(p.tie_break_2)}</td>
-                  <td className="hidden py-2 sm:table-cell">{Number(p.tie_break_3)}</td>
+                  <td className="hidden py-2 pr-3 sm:table-cell">{Number(p.tie_break_3)}</td>
+                  <td className="hidden py-2 sm:table-cell">{Number(p.tie_break_4)}</td>
                 </>
               )}
             </tr>

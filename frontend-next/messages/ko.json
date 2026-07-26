@@ -64,8 +64,8 @@
     "ratingClassic": "클래식 레이팅",
     "createdAt": "생성일",
     "endedAt": "종료일",
-    "rank": "순위",
-    "sno": "번호",
+    "rank": "#",
+    "sno": "#",
     "player": "이름",
     "rating": "레이팅",
     "points": "점수",
@@ -81,15 +81,15 @@
     "tieBreak": "타이브레이크",
     "rounds": "라운드 수",
     "timeControl": "시간 제한",
-    "arbiters": "심판 (쉼표로 구분된 ID)",
+    "arbiters": "심판진",
     "lastUpdate": "마지막 업데이트",
     "gender": "성별",
     "ageCategory": "연령",
-    "playerId": "선수 ID",
+    "playerId": "ID",
     "date": "날짜",
     "system": "System",
-    "arbiter": "Arbiter",
-    "director": "Director",
+    "arbiter": "심판",
+    "director": "디렉터",
     "tieBreaks": "Tie-breaks",
     "participantType": "Participant type",
     "type": "Type",
@@ -305,8 +305,7 @@
     "copied": "링크가 복사되었습니다!"
   },
   "standings": {
-    "afterRound": "Standings after round {n}",
-    "current": "Current standings"
+    "afterRound": "Standings after round {n}"
   },
   "organizers": {
     "title": "주최자",
@@ -391,5 +390,20 @@
     "loc_cz": "체코",
     "loc_other": "기타 국가",
     "loc_world": "대륙/권역"
+  },
+  "help": {
+    "open": "타이브레이크 계산 방법",
+    "title": "이 표의 계산 방법",
+    "tbHeading": "타이브레이크",
+    "tb1": "TB1 — 승수.",
+    "tb2": "TB2 — 부흐홀츠: 모든 상대의 최종 점수 합계.",
+    "tb3": "TB3 — 존네보른-베르거: 이긴 상대의 점수와 비긴 상대 점수의 절반의 합.",
+    "tb4": "TB4 — 누적 점수: 매 라운드 종료 시점의 누적 점수를 모두 더한 값.",
+    "order": "먼저 점수로 정렬하고, 그다음 대회가 정한 순서의 타이브레이크로 정렬합니다. 그 순서는 정보 탭에 표시됩니다.",
+    "titlesHeading": "선수 칭호",
+    "titles": "MSIC — 국제급 스포츠 마스터 · MS — 스포츠 마스터 · CMS — 스포츠 마스터 후보 · R1 / R2 / R3 — 1급, 2급, 3급.",
+    "arbiterTitlesHeading": "심판 칭호",
+    "arbiterTitles": "IA — 국제 심판 · FA — 연맹 심판 · NA — 국내 심판.",
+    "close": "닫기"
   }
 }

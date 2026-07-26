@@ -260,7 +260,10 @@ def test_finalize_tournament_applies_deltas(db):
 def test_search_tournaments_lang(db):
     tid = mk_tournament(db, slug="search-t")
     rows = db.execute(
-        "SELECT * FROM search_tournaments(p_lang := 'KAZ')"
+        # The simulation seed alone contributes 100 newer tournaments, and the
+        # function orders by start_date DESC — the default limit of 100 would
+        # push this row off the end.
+        "SELECT * FROM search_tournaments(p_lang := 'KAZ', p_limit := 1000)"
     ).fetchall()
     assert any(r[0] == tid for r in rows)
     row = [r for r in rows if r[0] == tid][0]

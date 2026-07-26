@@ -24,7 +24,9 @@ export default async function TournamentLayout({
 
   return (
     <PullToRefresh>
-      <div className="mb-4">
+      {/* On paper this whole block is replaced by each tab's PrintHeader,
+          which also carries the round and the source address. */}
+      <div className="no-print mb-4">
         <Link
           href="/tournaments"
           className="no-print text-sm text-neutral-500 hover:underline"

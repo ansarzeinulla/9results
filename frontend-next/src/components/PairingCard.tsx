@@ -29,38 +29,55 @@ export default function PairingCard({
       <span className="w-8 shrink-0 text-center font-mono text-sm font-semibold tabular-nums text-neutral-500">
         {m.board_number === 999 || m.board_number == null ? "—" : m.board_number}
       </span>
-      <div className="min-w-0 flex-1 text-right">
-        {m.white_title && (
-          <span className="mr-1 text-xs font-semibold text-emerald-700">
-            {m.white_title}
+      {/* Rating sits on the outer edge, points next to the result chip, both on
+          the name's own line — stacking them underneath made the card look
+          bottom-heavy and doubled its height. */}
+      <div className="flex min-w-0 flex-1 items-baseline justify-end gap-2">
+        <span className="shrink-0 text-xs tabular-nums text-neutral-500">
+          {m.white_rating ?? 0}
+        </span>
+        <span className="truncate">
+          {m.white_title && (
+            <span className="mr-1 text-xs font-semibold text-emerald-700">
+              {m.white_title}
+            </span>
+          )}
+          {m.white_name}
+          {m.white_team && (
+            <span className="ml-1 text-xs text-neutral-500">({m.white_team})</span>
+          )}
+        </span>
+        {m.white_points != null && (
+          <span className="shrink-0 text-xs tabular-nums text-neutral-500">
+            {Number(m.white_points)}
           </span>
         )}
-        <span className="font-medium">{m.white_name}</span>
-        {m.white_team && (
-          <span className="ml-1 text-xs text-neutral-500">({m.white_team})</span>
-        )}
-        <div className="text-xs text-neutral-500">
-          {m.white_rating ?? 0}
-          {m.white_points != null ? ` · ${Number(m.white_points)}` : ""}
-        </div>
       </div>
       <ResultChip result={m.result_id} />
-      <div className="min-w-0 flex-1">
+      <div className="flex min-w-0 flex-1 items-baseline gap-2">
         {m.black_name ? (
           <>
-            {m.black_title && (
-              <span className="mr-1 text-xs font-semibold text-emerald-700">
-                {m.black_title}
+            {m.black_points != null && (
+              <span className="shrink-0 text-xs tabular-nums text-neutral-500">
+                {Number(m.black_points)}
               </span>
             )}
-            <span className="font-medium">{m.black_name}</span>
-            {m.black_team && (
-              <span className="ml-1 text-xs text-neutral-500">({m.black_team})</span>
-            )}
-            <div className="text-xs text-neutral-500">
+            <span className="truncate">
+              {m.black_title && (
+                <span className="mr-1 text-xs font-semibold text-emerald-700">
+                  {m.black_title}
+                </span>
+              )}
+              {m.black_name}
+              {m.black_team && (
+                <span className="ml-1 text-xs text-neutral-500">
+                  ({m.black_team})
+                </span>
+              )}
+            </span>
+            <span className="shrink-0 text-xs tabular-nums text-neutral-500">
               {m.black_rating ?? 0}
-              {m.black_points != null ? ` · ${Number(m.black_points)}` : ""}
-            </div>
+            </span>
           </>
         ) : (
           <span className="text-neutral-400">{byeLabel}</span>

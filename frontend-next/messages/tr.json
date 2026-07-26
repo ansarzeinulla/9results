@@ -64,10 +64,10 @@
     "ratingClassic": "Klasik reyting",
     "createdAt": "Oluşturuldu",
     "endedAt": "Bitti",
-    "rank": "Sıra",
-    "sno": "SNo",
+    "rank": "#",
+    "sno": "#",
     "player": "Ad",
-    "rating": "Rtg",
+    "rating": "Reyting",
     "points": "Puan",
     "buchholz": "TB1",
     "rp": "Rp",
@@ -81,15 +81,15 @@
     "tieBreak": "Averaj",
     "rounds": "Tur sayısı",
     "timeControl": "Süre kontrolü",
-    "arbiters": "Hakemler (virgülle ayrılmış ID'ler)",
+    "arbiters": "Hakemler",
     "lastUpdate": "Son güncelleme",
     "gender": "Cinsiyet",
     "ageCategory": "Yaş",
-    "playerId": "Oyuncu kimliği",
+    "playerId": "ID",
     "date": "Tarih",
     "system": "System",
-    "arbiter": "Arbiter",
-    "director": "Director",
+    "arbiter": "Hakem",
+    "director": "Direktör",
     "tieBreaks": "Tie-breaks",
     "participantType": "Participant type",
     "type": "Type",
@@ -305,8 +305,7 @@
     "copied": "Bağlantı kopyalandı!"
   },
   "standings": {
-    "afterRound": "Standings after round {n}",
-    "current": "Current standings"
+    "afterRound": "Standings after round {n}"
   },
   "organizers": {
     "title": "Organizatörler",
@@ -391,5 +390,20 @@
     "loc_cz": "Çekya",
     "loc_other": "Diğer ülkeler",
     "loc_world": "Makro bölgeler"
+  },
+  "help": {
+    "open": "Averajlar nasıl hesaplanır",
+    "title": "Bu tablo nasıl hesaplanır",
+    "tbHeading": "Averajlar",
+    "tb1": "TB1 — Galibiyet sayısı.",
+    "tb2": "TB2 — Buchholz: tüm rakiplerinizin nihai puanlarının toplamı.",
+    "tb3": "TB3 — Sonneborn-Berger: yendiğiniz rakiplerin puanları, berabere kaldıklarınızın puanlarının yarısı.",
+    "tb4": "TB4 — Kümülatif puan: her turdan sonraki güncel puanınızın toplamı.",
+    "order": "Önce puana, sonra turnuvanın seçtiği sıradaki averajlara göre sıralanır — bu sıra Bilgi sekmesinde yazar.",
+    "titlesHeading": "Oyuncu unvanları",
+    "titles": "MSIC — uluslararası sınıf spor ustası · MS — spor ustası · CMS — spor ustası adayı · R1 / R2 / R3 — birinci, ikinci ve üçüncü derece.",
+    "arbiterTitlesHeading": "Hakem unvanları",
+    "arbiterTitles": "IA — uluslararası hakem · FA — federasyon hakemi · NA — ulusal hakem.",
+    "close": "Kapat"
   }
 }

@@ -4,6 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { cachedStandings } from "@/lib/cached";
 import type { ParticipantRow } from "@/lib/data";
 import ParticipantsTable from "../ParticipantsTable";
+import PrintHeader from "@/components/PrintHeader";
 
 export default async function StandingsTab({
   params,
@@ -33,6 +34,7 @@ export default async function StandingsTab({
         tie_break_1: h.tie_break_1,
         tie_break_2: h.tie_break_2,
         tie_break_3: h.tie_break_3,
+        tie_break_4: h.tie_break_4,
         final_rank: h.rank_after_round,
         status: h.status,
         club: h.club,
@@ -48,18 +50,16 @@ export default async function StandingsTab({
 
   return (
     <div>
+      <PrintHeader
+        title={tr.name}
+        subtitle={
+          target
+            ? t("standings.afterRound", { n: target.round_number })
+            : t("tournamentView.standings")
+        }
+      />
       {rounds.length > 0 && (
-        <div className="scrollbar-none -mx-4 mb-4 flex gap-2 overflow-x-auto px-4">
-          <Link
-            href={`/tournaments/${slug}/standings`}
-            className={`whitespace-nowrap rounded-lg border px-4 py-1.5 text-sm font-medium ${
-              !target
-                ? "border-emerald-600 bg-emerald-600 text-white"
-                : "border-neutral-300"
-            }`}
-          >
-            {t("standings.current")}
-          </Link>
+        <div className="scrollbar-none no-print -mx-4 mb-4 flex gap-2 overflow-x-auto px-4">
           {rounds.map((r) => (
             <Link
               key={r.id}

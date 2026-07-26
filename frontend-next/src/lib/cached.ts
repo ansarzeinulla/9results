@@ -22,8 +22,10 @@ import {
   getPlayer,
   getPlayerTournaments,
   getRatingHistory,
+  getRoundByNumber,
   getRounds,
   getStandingsAfterRound,
+  getTournamentArbiters,
   getTournamentBySlug,
   getTournamentTieBreaks,
   listOfficials,
@@ -86,12 +88,31 @@ export async function cachedPairings(locale: string, slug: string, n: number) {
   return { tournament, rounds, current, pairings };
 }
 
+/**
+ * One round's boards, without the round list. Kept separate from
+ * cachedRoundsBundle so the pairings can render as soon as they arrive while
+ * the round tabs stream in behind their own Suspense boundary.
+ */
+export async function cachedRoundPairings(locale: string, slug: string, n: number) {
+  "use cache";
+  const tournament = await getTournamentBySlug(locale, slug);
+  markTournament(tournament);
+  const current = tournament ? await getRoundByNumber(tournament.id, n) : null;
+  const pairings = current ? await getPairings(current.id) : [];
+  return { tournament, current, pairings };
+}
+
 export async function cachedTournamentInfo(locale: string, slug: string) {
   "use cache";
   const tournament = await getTournamentBySlug(locale, slug);
   markTournament(tournament);
-  const tieBreaks = tournament ? await getTournamentTieBreaks(tournament.id) : [];
-  return { tournament, tieBreaks };
+  const [tieBreaks, arbiters] = tournament
+    ? await Promise.all([
+        getTournamentTieBreaks(tournament.id),
+        getTournamentArbiters(tournament.id),
+      ])
+    : [[], []];
+  return { tournament, tieBreaks, arbiters };
 }
 
 /** Standings snapshot after a chosen round (falls back to live standings). */

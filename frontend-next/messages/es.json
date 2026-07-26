@@ -64,11 +64,11 @@
     "ratingClassic": "Rating clásico",
     "createdAt": "Creado",
     "endedAt": "Finalizado",
-    "rank": "Pos.",
-    "sno": "N.º",
+    "rank": "#",
+    "sno": "#",
     "player": "Nombre",
-    "rating": "Rtg",
-    "points": "Pts.",
+    "rating": "Rating",
+    "points": "Puntos",
     "buchholz": "TB1",
     "rp": "Rp",
     "startRating": "Rtg",
@@ -81,14 +81,14 @@
     "tieBreak": "Desempate",
     "rounds": "Número de rondas",
     "timeControl": "Control de tiempo",
-    "arbiters": "Árbitros (IDs separados por comas)",
+    "arbiters": "Árbitros",
     "lastUpdate": "Última actualización",
     "gender": "Género",
     "ageCategory": "Edad",
-    "playerId": "ID de jugador",
+    "playerId": "ID",
     "date": "Fecha",
     "system": "System",
-    "arbiter": "Arbiter",
+    "arbiter": "Árbitro",
     "director": "Director",
     "tieBreaks": "Tie-breaks",
     "participantType": "Participant type",
@@ -305,8 +305,7 @@
     "copied": "¡Enlace copiado!"
   },
   "standings": {
-    "afterRound": "Standings after round {n}",
-    "current": "Current standings"
+    "afterRound": "Standings after round {n}"
   },
   "organizers": {
     "title": "Organizadores",
@@ -391,5 +390,20 @@
     "loc_cz": "Chequia",
     "loc_other": "Otros países",
     "loc_world": "Macrorregiones"
+  },
+  "help": {
+    "open": "Cómo se calculan los desempates",
+    "title": "Cómo se calcula esta tabla",
+    "tbHeading": "Desempates",
+    "tb1": "TB1 — Número de victorias.",
+    "tb2": "TB2 — Buchholz: la suma de las puntuaciones finales de todos sus rivales.",
+    "tb3": "TB3 — Sonneborn-Berger: la puntuación de los rivales a los que ganó, más la mitad de la de aquellos con los que empató.",
+    "tb4": "TB4 — Puntuación acumulada: la suma de su marcador tras cada ronda.",
+    "order": "Primero se ordena por puntos y después por los desempates en el orden elegido por el torneo, indicado en la pestaña Información.",
+    "titlesHeading": "Títulos de jugador",
+    "titles": "MSIC — maestro de deporte de clase internacional · MS — maestro de deporte · CMS — candidato a maestro · R1 / R2 / R3 — primera, segunda y tercera categoría.",
+    "arbiterTitlesHeading": "Títulos de árbitro",
+    "arbiterTitles": "IA — árbitro internacional · FA — árbitro de federación · NA — árbitro nacional.",
+    "close": "Cerrar"
   }
 }

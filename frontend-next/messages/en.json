@@ -64,11 +64,11 @@
     "ratingClassic": "Classic rating",
     "createdAt": "Created",
     "endedAt": "Ended",
-    "rank": "Rk.",
-    "sno": "SNo",
+    "rank": "#",
+    "sno": "#",
     "player": "Name",
-    "rating": "Rtg",
-    "points": "Pts.",
+    "rating": "Rating",
+    "points": "Points",
     "buchholz": "TB1",
     "rp": "Rp",
     "startRating": "Rtg",
@@ -81,11 +81,11 @@
     "tieBreak": "Tie-break",
     "rounds": "Number of rounds",
     "timeControl": "Time control",
-    "arbiters": "Arbiters (comma-separated IDs)",
+    "arbiters": "Arbiters",
     "lastUpdate": "Last update",
     "gender": "Gender",
     "ageCategory": "Age",
-    "playerId": "Player ID",
+    "playerId": "ID",
     "date": "Date",
     "system": "System",
     "arbiter": "Arbiter",
@@ -305,8 +305,7 @@
     "copied": "Link copied!"
   },
   "standings": {
-    "afterRound": "Standings after round {n}",
-    "current": "Current standings"
+    "afterRound": "Standings after round {n}"
   },
   "organizers": {
     "title": "Organizers",
@@ -391,5 +390,20 @@
     "loc_cz": "Czechia",
     "loc_other": "Other countries",
     "loc_world": "World regions"
+  },
+  "help": {
+    "open": "How the tie-breaks are calculated",
+    "title": "How this table is calculated",
+    "tbHeading": "Tie-breaks",
+    "tb1": "TB1 — Number of wins.",
+    "tb2": "TB2 — Buchholz: the sum of the final scores of all your opponents.",
+    "tb3": "TB3 — Sonneborn-Berger: the scores of the opponents you beat, plus half the score of every opponent you drew.",
+    "tb4": "TB4 — Cumulative score: your running total after each round, added up.",
+    "order": "Players are ranked by points first, then by the tie-breaks in the order the tournament chose — that order is listed on the Info tab.",
+    "titlesHeading": "Player titles",
+    "titles": "MSIC — Master of Sport of International Class · MS — Master of Sport · CMS — Candidate Master of Sport · R1 / R2 / R3 — first, second and third rank.",
+    "arbiterTitlesHeading": "Arbiter titles",
+    "arbiterTitles": "IA — International Arbiter · FA — Federation Arbiter · NA — National Arbiter.",
+    "close": "Close"
   }
 }

@@ -387,6 +387,35 @@ async function tournamentPeople(t: {
   };
 }
 
+/**
+ * Every arbiter of a tournament: the ones named in tournament_arbiters plus
+ * the arbiter_id / director_id on the tournament row itself, deduplicated.
+ */
+export async function getTournamentArbiters(
+  tournamentId: number
+): Promise<string[]> {
+  if (useSupabase) {
+    const links = unwrap(
+      await supabase()
+        .from("tournament_arbiters")
+        .select("officials(first_name, last_name)")
+        .eq("tournament_id", tournamentId)
+    ) as { officials: { first_name: string; last_name: string }[] | null }[];
+    return links
+      .flatMap((l) => l.officials ?? [])
+      .map((o) => `${o.last_name} ${o.first_name}`);
+  }
+  const rows = await sql<{ name: string }>(
+    `SELECT (o.last_name || ' ' || o.first_name) AS name
+       FROM tournament_arbiters ta
+       JOIN officials o ON o.id = ta.official_id
+      WHERE ta.tournament_id = $1
+      ORDER BY o.last_name, o.first_name`,
+    [tournamentId]
+  );
+  return rows.map((r) => r.name);
+}
+
 /** Ordered tie-break criteria (TB1..TBn) selected for a tournament. */
 export async function getTournamentTieBreaks(
   tournamentId: number
@@ -420,6 +449,7 @@ export interface ParticipantRow {
   tie_break_1: string;
   tie_break_2: string;
   tie_break_3: string;
+  tie_break_4: string;
   final_rank: number | null;
   status: string;
   club: string | null;
@@ -438,7 +468,7 @@ export async function getParticipants(
     const { data } = await supabase()
       .from("tournament_participants")
       .select(
-        "player_id, starting_rank, rating_at_tournament, points, tie_break_1, tie_break_2, tie_break_3, final_rank, status, club, team_id, board_order, players(first_name, last_name, title_id)"
+        "player_id, starting_rank, rating_at_tournament, points, tie_break_1, tie_break_2, tie_break_3, tie_break_4, final_rank, status, club, team_id, board_order, players(first_name, last_name, title_id)"
       )
       .eq("tournament_id", tournamentId);
     const rows = (data ?? []).map((r) => {
@@ -464,7 +494,8 @@ export async function getParticipants(
         : "tp.starting_rank NULLS LAST";
   return sql<ParticipantRow>(
     `SELECT tp.player_id, tp.starting_rank, tp.rating_at_tournament, tp.points,
-            tp.tie_break_1, tp.tie_break_2, tp.tie_break_3, tp.final_rank,
+            tp.tie_break_1, tp.tie_break_2, tp.tie_break_3, tp.tie_break_4,
+            tp.final_rank,
             tp.status, tp.club, tp.team_id, tp.board_order,
             p.first_name, p.last_name, p.title_id
      FROM tournament_participants tp
@@ -495,6 +526,28 @@ export async function getRounds(tournamentId: number): Promise<RoundRow[]> {
      WHERE tournament_id = $1 ORDER BY round_number`,
     [tournamentId]
   );
+}
+
+/** One round by its number — lets a round page skip loading the whole list. */
+export async function getRoundByNumber(
+  tournamentId: number,
+  n: number
+): Promise<RoundRow | null> {
+  if (useSupabase) {
+    const { data } = await supabase()
+      .from("rounds")
+      .select("id, round_number, is_closed")
+      .eq("tournament_id", tournamentId)
+      .eq("round_number", n)
+      .maybeSingle();
+    return (data as RoundRow) ?? null;
+  }
+  const rows = await sql<RoundRow>(
+    `SELECT id, round_number, is_closed FROM rounds
+      WHERE tournament_id = $1 AND round_number = $2`,
+    [tournamentId, n]
+  );
+  return rows[0] ?? null;
 }
 
 export interface PairingRow {
@@ -852,6 +905,7 @@ export interface StandingRow {
   tie_break_1: string;
   tie_break_2: string;
   tie_break_3: string;
+  tie_break_4: string;
   rank_after_round: number | null;
   first_name: string;
   last_name: string;
@@ -870,7 +924,7 @@ export async function getStandingsAfterRound(
     const { data } = await supabase()
       .from("standings_history")
       .select(
-        "player_id, points, tie_break_1, tie_break_2, tie_break_3, rank_after_round, players(first_name, last_name, title_id)"
+        "player_id, points, tie_break_1, tie_break_2, tie_break_3, tie_break_4, rank_after_round, players(first_name, last_name, title_id)"
       )
       .eq("tournament_id", tournamentId)
       .eq("round_id", roundId)
@@ -905,7 +959,7 @@ export async function getStandingsAfterRound(
   }
   return sql<StandingRow>(
     `SELECT sh.player_id, sh.points, sh.tie_break_1, sh.tie_break_2,
-            sh.tie_break_3, sh.rank_after_round,
+            sh.tie_break_3, sh.tie_break_4, sh.rank_after_round,
             p.first_name, p.last_name, p.title_id,
             tp.club, tp.rating_at_tournament, tp.status
      FROM standings_history sh

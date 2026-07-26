@@ -142,6 +142,17 @@ BEGIN
             JOIN tournament_participants opp_tp
               ON ms.opponent_id = opp_tp.player_id AND opp_tp.tournament_id = p_tour_id
             WHERE ms.player_id = tp.player_id AND ms.tournament_id = p_tour_id
+        ), 0),
+        tie_break_4 = COALESCE(( -- Cumulative (progressive) score
+            -- Sum of the running score after each round: rewards a player who
+            -- led early over one who caught up at the end.
+            SELECT SUM(running) FROM (
+                SELECT SUM(SUM(points_earned)) OVER (ORDER BY round_number)
+                    AS running
+                FROM v_match_stats
+                WHERE player_id = tp.player_id AND tournament_id = p_tour_id
+                GROUP BY round_number
+            ) per_round
         ), 0)
     WHERE tournament_id = p_tour_id;
 
@@ -375,9 +386,10 @@ BEGIN
     CALL calculate_standings(p_tour_id);
 
     INSERT INTO standings_history (tournament_id, round_id, player_id, points,
-                                   tie_break_1, tie_break_2, tie_break_3, rank_after_round)
+                                   tie_break_1, tie_break_2, tie_break_3,
+                                   tie_break_4, rank_after_round)
     SELECT tournament_id, p_round_id, player_id, points,
-           tie_break_1, tie_break_2, tie_break_3, final_rank
+           tie_break_1, tie_break_2, tie_break_3, tie_break_4, final_rank
     FROM tournament_participants
     WHERE tournament_id = p_tour_id;
 
