@@ -9,8 +9,10 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./db/migrations:/docker-entrypoint-initdb.d/migrations:ro
-      - ./db/seeds:/docker-entrypoint-initdb.d/seeds:ro
+    # Schema + seeds are not auto-applied on container init (postgres's
+    # docker-entrypoint-initdb.d only runs top-level scripts, not the
+    # numbered subdirectories db/build and db/seeds use) — run
+    # `db/rebuild.sh` after `docker compose up -d` instead; see db/README.md.
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 2s

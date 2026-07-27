@@ -15,22 +15,24 @@ mobile-first public site.
 ## Repository layout
 
 ```
-db/migrations/001_schema.sql      # normalized schema (translation tables, extensible lookups)
-db/migrations/002_procedures.sql  # calculate_standings, org_set_result, org_close_round, ...
-db/migrations/003_rls.sql         # anon = read-only; users table invisible
-db/seeds/seed.sql                 # reference data + admin account
+db/build/                         # consolidated, final-state schema — for a fresh database
+db/seeds/                         # reference data + bootstrap accounts (idempotent)
+db/rebuild.sh                     # drop & replay build/ + seeds/ in one command (see db/README.md)
 backend-py/app/engines/swiss.py   # FIDE-Dutch-style Swiss engine (ported from JS, 25 tests)
 backend-py/app/engines/rating.py  # Elo (K=20)
 backend-py/app/routers/           # auth, organizer/admin actions
-frontend-next/src/app/[locale]/   # ru/en/kk routes: tournaments, players, organizer
+frontend-next/src/app/[locale]/   # ru/en/kk/tr/es/cs/ko routes: tournaments, players, organizer
 ```
+
+See `db/README.md` for the full schema layout and how `build/`, `seeds/`, and the
+archived `migrations/_legacy/` chain relate to each other.
 
 ## Local development
 
 ```bash
-# 1. Postgres (docker, or a local server on :5432)
+# 1. Postgres (docker, or a local server on :5432) — schema + seeds in one step
 docker compose up -d
-for f in db/migrations/*.sql db/seeds/*.sql; do psql -h localhost -U postgres -d results_togyz -f "$f"; done
+db/rebuild.sh
 
 # 2. Backend API on :8000
 cd backend-py
@@ -48,16 +50,27 @@ Default admin: `admin` / `admin12345` (change in production!).
 ## Tests
 
 ```bash
-cd backend-py && .venv/bin/pytest        # schema, procedures, RLS, engines, API (67+ tests)
-cd frontend-next && npm test             # Vitest component tests
+cd backend-py && .venv/bin/pytest        # schema, procedures, RLS, engines, API (377+ tests)
+cd frontend-next && npx tsc --noEmit     # type check
+cd frontend-next && npm test             # Vitest component tests + i18n key-parity check
 cd frontend-next && npm run build        # production build check
 ```
 
+All four run automatically on every push/PR — see `.github/workflows/ci.yml`.
+
 ## Deployment
 
-1. **Supabase**: run `db/migrations/*.sql` then `db/seeds/seed.sql` in the SQL editor
-   (or via `psql "$SUPABASE_DB_URL"`). Replace the seeded admin password:
-   `UPDATE users SET password_hash = crypt(...)` with a bcrypt hash of your own.
+1. **Supabase**: on a brand-new (or emptied) project there is no schema yet, so run
+   both directories in order:
+   ```bash
+   for f in db/build/*.sql db/seeds/*.sql; do psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"; done
+   ```
+   (via the SQL editor or `psql "$SUPABASE_DB_URL"`). `build/` is not idempotent —
+   only apply it to an empty database. Once the schema exists, redeploying only
+   new reference data is `db/rebuild.sh` with `DATABASE_URL` set, which replays
+   `seeds/` alone (all seeds are `ON CONFLICT DO NOTHING`). Replace the seeded
+   admin password afterwards: `UPDATE users SET password_hash = crypt(...)` with
+   a bcrypt hash of your own.
 2. **Render** (backend): root dir `backend-py`, build `pip install -r requirements.txt`,
    start `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
    Env: `DATABASE_URL` (Supabase *direct* connection string), `JWT_SECRET`,
