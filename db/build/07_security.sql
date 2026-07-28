@@ -6,12 +6,10 @@
 --
 -- Consolidated from legacy migrations 003, 006 (search grants), 009 (teams).
 --
--- NOTE — carried forward from the legacy chain, flagged for review:
--- the reference tables added after the original 003 (tie_breaks,
--- tie_break_translations, time_controls, tournament_statuses,
--- tournament_tie_breaks) were never added to the anon read set, so anon
--- currently cannot SELECT them. This build reproduces that exact behavior.
--- If the public UI needs to display these, add them to the array below.
+-- The public UI displays tie-break criteria (tournament creation, standings
+-- column labels, the Info tab, the Rules page) and tournament status/time
+-- control text, so tie_breaks / tie_break_translations / tournament_tie_breaks
+-- / time_controls / tournament_statuses are in the anon read set below.
 
 DO $$
 BEGIN
@@ -46,7 +44,9 @@ BEGIN
         'participant_types', 'genders', 'titles', 'match_results', 'statuses',
         'players', 'tournaments', 'tournament_participants',
         'rounds', 'pairings', 'standings_history', 'rating_history',
-        'teams', 'team_matches', 'tournament_arbiters'
+        'teams', 'team_matches', 'tournament_arbiters',
+        'tie_breaks', 'tie_break_translations', 'tournament_tie_breaks',
+        'time_controls', 'tournament_statuses'
     ]
     LOOP
         EXECUTE format('GRANT SELECT ON %I TO anon', t);
