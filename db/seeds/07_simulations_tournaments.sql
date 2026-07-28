@@ -1,43 +1,10 @@
--- seeds/05_simulation.sql
--- Large stratified-random simulation dataset, all owned by the 'organizer' user:
---   * 200 players           — rating stratified into 5 bands, mixed gender/title/fed
---   * 200 arbiters           — officials + matching ORGANIZER login accounts
---   * 100 Swiss tournaments  — stratified level / rating type / category / size /
---                              round count (2..10) / lifecycle status, each played
---                              out round-by-round with results and standings, and
---                              (for the COMPLETED ones) finalized with rating deltas.
---
--- All generated rows use the 'SIM' player-id prefix and 'sim_' usernames /
--- 'sim-t-' slugs so they never collide with the hand-written 04_maybe.sql data.
--- Load order: after 01_reference_data.sql (vocabularies) and 02_locations.sql
--- (city rows); independent of 04_maybe.sql.
---
--- Re-runnable: if the simulated players already exist the block is a no-op, so a
--- second `psql -f` won't duplicate rows or trip the unique username/slug keys.
---
--- The pairing is Swiss-*like* — each round sorts the field by standing and pairs
--- neighbours with alternating colours and a bye for the odd player out. It does
--- not enforce the no-rematch rule; this is representative demo data, not a
--- certified pairing engine.
+-- seeds/07_simulation_tournaments.sql
+-- Part 3/3 of the simulation dataset.
+-- Generates 100 Swiss tournaments — played out round-by-round and finalized.
+-- Dependencies: 05_simulation_players.sql and 06_simulation_arbiters.sql must run first.
 
 DO $$
 DECLARE
-    -- 'admin12345' bcrypt hash, same as 03_accounts.sql / 04_maybe.sql.
-    c_hash CONSTANT VARCHAR := '$2b$12$7Thwno4xgoYwL73Rb1qnJOR3m38P3.T0.NmHYp/1d.i4cONmTqXqa';
-
-    -- Name pools (reused for players and arbiters).
-    c_male   CONSTANT TEXT[] := ARRAY['Alibek','Bakhyt','Chingiz','Daniyar','Erlan',
-        'Farkhat','Galym','Nurlan','Olzhas','Rustam','Sanzhar','Timur','Ulan',
-        'Yerbol','Zhanibek','Askar','Bekzat','Damir','Kanat','Marat'];
-    c_female CONSTANT TEXT[] := ARRAY['Farida','Gulnaz','Aizhan','Inkar','Jamilya',
-        'Kamila','Laura','Madina','Nazgul','Perizat','Saltanat','Tomiris','Ulzhan',
-        'Venera','Zarina','Aigerim','Dana','Gauhar','Karlygash','Meruert'];
-    c_last   CONSTANT TEXT[] := ARRAY['Sarsenov','Nurgaliyev','Ospanov','Khasanov',
-        'Tulegenov','Iskakov','Muratov','Kasymov','Nurlanov','Omarov','Akhmetov',
-        'Zhumagaliyev','Bekov','Dosanov','Yerzhanov','Kaliyev','Serikov','Toktarov',
-        'Abenov','Baytursynov','Zhaksybekov','Suleimenov','Amanzholov','Karimov',
-        'Nazarbayev','Auezov','Satpayev','Valikhanov','Kunanbayev','Aimanov'];
-
     -- Stratification vocabularies (all seeded in 01_reference_data / 02_locations).
     c_levels  CONSTANT TEXT[] := ARRAY['International','National','Regional','Club','Other'];
     c_rtypes  CONSTANT TEXT[] := ARRAY['Classic','Rapid','Blitz'];
@@ -45,17 +12,11 @@ DECLARE
     c_locs    CONSTANT TEXT[] := ARRAY['Almaty','Astana','Shymkent','Karaganda','Taraz',
         'Aktobe','Pavlodar','Kostanay','Semey','Oral','Atyrau','Online'];
     c_tc      CONSTANT TEXT[] := ARRAY['Classic_90','Rapid_20','Blitz_5_3'];
-    c_bases   CONSTANT INT[]  := ARRAY[2250,2050,1850,1650,1450]; -- rating band floors
 
     v_arb_ids INT[];       -- official ids of the arbiters we create, for random pick
     v_arb1 INT; v_arb2 INT;
 
-    -- player loop
-    v_gender VARCHAR; v_first TEXT; v_last TEXT; v_rating INT; v_year INT;
-    v_title VARCHAR; v_fed VARCHAR; v_club VARCHAR; v_band INT;
-
-    -- tournament loop
-    t INT; r INT; i INT;
+    t INT; r INT;
     v_tid INT; v_rid INT;
     v_np INT; v_rounds INT; v_n INT; v_board INT; v_idx INT; v_upto INT;
     v_status VARCHAR; v_rtype VARCHAR; v_start DATE;
@@ -65,66 +26,20 @@ DECLARE
     rec RECORD;
 BEGIN
     -- Idempotency guard.
-    IF EXISTS (SELECT 1 FROM players WHERE id LIKE 'SIM%') THEN
-        RAISE NOTICE 'seeds/05_simulation.sql: SIM data already present, skipping.';
+    IF EXISTS (SELECT 1 FROM tournaments WHERE slug LIKE 'sim-t-%') THEN
+        RAISE NOTICE 'seeds/07_simulation_tournaments.sql: SIM tournaments already present, skipping.';
         RETURN;
     END IF;
 
-    -- ==========================================
-    -- 1. 200 PLAYERS (rating-band stratified)
-    -- ==========================================
-    FOR i IN 1..200 LOOP
-        v_band   := i % 5;                                   -- even spread across 5 bands
-        v_gender := CASE WHEN i % 2 = 0 THEN 'M' ELSE 'F' END;
-        v_first  := CASE WHEN v_gender = 'M'
-                         THEN c_male[1 + (i % array_length(c_male, 1))]
-                         ELSE c_female[1 + (i % array_length(c_female, 1))] END;
-        v_last   := c_last[1 + ((i * 7) % array_length(c_last, 1))];
-        v_rating := c_bases[v_band + 1] + floor(random() * 150)::int;
-        v_year   := 1965 + floor(random() * 45)::int;        -- 1965..2009
-        v_fed    := CASE WHEN random() < 0.1 THEN 'WTF' ELSE 'KAZ' END;
-        v_title  := CASE
-                        WHEN v_rating >= 2300 THEN 'MSIC'
-                        WHEN v_rating >= 2100 THEN 'MS'
-                        WHEN v_rating >= 1900 THEN 'CMS'
-                        WHEN v_rating >= 1700 THEN 'R1'
-                        WHEN v_rating >= 1500 THEN 'R2'
-                        ELSE 'R3' END;
-        v_club   := CASE (i % 4)
-                        WHEN 0 THEN 'Almaty Club'
-                        WHEN 1 THEN 'Astana Club'
-                        WHEN 2 THEN 'Shymkent Club'
-                        ELSE NULL END;
-
-        CALL admin_upsert_player(
-            'SIM' || lpad(i::text, 3, '0'),
-            v_first, v_last, v_fed, v_rating,
-            NULL, v_gender, v_year, v_title, v_club,
-            greatest(v_rating - 50, 100), greatest(v_rating - 100, 100), '[]');
-    END LOOP;
-
-    -- ==========================================
-    -- 2. 200 ARBITERS (officials + organizer logins)
-    -- ==========================================
-    FOR i IN 1..200 LOOP
-        v_gender := CASE WHEN i % 2 = 0 THEN 'M' ELSE 'F' END;
-        v_first  := CASE WHEN v_gender = 'M'
-                         THEN c_male[1 + (i % array_length(c_male, 1))]
-                         ELSE c_female[1 + (i % array_length(c_female, 1))] END;
-        v_last   := c_last[1 + ((i * 13) % array_length(c_last, 1))];
-        CALL admin_create_official(
-            v_first, v_last,
-            (ARRAY['IA','FA','NA','None'])[1 + (i % 4)],
-            'sim_arb_' || i, c_hash, 'KAZ');
-    END LOOP;
     -- Capture the real official ids: the IDENTITY sequence can have gaps, so we
     -- must pick arbiters from the ids that actually exist, not from arithmetic.
     SELECT array_agg(official_id) INTO v_arb_ids
     FROM users WHERE username LIKE 'sim_arb_%';
 
-    -- ==========================================
-    -- 3. 100 SWISS TOURNAMENTS (stratified, played out)
-    -- ==========================================
+    IF v_arb_ids IS NULL THEN
+         RAISE EXCEPTION 'Arbiter data missing! Run 06_simulation_arbiters.sql first.';
+    END IF;
+
     FOR t IN 1..100 LOOP
         -- Lifecycle mix: ~10% still taking entries, ~20% live, ~70% finished.
         v_status := CASE
@@ -260,5 +175,5 @@ BEGIN
         END IF;
     END LOOP;
 
-    RAISE NOTICE 'seeds/05_simulation.sql: generated 200 players, 200 arbiters, 100 tournaments.';
+    RAISE NOTICE 'seeds/07_simulation_tournaments.sql: generated 100 tournaments.';
 END $$;
