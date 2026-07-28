@@ -44,6 +44,7 @@ def live_tournament(client, tokens, migrated_db):
         "location_id": "Astana", "rating_type_id": "Classic",
         "tournament_type_id": "Swiss", "start_date": "2026-05-01",
         "end_date": "2026-05-03", "rounds": 3, "status": "ONGOING",
+        "tie_breaks": ["WinCount", "Buchholz", "Berger", "CumulativeScore"],
     })
     tid = r.json()["id"]
     client.post(f"/api/tournaments/{tid}/players/bulk", headers=auth(org),

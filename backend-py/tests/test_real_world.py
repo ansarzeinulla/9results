@@ -84,6 +84,7 @@ def test_tournament_with_cyrillic_name_and_slug(client, organizer_token, migrate
         "federation_id": "KAZ", "location_id": "Astana",
         "rating_type_id": "Classic", "tournament_type_id": "Swiss",
         "start_date": "2026-09-01", "end_date": "2026-09-05", "rounds": 5,
+        "tie_breaks": ["WinCount", "Buchholz", "Berger", "CumulativeScore"],
     })
     assert r.status_code == 200, r.text
     with psycopg.connect(migrated_db) as db:
@@ -130,6 +131,7 @@ def test_registering_the_same_player_twice_is_a_conflict(client, admin_token, or
         "location_id": "Astana", "rating_type_id": "Classic",
         "tournament_type_id": "Swiss", "start_date": "2026-10-01",
         "end_date": "2026-10-03", "rounds": 3,
+        "tie_breaks": ["WinCount", "Buchholz", "Berger", "CumulativeScore"],
     })
     tid = r.json()["id"]
     first = client.post(f"/api/tournaments/{tid}/players",
@@ -173,6 +175,7 @@ def test_odd_field_gives_exactly_one_bye_worth_a_point(
         "location_id": "Astana", "rating_type_id": "Classic",
         "tournament_type_id": "Swiss", "start_date": "2026-11-01",
         "end_date": "2026-11-03", "rounds": 3,
+        "tie_breaks": ["WinCount", "Buchholz", "Berger", "CumulativeScore"],
     })
     tid = r.json()["id"]
     for pid in ids:
@@ -211,6 +214,7 @@ def test_withdrawn_player_is_left_out_of_the_next_round(
         "location_id": "Astana", "rating_type_id": "Classic",
         "tournament_type_id": "Swiss", "start_date": "2026-12-01",
         "end_date": "2026-12-03", "rounds": 3,
+        "tie_breaks": ["WinCount", "Buchholz", "Berger", "CumulativeScore"],
     })
     tid = r.json()["id"]
     for pid in ids:

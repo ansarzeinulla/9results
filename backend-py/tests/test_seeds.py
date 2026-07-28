@@ -20,9 +20,12 @@ def test_all_languages_seeded(db):
 
 def test_tie_break_tables_exist_and_seeded(db):
     seeded = ids(db, "tie_breaks")
+    # BlitzPlayoff was removed entirely: it needs playoff-game data the
+    # schema doesn't capture, so it was dropped rather than left unusable.
+    assert "BlitzPlayoff" not in seeded
     # base set from seed.sql
-    assert {"Points", "DirectEncounter", "WinCount", "Buchholz", "Berger",
-            "BlitzPlayoff"} <= seeded
+    assert {"Points", "DirectEncounter", "WinCount", "Buchholz",
+            "Berger"} <= seeded
     # extended set from seed3.sql
     assert {"BuchholzCut1", "BuchholzCut2", "MedianBuchholz",
             "CumulativeScore"} <= seeded

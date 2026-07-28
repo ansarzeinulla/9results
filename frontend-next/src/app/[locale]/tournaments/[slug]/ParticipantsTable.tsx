@@ -1,17 +1,22 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { ParticipantRow } from "@/lib/data";
-import TieBreakHelp from "@/components/TieBreakHelp";
 
 export default async function ParticipantsTable({
   rows,
   mode,
+  tieBreaks,
 }: {
   rows: ParticipantRow[];
   mode: "starting" | "alphabetical" | "standings";
+  tieBreaks?: { position: number; tie_break_id: string; tie_break_name: string }[];
 }) {
   const t = await getTranslations("fields");
   const showStandings = mode === "standings";
+  const tbLabel = (position: number) => {
+    const name = tieBreaks?.find((tb) => tb.position === position)?.tie_break_name;
+    return name ? `TB${position} (${name})` : `TB${position}`;
+  };
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-sm">
@@ -26,12 +31,11 @@ export default async function ParticipantsTable({
             {showStandings && (
               <>
                 <th className="py-2 pr-3 font-bold">{t("points")}</th>
-                <th className="hidden py-2 pr-3 sm:table-cell">TB1</th>
-                <th className="hidden py-2 pr-3 sm:table-cell">TB2</th>
-                <th className="hidden py-2 pr-3 sm:table-cell">TB3</th>
+                <th className="hidden py-2 pr-3 sm:table-cell">{tbLabel(1)}</th>
+                <th className="hidden py-2 pr-3 sm:table-cell">{tbLabel(2)}</th>
+                <th className="hidden py-2 pr-3 sm:table-cell">{tbLabel(3)}</th>
                 <th className="hidden whitespace-nowrap py-2 sm:table-cell">
-                  TB4
-                  <TieBreakHelp />
+                  {tbLabel(4)}
                 </th>
               </>
             )}

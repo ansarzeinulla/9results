@@ -34,7 +34,7 @@ export default async function InfoTab({
     [
       t("tieBreaks"),
       tieBreaks.length
-        ? tieBreaks.map((tb) => `TB${tb.position}: ${tb.tie_break_id}`).join(", ")
+        ? tieBreaks.map((tb) => `TB${tb.position}: ${tb.tie_break_name}`).join(", ")
         : null,
     ],
     [t("status"), tr.status],

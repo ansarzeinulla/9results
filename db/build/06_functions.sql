@@ -109,57 +109,144 @@ SELECT
 FROM pairings p JOIN rounds r ON p.round_id = r.id
 WHERE p.result_id IS NOT NULL AND p.black_player_id IS NOT NULL;
 
--- Recompute points, tie-breaks (WinCount / Buchholz / Sonneborn-Berger) and
--- final_rank for a whole tournament.
+-- Recompute points, tie-breaks and final_rank for a whole tournament.
+--
+-- tie_break_1..4 are NOT fixed formulas: they mirror whatever 4 criteria the
+-- organizer picked in tournament_tie_breaks (position 1..4, repeats allowed).
+-- All 9 supported criteria are computed for every player first, then mapped
+-- into tie_break_1..4 by position, and RANK() breaks ties in that same order.
 CREATE OR REPLACE PROCEDURE calculate_standings(p_tour_id INT)
 LANGUAGE plpgsql AS $$
 BEGIN
+    -- Points must be settled before anything else: several criteria
+    -- (DirectEncounter, Buchholz family) read opponents' final points.
     UPDATE tournament_participants tp
-    SET
-        points = COALESCE((SELECT SUM(points_earned) FROM v_match_stats
-                           WHERE player_id = tp.player_id AND tournament_id = p_tour_id), 0),
-        tie_break_1 = COALESCE((SELECT SUM(is_win) FROM v_match_stats
-                                WHERE player_id = tp.player_id AND tournament_id = p_tour_id), 0)
+    SET points = COALESCE((SELECT SUM(points_earned) FROM v_match_stats
+                           WHERE player_id = tp.player_id AND tournament_id = p_tour_id), 0)
     WHERE tournament_id = p_tour_id;
 
-    UPDATE tournament_participants tp
-    SET
-        tie_break_2 = COALESCE(( -- Buchholz
-            SELECT SUM(opp_tp.points)
-            FROM v_match_stats ms
-            JOIN tournament_participants opp_tp
-              ON ms.opponent_id = opp_tp.player_id AND opp_tp.tournament_id = p_tour_id
-            WHERE ms.player_id = tp.player_id AND ms.tournament_id = p_tour_id
-        ), 0),
-        tie_break_3 = COALESCE(( -- Sonneborn-Berger
-            SELECT SUM(
-                CASE
+    WITH opp_agg AS (
+        SELECT
+            ms.player_id,
+            array_agg(opp_tp.points ORDER BY opp_tp.points) AS opp_pts_asc,
+            SUM(opp_tp.points) AS buchholz,
+            SUM(CASE
                     WHEN ms.points_earned = 1 THEN opp_tp.points
                     WHEN ms.points_earned = 0.5 THEN opp_tp.points * 0.5
                     ELSE 0
-                END)
-            FROM v_match_stats ms
-            JOIN tournament_participants opp_tp
-              ON ms.opponent_id = opp_tp.player_id AND opp_tp.tournament_id = p_tour_id
-            WHERE ms.player_id = tp.player_id AND ms.tournament_id = p_tour_id
-        ), 0),
-        tie_break_4 = COALESCE(( -- Cumulative (progressive) score
-            -- Sum of the running score after each round: rewards a player who
-            -- led early over one who caught up at the end.
-            SELECT SUM(running) FROM (
-                SELECT SUM(SUM(points_earned)) OVER (ORDER BY round_number)
-                    AS running
-                FROM v_match_stats
-                WHERE player_id = tp.player_id AND tournament_id = p_tour_id
-                GROUP BY round_number
-            ) per_round
-        ), 0)
-    WHERE tournament_id = p_tour_id;
+                END) AS berger,
+            SUM(CASE WHEN opp_tp.points = tp_self.points THEN ms.points_earned ELSE 0 END)
+                AS direct_encounter
+        FROM v_match_stats ms
+        JOIN tournament_participants opp_tp
+          ON ms.opponent_id = opp_tp.player_id AND opp_tp.tournament_id = p_tour_id
+        JOIN tournament_participants tp_self
+          ON tp_self.player_id = ms.player_id AND tp_self.tournament_id = p_tour_id
+        WHERE ms.tournament_id = p_tour_id
+        GROUP BY ms.player_id
+    ),
+    wins AS (
+        SELECT player_id, SUM(is_win) AS win_count
+        FROM v_match_stats WHERE tournament_id = p_tour_id
+        GROUP BY player_id
+    ),
+    cumulative AS (
+        SELECT player_id, SUM(running) AS cumulative_score
+        FROM (
+            SELECT player_id,
+                   SUM(SUM(points_earned)) OVER (PARTITION BY player_id ORDER BY round_number)
+                       AS running
+            FROM v_match_stats
+            WHERE tournament_id = p_tour_id
+            GROUP BY player_id, round_number
+        ) per_round
+        GROUP BY player_id
+    ),
+    metrics AS (
+        SELECT
+            tp.player_id,
+            tp.points AS m_points,
+            COALESCE(w.win_count, 0) AS m_wincount,
+            COALESCE(o.direct_encounter, 0) AS m_direct,
+            COALESCE(o.buchholz, 0) AS m_buchholz,
+            COALESCE(o.berger, 0) AS m_berger,
+            COALESCE(c.cumulative_score, 0) AS m_cumulative,
+            COALESCE(o.buchholz, 0) - COALESCE(o.opp_pts_asc[1], 0)
+                AS m_cut1,
+            COALESCE(o.buchholz, 0)
+                - COALESCE(o.opp_pts_asc[1], 0)
+                - CASE WHEN array_length(o.opp_pts_asc, 1) >= 2
+                       THEN o.opp_pts_asc[2] ELSE 0 END
+                AS m_cut2,
+            CASE WHEN array_length(o.opp_pts_asc, 1) >= 2
+                 THEN COALESCE(o.buchholz, 0) - o.opp_pts_asc[1]
+                      - o.opp_pts_asc[array_length(o.opp_pts_asc, 1)]
+                 ELSE COALESCE(o.buchholz, 0)
+            END AS m_median
+        FROM tournament_participants tp
+        LEFT JOIN opp_agg o ON o.player_id = tp.player_id
+        LEFT JOIN wins w ON w.player_id = tp.player_id
+        LEFT JOIN cumulative c ON c.player_id = tp.player_id
+        WHERE tp.tournament_id = p_tour_id
+    ),
+    tb_pos AS (
+        SELECT position, tie_break_id
+        FROM tournament_tie_breaks
+        WHERE tournament_id = p_tour_id
+    )
+    UPDATE tournament_participants tp
+    SET
+        tie_break_1 = CASE (SELECT tie_break_id FROM tb_pos WHERE position = 1)
+            WHEN 'Points' THEN m.m_points
+            WHEN 'DirectEncounter' THEN m.m_direct
+            WHEN 'WinCount' THEN m.m_wincount
+            WHEN 'Buchholz' THEN m.m_buchholz
+            WHEN 'Berger' THEN m.m_berger
+            WHEN 'BuchholzCut1' THEN m.m_cut1
+            WHEN 'BuchholzCut2' THEN m.m_cut2
+            WHEN 'MedianBuchholz' THEN m.m_median
+            WHEN 'CumulativeScore' THEN m.m_cumulative
+            ELSE 0 END,
+        tie_break_2 = CASE (SELECT tie_break_id FROM tb_pos WHERE position = 2)
+            WHEN 'Points' THEN m.m_points
+            WHEN 'DirectEncounter' THEN m.m_direct
+            WHEN 'WinCount' THEN m.m_wincount
+            WHEN 'Buchholz' THEN m.m_buchholz
+            WHEN 'Berger' THEN m.m_berger
+            WHEN 'BuchholzCut1' THEN m.m_cut1
+            WHEN 'BuchholzCut2' THEN m.m_cut2
+            WHEN 'MedianBuchholz' THEN m.m_median
+            WHEN 'CumulativeScore' THEN m.m_cumulative
+            ELSE 0 END,
+        tie_break_3 = CASE (SELECT tie_break_id FROM tb_pos WHERE position = 3)
+            WHEN 'Points' THEN m.m_points
+            WHEN 'DirectEncounter' THEN m.m_direct
+            WHEN 'WinCount' THEN m.m_wincount
+            WHEN 'Buchholz' THEN m.m_buchholz
+            WHEN 'Berger' THEN m.m_berger
+            WHEN 'BuchholzCut1' THEN m.m_cut1
+            WHEN 'BuchholzCut2' THEN m.m_cut2
+            WHEN 'MedianBuchholz' THEN m.m_median
+            WHEN 'CumulativeScore' THEN m.m_cumulative
+            ELSE 0 END,
+        tie_break_4 = CASE (SELECT tie_break_id FROM tb_pos WHERE position = 4)
+            WHEN 'Points' THEN m.m_points
+            WHEN 'DirectEncounter' THEN m.m_direct
+            WHEN 'WinCount' THEN m.m_wincount
+            WHEN 'Buchholz' THEN m.m_buchholz
+            WHEN 'Berger' THEN m.m_berger
+            WHEN 'BuchholzCut1' THEN m.m_cut1
+            WHEN 'BuchholzCut2' THEN m.m_cut2
+            WHEN 'MedianBuchholz' THEN m.m_median
+            WHEN 'CumulativeScore' THEN m.m_cumulative
+            ELSE 0 END
+    FROM metrics m
+    WHERE tp.player_id = m.player_id AND tp.tournament_id = p_tour_id;
 
     WITH RankedPlayers AS (
         SELECT player_id,
-               RANK() OVER(ORDER BY points DESC, tie_break_2 DESC,
-                           tie_break_3 DESC, tie_break_1 DESC) AS rnk
+               RANK() OVER(ORDER BY points DESC, tie_break_1 DESC,
+                           tie_break_2 DESC, tie_break_3 DESC, tie_break_4 DESC) AS rnk
         FROM tournament_participants
         WHERE tournament_id = p_tour_id
     )

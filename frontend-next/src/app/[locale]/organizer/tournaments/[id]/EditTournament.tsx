@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { errorText } from "@/lib/api-error";
 import type { TournamentRow } from "@/lib/data";
+import GroupedSelect from "@/components/GroupedSelect";
+import { groupLocations } from "@/lib/option-groups";
 
 interface Lookup {
   id: string;
@@ -45,6 +47,11 @@ export default function EditTournament({
     time_control: tournament.time_control ?? "",
     status: tournament.status,
   });
+
+  const locationGroups = useMemo(
+    () => groupLocations(lookups.locations),
+    [lookups.locations]
+  );
 
   const set = (k: string, v: string | number) => setForm({ ...form, [k]: v });
 
@@ -102,15 +109,13 @@ export default function EditTournament({
           <option key={f.id} value={f.id}>{f.name}</option>
         ))}
       </select>
-      <select
+      <GroupedSelect
         className={cls}
+        groups={locationGroups}
         value={form.location_id}
-        onChange={(e) => set("location_id", e.target.value)}
-      >
-        {lookups.locations.map((l) => (
-          <option key={l.id} value={l.id}>{l.name}</option>
-        ))}
-      </select>
+        onChange={(v) => set("location_id", v)}
+        placeholder={t("tournaments.anyLocation")}
+      />
       <select
         className={cls}
         value={form.rating_type_id}

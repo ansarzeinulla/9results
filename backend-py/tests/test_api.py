@@ -56,6 +56,7 @@ def test_tournament_created_without_rounds(client, organizer_token):
         "location_id": "Astana", "rating_type_id": "Classic",
         "tournament_type_id": "Swiss", "start_date": "2026-12-01",
         "end_date": "2026-12-05",
+        "tie_breaks": ["WinCount", "Buchholz", "Berger", "CumulativeScore"],
     })
     assert r.status_code == 200
     assert r.json()["id"] > 0
@@ -94,6 +95,7 @@ def test_full_tournament_lifecycle(client, admin_token, organizer_token, migrate
         "location_id": "Astana",
         "rating_type_id": "Classic", "tournament_type_id": "Swiss",
         "start_date": "2026-08-01", "end_date": "2026-08-05", "rounds": 3,
+        "tie_breaks": ["WinCount", "Buchholz", "Berger", "CumulativeScore"],
     })
     assert r.status_code == 200, r.text
     tid = r.json()["id"]
@@ -162,6 +164,7 @@ def test_validate_pairings_endpoint(client, admin_token, organizer_token):
         "location_id": "Astana", "rating_type_id": "Classic",
         "tournament_type_id": "Swiss", "start_date": "2026-09-01",
         "end_date": "2026-09-02", "rounds": 3,
+        "tie_breaks": ["WinCount", "Buchholz", "Berger", "CumulativeScore"],
     })
     tid = r.json()["id"]
     h = ho  # organizer (owner) manages the rest

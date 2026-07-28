@@ -65,6 +65,7 @@ def test_full_organizer_journey(client, organizer_token, roster, migrated_db):
         "location_id": "Astana", "rating_type_id": "Classic",
         "tournament_type_id": "Swiss", "start_date": "2026-06-01",
         "end_date": "2026-06-07", "rounds": 3,
+        "tie_breaks": ["WinCount", "Buchholz", "Berger", "CumulativeScore"],
     })
     assert r.status_code == 200, r.text
     tid = r.json()["id"]
@@ -224,6 +225,7 @@ def test_adding_an_unknown_player_to_a_tournament_is_404(client, organizer_token
         "location_id": "Astana", "rating_type_id": "Classic",
         "tournament_type_id": "Swiss", "start_date": "2026-07-01",
         "end_date": "2026-07-03", "rounds": 3,
+        "tie_breaks": ["WinCount", "Buchholz", "Berger", "CumulativeScore"],
     })
     tid = r.json()["id"]
     r = client.post(f"/api/tournaments/{tid}/players",

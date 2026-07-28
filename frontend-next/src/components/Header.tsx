@@ -57,6 +57,12 @@ export default function Header() {
           9ecosystem
         </Link>
         <div className="ml-auto flex items-center gap-2">
+          <Link
+            href="/rules"
+            className="hidden text-sm text-neutral-600 hover:text-neutral-900 md:block"
+          >
+            {t("nav.rules")}
+          </Link>
           <LangSwitcher />
           {user ? (
             <div className="flex items-center gap-2 text-sm">

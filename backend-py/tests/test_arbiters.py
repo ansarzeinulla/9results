@@ -26,6 +26,7 @@ def test_arbiters_assigned_on_create(client, organizer_token, migrated_db):
         "rating_type_id": "Classic", "tournament_type_id": "Swiss",
         "start_date": "2026-05-01", "end_date": "2026-05-02",
         "arbiter_ids": [oid],
+        "tie_breaks": ["WinCount", "Buchholz", "Berger", "CumulativeScore"],
     })
     assert r.status_code == 200, r.text
     tid = r.json()["id"]
@@ -43,6 +44,7 @@ def test_unknown_arbiter_is_422(client, organizer_token):
         "rating_type_id": "Classic", "tournament_type_id": "Swiss",
         "start_date": "2026-05-01", "end_date": "2026-05-02",
         "arbiter_ids": [999999],
+        "tie_breaks": ["WinCount", "Buchholz", "Berger", "CumulativeScore"],
     })
     assert r.status_code == 422
     assert r.json()["detail"]["code"] == "UNKNOWN_ARBITER"

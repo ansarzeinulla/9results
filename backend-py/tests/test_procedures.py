@@ -19,13 +19,22 @@ def mk_players(db, n):
 
 
 def mk_tournament(db, slug="proc-t"):
-    return db.execute(
+    tid = db.execute(
         """INSERT INTO tournaments (name, slug, federation_id, location_id,
                rating_type_id, tournament_type_id, start_date, end_date, rounds)
            VALUES ('Proc T', %s, 'KAZ', 'Astana', 'Classic', 'Swiss',
                    '2025-02-01', '2025-02-05', 5) RETURNING id""",
         (slug,),
     ).fetchone()[0]
+    # TB1=wins, TB2=Buchholz, TB3=Berger, TB4=cumulative — the order these
+    # tests were originally written to assume of the fixed-formula procedure.
+    for pos, crit in enumerate(["WinCount", "Buchholz", "Berger", "CumulativeScore"], start=1):
+        db.execute(
+            """INSERT INTO tournament_tie_breaks (tournament_id, tie_break_id, position)
+               VALUES (%s, %s, %s)""",
+            (tid, crit, pos),
+        )
+    return tid
 
 
 def add_all(db, tid, pids):
@@ -122,6 +131,78 @@ def test_buchholz_and_berger(db):
     # Berger(pl1) = beat both -> 0.5 + 1 = 1.5
     assert float(p1[3]) == 1.5
     assert p1[4] == 1
+
+
+def mk_tournament_with_tiebreaks(db, slug, criteria):
+    tid = db.execute(
+        """INSERT INTO tournaments (name, slug, federation_id, location_id,
+               rating_type_id, tournament_type_id, start_date, end_date, rounds)
+           VALUES ('Proc T', %s, 'KAZ', 'Astana', 'Classic', 'Swiss',
+                   '2025-02-01', '2025-02-05', 5) RETURNING id""",
+        (slug,),
+    ).fetchone()[0]
+    for pos, crit in enumerate(criteria, start=1):
+        db.execute(
+            """INSERT INTO tournament_tie_breaks (tournament_id, tie_break_id, position)
+               VALUES (%s, %s, %s)""",
+            (tid, crit, pos),
+        )
+    return tid
+
+
+def tp_all(db, tid, pid):
+    return db.execute(
+        """SELECT points, tie_break_1, tie_break_2, tie_break_3, tie_break_4, final_rank
+           FROM tournament_participants
+           WHERE tournament_id = %s AND player_id = %s""",
+        (tid, pid),
+    ).fetchone()
+
+
+def test_tie_break_order_is_whatever_the_organizer_chose(db):
+    # Reversed order vs. the "default" WinCount/Buchholz/Berger/Cumulative:
+    # TB1=Berger, TB2=WinCount, TB3=CumulativeScore, TB4=Buchholz.
+    tid = mk_tournament_with_tiebreaks(
+        db, "reordered-tb", ["Berger", "WinCount", "CumulativeScore", "Buchholz"]
+    )
+    pids = mk_players(db, 4)
+    add_all(db, tid, pids)
+    r1 = mk_round(db, tid, 1)
+    db.execute("CALL org_set_result(%s, '1-0')", (pair(db, r1, 1, "pl1", "pl3"),))
+    db.execute("CALL org_set_result(%s, '1-0')", (pair(db, r1, 2, "pl2", "pl4"),))
+    r2 = mk_round(db, tid, 2)
+    db.execute("CALL org_set_result(%s, '1-0')", (pair(db, r2, 1, "pl1", "pl2"),))
+    db.execute("CALL org_set_result(%s, '0.5-0.5')", (pair(db, r2, 2, "pl3", "pl4"),))
+    # points: pl1=2, pl2=1, pl3=0.5, pl4=0.5
+    points, tb1, tb2, tb3, tb4, rank = tp_all(db, tid, "pl1")
+    assert float(tb1) == 1.5  # TB1 = Berger (same value as old tie_break_3)
+    assert float(tb2) == 2.0  # TB2 = WinCount (pl1 won both games)
+    assert float(tb4) == 1.5  # TB4 = Buchholz (same value as old tie_break_2)
+    assert rank == 1
+
+
+def test_buchholz_cut_and_median_drop_extreme_opponents(db):
+    tid = mk_tournament_with_tiebreaks(
+        db, "cut-median-tb", ["Buchholz", "BuchholzCut1", "BuchholzCut2", "MedianBuchholz"]
+    )
+    pids = mk_players(db, 4)  # pl1..pl4, ratings 1950/1900/1850/1800
+    add_all(db, tid, pids)
+    r1 = mk_round(db, tid, 1)
+    db.execute("CALL org_set_result(%s, '1-0')", (pair(db, r1, 1, "pl1", "pl2"),))
+    db.execute("CALL org_set_result(%s, '1-0')", (pair(db, r1, 2, "pl3", "pl4"),))
+    r2 = mk_round(db, tid, 2)
+    db.execute("CALL org_set_result(%s, '1-0')", (pair(db, r2, 1, "pl1", "pl3"),))
+    db.execute("CALL org_set_result(%s, '0.5-0.5')", (pair(db, r2, 2, "pl2", "pl4"),))
+    r3 = mk_round(db, tid, 3)
+    db.execute("CALL org_set_result(%s, '1-0')", (pair(db, r3, 1, "pl1", "pl4"),))
+    db.execute("CALL org_set_result(%s, '0.5-0.5')", (pair(db, r3, 2, "pl2", "pl3"),))
+    # pl1's opponents: pl2 (0.5), pl3 (1), pl4 (0) -> points at finish.
+    points, buchholz, cut1, cut2, median, rank = tp_all(db, tid, "pl1")
+    opp_scores = sorted([float(tp_all(db, tid, o)[0]) for o in ("pl2", "pl3", "pl4")])
+    assert float(buchholz) == sum(opp_scores)
+    assert float(cut1) == sum(opp_scores) - opp_scores[0]
+    assert float(cut2) == sum(opp_scores) - opp_scores[0] - opp_scores[1]
+    assert float(median) == sum(opp_scores) - opp_scores[0] - opp_scores[-1]
 
 
 def test_bye_gives_point(db):

@@ -113,10 +113,12 @@ CREATE TABLE rating_history (
 -- RANKING CRITERIA
 -- ==========================================
 -- Ordered tie-break criteria for a tournament (position 1 = applied first).
+-- Exactly 4 positions (TB1..TB4) are required; the same criterion may repeat
+-- across positions.
 CREATE TABLE tournament_tie_breaks (
     tournament_id INT REFERENCES tournaments(id) ON DELETE CASCADE,
     tie_break_id VARCHAR(30) REFERENCES tie_breaks(id),
     position INT NOT NULL,
     PRIMARY KEY (tournament_id, position),
-    CONSTRAINT chk_tie_break_position CHECK (position > 0 AND position <= 10)
+    CONSTRAINT chk_tie_break_position CHECK (position > 0 AND position <= 4)
 );

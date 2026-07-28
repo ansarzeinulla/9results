@@ -98,7 +98,7 @@ INSERT INTO tournament_statuses (id) VALUES
 -- Ranking criteria (tie-breaks).
 INSERT INTO tie_breaks (id) VALUES
     ('Points'), ('DirectEncounter'), ('WinCount'),
-    ('Buchholz'), ('Berger'), ('BlitzPlayoff'),
+    ('Buchholz'), ('Berger'),
     ('BuchholzCut1'), ('BuchholzCut2'), ('MedianBuchholz'),
     ('CumulativeScore'); -- progressive score (sum of scores after each round)
 
@@ -135,7 +135,6 @@ SELECT tb.id, l.id,
                WHEN 'WinCount' THEN 'Количество побед'
                WHEN 'Buchholz' THEN 'Бухгольц'
                WHEN 'Berger' THEN 'Бергер'
-               WHEN 'BlitzPlayoff' THEN 'Блиц тай-брейк'
                WHEN 'BuchholzCut1' THEN 'Бухгольц (без 1)'
                WHEN 'BuchholzCut2' THEN 'Бухгольц (без 2)'
                WHEN 'MedianBuchholz' THEN 'Средний Бухгольц'
@@ -149,7 +148,6 @@ SELECT tb.id, l.id,
                WHEN 'WinCount' THEN 'Number of wins'
                WHEN 'Buchholz' THEN 'Buchholz'
                WHEN 'Berger' THEN 'Sonneborn-Berger'
-               WHEN 'BlitzPlayoff' THEN 'Blitz playoff'
                WHEN 'BuchholzCut1' THEN 'Buchholz Cut 1'
                WHEN 'BuchholzCut2' THEN 'Buchholz Cut 2'
                WHEN 'MedianBuchholz' THEN 'Median Buchholz'

@@ -416,22 +416,37 @@ export async function getTournamentArbiters(
   return rows.map((r) => r.name);
 }
 
-/** Ordered tie-break criteria (TB1..TBn) selected for a tournament. */
+/** Ordered tie-break criteria (TB1..TBn) selected for a tournament, with
+ * localized display names. */
 export async function getTournamentTieBreaks(
-  tournamentId: number
-): Promise<{ position: number; tie_break_id: string }[]> {
+  tournamentId: number,
+  locale: string = "en"
+): Promise<{ position: number; tie_break_id: string; tie_break_name: string }[]> {
+  const lang = dbLang(locale);
   if (useSupabase) {
-    const { data } = await supabase()
-      .from("tournament_tie_breaks")
-      .select("position, tie_break_id")
-      .eq("tournament_id", tournamentId)
-      .order("position");
-    return (data ?? []) as { position: number; tie_break_id: string }[];
+    const sb = supabase();
+    const [{ data }, { data: names }] = await Promise.all([
+      sb
+        .from("tournament_tie_breaks")
+        .select("position, tie_break_id")
+        .eq("tournament_id", tournamentId)
+        .order("position"),
+      sb.from("tie_break_translations").select("tie_break_id, name").eq("lang_code", lang),
+    ]);
+    const nameOf = new Map((names ?? []).map((r) => [r.tie_break_id, r.name]));
+    return ((data ?? []) as { position: number; tie_break_id: string }[]).map((r) => ({
+      ...r,
+      tie_break_name: nameOf.get(r.tie_break_id) ?? r.tie_break_id,
+    }));
   }
   return sql(
-    `SELECT position, tie_break_id FROM tournament_tie_breaks
-     WHERE tournament_id = $1 ORDER BY position`,
-    [tournamentId]
+    `SELECT ttb.position, ttb.tie_break_id,
+            COALESCE(t.name, ttb.tie_break_id) AS tie_break_name
+       FROM tournament_tie_breaks ttb
+       LEFT JOIN tie_break_translations t
+         ON t.tie_break_id = ttb.tie_break_id AND t.lang_code = $2
+      WHERE ttb.tournament_id = $1 ORDER BY ttb.position`,
+    [tournamentId, lang]
   );
 }
 
@@ -1207,7 +1222,7 @@ export async function getLookups(locale: string) {
     // the filter renders as an empty (apparently disabled) select.
     const [
       locBase, locs, levBase, levels, ratBase, ratings,
-      feds, titles, ptypes, ttypes, tbreaks,
+      feds, titles, ptypes, ttypes, tbreaks, tbNames,
     ] = await Promise.all([
       sb.from("locations").select("id"),
       sb.from("location_translations").select("location_id, name").eq("lang_code", lang),
@@ -1220,6 +1235,7 @@ export async function getLookups(locale: string) {
       sb.from("participant_types").select("id"),
       sb.from("tournament_types").select("id"),
       sb.from("tie_breaks").select("id"),
+      sb.from("tie_break_translations").select("tie_break_id, name").eq("lang_code", lang),
     ]);
     const typeNames = await sb
       .from("type_translations")
@@ -1253,7 +1269,10 @@ export async function getLookups(locale: string) {
         id: r.id,
         name: typName.get(r.id) ?? r.id,
       })),
-      tieBreaks: (tbreaks.data ?? []).map((r) => ({ id: r.id, name: r.id })),
+      tieBreaks: (tbreaks.data ?? []).map((r) => ({
+        id: r.id,
+        name: label(tbNames.data, "tie_break_id").get(r.id) ?? r.id,
+      })),
     };
   }
   const [
@@ -1302,7 +1321,14 @@ export async function getLookups(locale: string) {
         ORDER BY tt.id`,
       [lang]
     ),
-    sql<{ id: string; name: string }>("SELECT id, id AS name FROM tie_breaks ORDER BY id", []),
+    sql<{ id: string; name: string }>(
+      `SELECT tb.id, COALESCE(t.name, tb.id) AS name
+         FROM tie_breaks tb
+         LEFT JOIN tie_break_translations t
+           ON t.tie_break_id = tb.id AND t.lang_code = $1
+        ORDER BY tb.id`,
+      [lang]
+    ),
   ]);
   return {
     locations,

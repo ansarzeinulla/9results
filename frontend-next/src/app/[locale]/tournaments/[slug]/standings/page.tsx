@@ -18,7 +18,7 @@ export default async function StandingsTab({
   setRequestLocale(locale);
   const t = await getTranslations();
   const roundN = sp.round ? Number(sp.round) : undefined;
-  const { tournament: tr, rounds, target, history, live } = await cachedStandings(
+  const { tournament: tr, rounds, target, history, live, tieBreaks } = await cachedStandings(
     locale,
     slug,
     roundN
@@ -75,7 +75,7 @@ export default async function StandingsTab({
           ))}
         </div>
       )}
-      <ParticipantsTable rows={rows} mode="standings" />
+      <ParticipantsTable rows={rows} mode="standings" tieBreaks={tieBreaks} />
     </div>
   );
 }

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { errorText } from "@/lib/api-error";
+import GroupedSelect from "@/components/GroupedSelect";
+import { groupLocations, groupParticipantTypes } from "@/lib/option-groups";
 
 interface Lookup {
   id: string;
@@ -61,6 +63,14 @@ export default function CreateTournament({
   const participantOptions = isTeamFormat
     ? lookups.participantTypes
     : lookups.participantTypes.filter((p) => !p.id.startsWith("Team"));
+  const locationGroups = useMemo(
+    () => groupLocations(lookups.locations),
+    [lookups.locations]
+  );
+  const participantGroups = useMemo(
+    () => groupParticipantTypes(participantOptions),
+    [participantOptions]
+  );
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -68,6 +78,10 @@ export default function CreateTournament({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (tieBreaks.some((tb) => !tb)) {
+      setError(t("fields.tieBreaksRequired"));
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -79,7 +93,7 @@ export default function CreateTournament({
           level_id: form.level_id || null,
           participant_type_id: form.participant_type_id || null,
           time_control: form.time_control || null,
-          tie_breaks: tieBreaks.filter(Boolean),
+          tie_breaks: tieBreaks,
           arbiter_ids: arbiters
             .split(",")
             .map((s) => parseInt(s.trim(), 10))
@@ -109,17 +123,13 @@ export default function CreateTournament({
         onChange={(e) => set("name", e.target.value)}
         required
       />
-      <select
+      <GroupedSelect
         className={cls}
+        groups={locationGroups}
         value={form.location_id}
-        onChange={(e) => set("location_id", e.target.value)}
-      >
-        {lookups.locations.map((l) => (
-          <option key={l.id} value={l.id}>
-            {l.name}
-          </option>
-        ))}
-      </select>
+        onChange={(v) => set("location_id", v)}
+        placeholder={t("tournaments.anyLocation")}
+      />
       <select
         className={cls}
         value={form.rating_type_id}
@@ -181,18 +191,13 @@ export default function CreateTournament({
           </option>
         ))}
       </select>
-      <select
+      <GroupedSelect
         className={cls}
+        groups={participantGroups}
         value={form.participant_type_id}
-        onChange={(e) => set("participant_type_id", e.target.value)}
-      >
-        <option value="">{t("tournaments.anyParticipantType")}</option>
-        {participantOptions.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.name}
-          </option>
-        ))}
-      </select>
+        onChange={(v) => set("participant_type_id", v)}
+        placeholder={t("tournaments.anyParticipantType")}
+      />
       <input
         className={`${cls} sm:col-span-2`}
         placeholder={t("fields.timeControl")}
@@ -214,6 +219,8 @@ export default function CreateTournament({
               className={cls}
               value={tb}
               title={`TB${i + 1}`}
+              required
+              aria-label={`TB${i + 1}`}
               onChange={(e) => {
                 const next = [...tieBreaks];
                 next[i] = e.target.value;

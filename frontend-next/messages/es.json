@@ -20,7 +20,8 @@
     "login": "Iniciar sesión",
     "organizers": "Organizadores",
     "arbiters": "Árbitros y oficiales",
-    "engineRating": "Rating del motor"
+    "engineRating": "Rating del motor",
+    "rules": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
   },
   "common": {
     "search": "Buscar",
@@ -92,6 +93,7 @@
     "arbiter": "Árbitro",
     "director": "Director",
     "tieBreaks": "Tie-breaks",
+    "tieBreaksRequired": "Choose all 4 tie-breaks (TB1-TB4)",
     "participantType": "Participant type",
     "type": "Type",
     "id": "ID"
@@ -399,19 +401,52 @@
     "loc_other": "Otros países",
     "loc_world": "Macrorregiones"
   },
-  "help": {
-    "open": "Cómo se calculan los desempates",
-    "title": "Cómo se calcula esta tabla",
-    "tbHeading": "Desempates",
-    "tb1": "TB1 — Número de victorias.",
-    "tb2": "TB2 — Buchholz: la suma de las puntuaciones finales de todos sus rivales.",
-    "tb3": "TB3 — Sonneborn-Berger: la puntuación de los rivales a los que ganó, más la mitad de la de aquellos con los que empató.",
-    "tb4": "TB4 — Puntuación acumulada: la suma de su marcador tras cada ronda.",
-    "order": "Primero se ordena por puntos y después por los desempates en el orden elegido por el torneo, indicado en la pestaña Información.",
-    "titlesHeading": "Títulos de jugador",
-    "titles": "MSIC — maestro de deporte de clase internacional · MS — maestro de deporte · CMS — candidato a maestro · R1 / R2 / R3 — primera, segunda y tercera categoría.",
-    "arbiterTitlesHeading": "Títulos de árbitro",
-    "arbiterTitles": "IA — árbitro internacional · FA — árbitro de federación · NA — árbitro nacional.",
-    "close": "Cerrar"
+  "rulesPage": {
+    "title": "Rules & Info",
+    "nav": {
+      "pairing": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "tieBreaks": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "titles": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "rating": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "contacts": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+    },
+    "pairing": {
+      "heading": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "intro": "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "swiss": "Swiss — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "roundRobin": "Round-robin — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "olympic": "Olympic — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "teamMatch": "Team-match — Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+    },
+    "tieBreaks": {
+      "heading": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "intro": "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "points": "Points — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "directEncounter": "Direct encounter — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "winCount": "Number of wins — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "buchholz": "Buchholz — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "berger": "Sonneborn-Berger — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "buchholzCut1": "Buchholz Cut 1 — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "buchholzCut2": "Buchholz Cut 2 — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "medianBuchholz": "Median Buchholz — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "cumulativeScore": "Cumulative score — Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+    },
+    "titles": {
+      "heading": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "playerHeading": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "playerTitles": "MSIC · MS · CMS · R1 / R2 / R3 — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "arbiterHeading": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "arbiterTitles": "IA · FA · NA — Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+    },
+    "rating": {
+      "heading": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "intro": "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "formula": "expected = 1 / (1 + 10^((opponentRating − ownRating) / 400));  newRating = oldRating + K × (actualScore − expected), with K = 20.",
+      "notes": "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+    },
+    "contacts": {
+      "heading": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "body": "No contacts for now."
+    }
   }
 }

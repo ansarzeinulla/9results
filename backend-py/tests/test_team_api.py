@@ -59,6 +59,7 @@ def make_tournament(client, token, slug, ttype="Team-match"):
         "federation_id": "KAZ", "location_id": "Online",
         "rating_type_id": "Classic", "tournament_type_id": ttype,
         "start_date": "2026-07-18", "end_date": "2026-07-26",
+        "tie_breaks": ["WinCount", "Buchholz", "Berger", "CumulativeScore"],
     })
     assert r.status_code == 200, r.text
     return r.json()["id"]

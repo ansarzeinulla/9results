@@ -53,6 +53,7 @@ def make_tournament(client, token, slug):
         "location_id": "Astana", "rating_type_id": "Classic",
         "tournament_type_id": "Swiss", "start_date": "2026-03-01",
         "end_date": "2026-03-05", "rounds": 3,
+        "tie_breaks": ["WinCount", "Buchholz", "Berger", "CumulativeScore"],
     })
     assert r.status_code == 200, r.text
     return r.json()["id"]

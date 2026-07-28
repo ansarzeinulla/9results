@@ -119,6 +119,8 @@ def make_tournament(client, token, slug, type_id="Swiss", rounds=None,
         "location_id": "Astana", "rating_type_id": "Classic",
         "tournament_type_id": type_id, "start_date": start_date,
         "end_date": end_date,
+        # Exactly 4 required (repeats allowed) — see TIE_BREAKS_MUST_BE_FOUR.
+        "tie_breaks": ["WinCount", "Buchholz", "Berger", "CumulativeScore"],
     }
     if rounds is not None:
         body["rounds"] = rounds

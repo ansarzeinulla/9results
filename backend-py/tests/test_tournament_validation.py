@@ -38,6 +38,8 @@ BASE = {
     "start_date": "2026-07-18",
     "end_date": "2026-07-26",
     "rounds": 7,
+    # Exactly 4 required (repeats allowed) — see TIE_BREAKS_MUST_BE_FOUR tests below.
+    "tie_breaks": ["WinCount", "Buchholz", "Berger", "CumulativeScore"],
 }
 
 
@@ -111,7 +113,8 @@ def test_unknown_status_is_422(client, token):
 
 def test_unknown_tie_break_is_422(client, token):
     r = client.post("/api/tournaments", headers=auth(token), json={
-        **BASE, "slug": "bad-tiebreak", "tie_breaks": ["Buchholz", "NOPE"],
+        **BASE, "slug": "bad-tiebreak",
+        "tie_breaks": ["Buchholz", "Berger", "WinCount", "NOPE"],
     })
     assert r.status_code == 422
     assert r.json()["detail"]["code"] == "UNKNOWN_TIE_BREAK"
@@ -120,9 +123,44 @@ def test_unknown_tie_break_is_422(client, token):
 def test_known_tie_breaks_are_accepted(client, token):
     r = client.post("/api/tournaments", headers=auth(token), json={
         **BASE, "slug": "good-tiebreaks",
-        "tie_breaks": ["Buchholz", "Berger", "WinCount"],
+        "tie_breaks": ["Buchholz", "Berger", "WinCount", "Buchholz"],
     })
     assert r.status_code == 200, r.text
+
+
+def test_fewer_than_four_tie_breaks_is_422(client, token):
+    r = client.post("/api/tournaments", headers=auth(token), json={
+        **BASE, "slug": "too-few-tiebreaks",
+        "tie_breaks": ["Buchholz", "Berger", "WinCount"],
+    })
+    assert r.status_code == 422
+    assert r.json()["detail"]["code"] == "TIE_BREAKS_MUST_BE_FOUR"
+
+
+def test_more_than_four_tie_breaks_is_422(client, token):
+    r = client.post("/api/tournaments", headers=auth(token), json={
+        **BASE, "slug": "too-many-tiebreaks",
+        "tie_breaks": ["Buchholz", "Berger", "WinCount", "Points", "Buchholz"],
+    })
+    assert r.status_code == 422
+    assert r.json()["detail"]["code"] == "TIE_BREAKS_MUST_BE_FOUR"
+
+
+def test_missing_tie_breaks_is_422(client, token):
+    body = {**BASE, "slug": "missing-tiebreaks"}
+    del body["tie_breaks"]
+    r = client.post("/api/tournaments", headers=auth(token), json=body)
+    assert r.status_code == 422
+    assert r.json()["detail"]["code"] == "TIE_BREAKS_MUST_BE_FOUR"
+
+
+def test_blitz_playoff_no_longer_exists(client, token):
+    r = client.post("/api/tournaments", headers=auth(token), json={
+        **BASE, "slug": "blitz-playoff-gone",
+        "tie_breaks": ["Buchholz", "Berger", "WinCount", "BlitzPlayoff"],
+    })
+    assert r.status_code == 422
+    assert r.json()["detail"]["code"] == "UNKNOWN_TIE_BREAK"
 
 
 def test_malformed_date_is_422(client, token):

@@ -108,7 +108,7 @@ export async function cachedTournamentInfo(locale: string, slug: string) {
   markTournament(tournament);
   const [tieBreaks, arbiters] = tournament
     ? await Promise.all([
-        getTournamentTieBreaks(tournament.id),
+        getTournamentTieBreaks(tournament.id, locale),
         getTournamentArbiters(tournament.id),
       ])
     : [[], []];
@@ -130,7 +130,10 @@ export async function cachedStandings(locale: string, slug: string, roundN?: num
       : [];
   const live =
     tournament && !target ? await getParticipants(tournament.id, "standings") : [];
-  return { tournament, rounds: closed, target, history, live };
+  const tieBreaks = tournament
+    ? await getTournamentTieBreaks(tournament.id, locale)
+    : [];
+  return { tournament, rounds: closed, target, history, live, tieBreaks };
 }
 
 export async function cachedOrganizers(q?: string, federation?: string) {

@@ -152,11 +152,17 @@ def _save_arbiters(conn, tid: int, arbiter_ids: list[int] | None) -> None:
             raise AppError(422, "UNKNOWN_ARBITER", "Unknown arbiter id", {"id": oid})
 
 
+def _validate_tie_breaks(tie_breaks: list[str] | None) -> None:
+    if tie_breaks is not None and len(tie_breaks) != 4:
+        raise AppError(422, "TIE_BREAKS_MUST_BE_FOUR",
+                       "Exactly 4 tie-break criteria must be chosen (TB1..TB4)")
+
+
 def _save_tie_breaks(conn, tid: int, tie_breaks: list[str] | None) -> None:
     if tie_breaks is None:
         return
     conn.execute("DELETE FROM tournament_tie_breaks WHERE tournament_id = %s", (tid,))
-    for pos, tb in enumerate(tie_breaks[:10], start=1):
+    for pos, tb in enumerate(tie_breaks, start=1):
         conn.execute(
             """INSERT INTO tournament_tie_breaks (tournament_id, tie_break_id, position)
                VALUES (%s, %s, %s)""",
@@ -170,6 +176,9 @@ def create_tournament(body: TournamentBody, user=Depends(require_organizer)):
     if user.get("role") == "ADMIN":
         raise AppError(403, "ADMIN_CANNOT_CREATE",
                        "Admins cannot create tournaments")
+    if body.tie_breaks is None or len(body.tie_breaks) != 4:
+        raise AppError(422, "TIE_BREAKS_MUST_BE_FOUR",
+                       "Exactly 4 tie-break criteria must be chosen (TB1..TB4)")
     with db.connect() as conn:
         federation_id = _organizer_federation(conn, user)
         try:
@@ -219,6 +228,7 @@ def my_tournaments(user=Depends(require_organizer)):
 
 @router.put("/tournaments/{tid}")
 def update_tournament(tid: int, body: TournamentBody, user=Depends(require_organizer)):
+    _validate_tie_breaks(body.tie_breaks)
     with db.connect() as conn:
         _check_owner_tid(conn, tid, user)
         try:

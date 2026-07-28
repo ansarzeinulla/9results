@@ -20,7 +20,8 @@
     "login": "Sign in",
     "organizers": "Organizers",
     "arbiters": "Arbiters",
-    "engineRating": "Engine rating"
+    "engineRating": "Engine rating",
+    "rules": "Rules & Info"
   },
   "common": {
     "search": "Search",
@@ -92,6 +93,7 @@
     "arbiter": "Arbiter",
     "director": "Director",
     "tieBreaks": "Tie-breaks",
+    "tieBreaksRequired": "Choose all 4 tie-breaks (TB1-TB4)",
     "participantType": "Participant type",
     "type": "Type",
     "id": "ID"
@@ -399,19 +401,52 @@
     "loc_other": "Other countries",
     "loc_world": "World regions"
   },
-  "help": {
-    "open": "How the tie-breaks are calculated",
-    "title": "How this table is calculated",
-    "tbHeading": "Tie-breaks",
-    "tb1": "TB1 — Number of wins.",
-    "tb2": "TB2 — Buchholz: the sum of the final scores of all your opponents.",
-    "tb3": "TB3 — Sonneborn-Berger: the scores of the opponents you beat, plus half the score of every opponent you drew.",
-    "tb4": "TB4 — Cumulative score: your running total after each round, added up.",
-    "order": "Players are ranked by points first, then by the tie-breaks in the order the tournament chose — that order is listed on the Info tab.",
-    "titlesHeading": "Player titles",
-    "titles": "MSIC — Master of Sport of International Class · MS — Master of Sport · CMS — Candidate Master of Sport · R1 / R2 / R3 — first, second and third rank.",
-    "arbiterTitlesHeading": "Arbiter titles",
-    "arbiterTitles": "IA — International Arbiter · FA — Federation Arbiter · NA — National Arbiter.",
-    "close": "Close"
+  "rulesPage": {
+    "title": "Rules & Info",
+    "nav": {
+      "pairing": "Pairing systems",
+      "tieBreaks": "Tie-breaks",
+      "titles": "Titles",
+      "rating": "Rating formula",
+      "contacts": "Contacts"
+    },
+    "pairing": {
+      "heading": "Pairing systems",
+      "intro": "Different tournaments use different systems to decide who plays whom each round.",
+      "swiss": "Swiss — each round pairs players with the closest scores who have not yet met, without repeating a pairing; the tournament ends after a fixed number of rounds without a single winner emerging from a full round-robin.",
+      "roundRobin": "Round-robin — every player meets every other player once (or twice, in a double round-robin), so the final standings reflect complete head-to-head results.",
+      "olympic": "Olympic — a single-elimination bracket: the loser of each match is eliminated, and the winner advances until one player remains.",
+      "teamMatch": "Team-match — teams of players face off board by board; each board's result (win/draw/loss) contributes to the team's overall match score."
+    },
+    "tieBreaks": {
+      "heading": "Tie-breaks",
+      "intro": "When two or more players finish with the same number of points, one or more of the following criteria — in the order the organizer chose for this tournament (see the Info tab) — decide the final ranking.",
+      "points": "Points — the player's own total score; included as a possible tie-break for completeness.",
+      "directEncounter": "Direct encounter — the result(s) of the game(s) played against opponents who finished on the same number of points.",
+      "winCount": "Number of wins — how many games the player won outright.",
+      "buchholz": "Buchholz — the sum of the final scores of all of the player's opponents.",
+      "berger": "Sonneborn-Berger — the sum of the scores of the opponents the player beat, plus half the score of every opponent the player drew.",
+      "buchholzCut1": "Buchholz Cut 1 — Buchholz with the single lowest-scoring opponent's result removed.",
+      "buchholzCut2": "Buchholz Cut 2 — Buchholz with the two lowest-scoring opponents' results removed.",
+      "medianBuchholz": "Median Buchholz — Buchholz with both the highest- and lowest-scoring opponents' results removed.",
+      "cumulativeScore": "Cumulative score — the player's running total after each round, added up; rewards a player who led early over one who caught up at the end."
+    },
+    "titles": {
+      "heading": "Titles",
+      "playerHeading": "Player titles",
+      "playerTitles": "MSIC — Master of Sport of International Class · MS — Master of Sport · CMS — Candidate Master of Sport · R1 / R2 / R3 — first, second and third rank.",
+      "arbiterHeading": "Arbiter titles",
+      "arbiterTitles": "IA — International Arbiter · FA — Federation Arbiter · NA — National Arbiter."
+    },
+    "rating": {
+      "heading": "Rating formula",
+      "intro": "Ratings are updated after a tournament is finalized, using the standard Elo formula.",
+      "formula": "expected = 1 / (1 + 10^((opponentRating − ownRating) / 400));  newRating = oldRating + K × (actualScore − expected), with K = 20.",
+      "notes": "Matches are processed one at a time in order, so each player's rating is updated after every game before the next game is calculated — later results in the same tournament use the already-updated rating. Byes and games without a recorded result are skipped."
+    },
+    "contacts": {
+      "heading": "Contacts",
+      "body": "No contacts for now."
+    }
   }
 }

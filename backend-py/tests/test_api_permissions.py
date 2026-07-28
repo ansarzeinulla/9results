@@ -49,6 +49,7 @@ def test_organizer_can_manage_tournaments(client, organizer_token):
         "location_id": "Astana", "rating_type_id": "Classic",
         "tournament_type_id": "Swiss", "start_date": "2026-10-01",
         "end_date": "2026-10-03", "rounds": 3,
+        "tie_breaks": ["WinCount", "Buchholz", "Berger", "CumulativeScore"],
     })
     assert r.status_code == 200
 
@@ -73,6 +74,7 @@ def test_withdrawn_player_excluded_from_pairing(
         "location_id": "Astana", "rating_type_id": "Classic",
         "tournament_type_id": "Swiss", "start_date": "2026-11-01",
         "end_date": "2026-11-02", "rounds": 3,
+        "tie_breaks": ["WinCount", "Buchholz", "Berger", "CumulativeScore"],
     })
     tid = r.json()["id"]
     for i in range(1, 6):
